@@ -1,33 +1,28 @@
-# OpenCode 部署 — MCTS-TD Planner
+# MCTS-TD 决策引擎 — OpenCode 部署说明
 
-将以下规则添加到 OpenCode 的配置中：
+## 安装方式
 
-## 方式一: opencode.mdc
+### 方式一：项目规则
 
-在项目根目录创建或编辑 `.opencode/rules/decision-engine.mdc`：
+将 `rules/decision-engine.mdc` 复制到 OpenCode 的项目规则目录：
 
-```yaml
----
-description: MCTS-TD 通用决策引擎 — 先想清楚再做
-globs: []
----
+```bash
+cp deploy/opencode/rules/decision-engine.mdc .opencode/rules/decision-engine.mdc
 ```
 
-然后将 `rules/RULES.md` 的内容追加到该文件中。
+### 方式二：自定义指令
 
-## 方式二: 系统提示
+将 `rules/decision-engine.mdc` 的内容添加到 OpenCode 的自定义指令中。
 
-将 `rules/RULES.md` 的内容直接添加到 OpenCode 的系统提示中。
+## 验证
 
-## 方式三: 自定义指令
+在 OpenCode 中输入任意有多个实现方案的任务，如果 AI 先问限制条件、列出多个方案、逐个推演后再执行，说明安装成功。
 
-在 OpenCode 的自定义指令中添加:
+## 文件说明
 
 ```
-当收到任务时，先检查是否有多种可行方案。如果有，按以下流程执行:
-第0步: 收集需求约束，信息不全就问用户
-第1步: 查资料理解领域，有依据地列出候选方案
-第2步: 对每个方案独立进行3步因果链推演
-第3步: 汇总比较，选最优方案再执行
-第5步: 总结经验并记录下来
+deploy/opencode/
+├── README.md
+└── rules/
+    └── decision-engine.mdc
 ```

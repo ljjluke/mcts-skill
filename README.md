@@ -80,49 +80,69 @@ AI: → 那 OAuth2 排除，JWT 和 Session 二选一
 ```bash
 /plugin marketplace add ljjluke/mcts-skill
 ```
-装好后输入任意任务，看到 ⚡ 标志说明生效。安装说明：[deploy/claude-code/](./deploy/claude-code/)
+装好后输入任意任务，看到 ⚡ 标志说明生效。
 
 ### Cursor
 ```bash
-# 将决策规则添加到 Cursor 的全局规则中
-cp deploy/cursor/.cursor/mcts-td-planner.json ~/.cursor/rules/
+cp deploy/cursor/rules/decision-engine.mdc .cursor/rules/decision-engine.mdc
 ```
-或者在项目级 `.cursor/rules/` 目录下创建同名文件。安装说明：[deploy/cursor/](./deploy/cursor/)
 
 ### OpenCode
-将 `rules/RULES.md` 的内容添加到 OpenCode 的系统提示或项目规则中：
 ```bash
-# 方式一：自定义指令
-cat rules/RULES.md >> .opencode/instructions.md
-
-# 方式二：opencode.mdc 规则文件
-cp rules/RULES.md .opencode/rules/decision-engine.md
+cp deploy/opencode/rules/decision-engine.mdc .opencode/rules/decision-engine.mdc
 ```
-安装说明：[deploy/opencode/](./deploy/opencode/)
 
 ### Trae
-将 `rules/RULES.md` 的内容添加到 Trae 的项目规则或自定义 AI 指令中：
-
-```
-你是一个结构化决策引擎。每次收到任务时，先检测是否存在多种合理方案。
-如果有，按 rules/RULES.md 中的流程执行：先收集约束、再列方案、
-逐个推演、比较选优、执行前自检、执行后总结。
-```
-安装说明：[deploy/trae/](./deploy/trae/)
+将 `deploy/trae/instructions.md` 的内容添加到 Trae 的项目规则中。
 
 ### CodeX
-将 `rules/RULES.md` 的核心指令添加到 CodeX 的 Agent 系统提示中。安装说明：[deploy/codex/](./deploy/codex/)
+将 `deploy/codex/instructions.md` 的内容添加到 CodeX 的 Agent 系统提示中。
 
-> 所有平台的部署说明都在 [deploy/](./deploy/) 目录下。
+> 各平台部署说明：[deploy/](./deploy/)
 
 ---
 
-## 🔧 核心决策流程
+## 🔧 三引擎决策流程
+
+本引擎由三个独立引擎组成，**每个引擎有可验证的产出，不可跳过**：
 
 ```
-第0步: 需求约束收集 — 问清楚再动手，不假设
-第1步: 领域认知与方案生成 — 不熟就查资料，有依据地列方案
-第2步: 分轮独立推演 — 每个方案在脑子里独立走一遍因果链
+用户需求理解 → 先听懂用户说了什么
+       │
+       ▼
+┌───────────────────────────────┐
+│  发散引擎（头脑风暴，可多轮）    │
+│                               │
+│  发散 → 缺信息? → 问用户       │
+│  → 获得新信息 → 再来一轮发散    │
+│  → 收敛 → 输出方案清单         │
+└───────────┬───────────────────┘
+            │
+            ▼
+┌───────────────────────────────┐
+│  推演引擎（子 agent 独立推演）  │
+│                               │
+│  子A ⟳ 子B ⟳ 子C（互不知对方） │
+│  独立推演 → 记录问题 → 继续     │
+│  ★ 问用户不阻塞其他子agent     │
+└───────────┬───────────────────┘
+            │
+            ▼
+┌───────────────────────────────┐
+│  仲裁引擎（汇总与决策）         │
+│                               │
+│  汇总结果+问题 → 统一问用户    │
+│  → 重新评估 → 自检 → 决策     │
+└───────────────────────────────┘
+```
+
+### 验证规则
+
+```
+✅ 有发散和收敛记录 → 发散引擎已执行
+✅ 推演报告数 = 方案数 → 推演引擎已执行
+✅ 有决策报告（含自检）→ 仲裁引擎已执行
+```
 第3步: 汇总比较 — V_final = 技术评分×0.6 + 项目匹配度×0.4
 第3.5步: 推演自检 — 自我质疑，防止推演错了还执行
 第4步: 执行 — 只做选中的那个
