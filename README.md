@@ -151,9 +151,67 @@ Type D: 排查类任务 — 触发简化推演
 
 ---
 
-## 使用方式
+## 安装方法
 
-安装后自动生效（`alwaysApply: true`），无需手动调用。当检测到决策需求时自动启动。
+### 方式一：通过插件市场安装（推荐）
+
+```bash
+# 在 Claude Code 中执行以下命令：
+/plugin marketplace add ljjluke/mcts-skill
+```
+
+或者在 `~/.claude/settings.json` 中手动配置：
+
+```json
+{
+  "extraKnownMarketplaces": {
+    "mcts-td-planner": {
+      "source": {
+        "source": "github",
+        "repo": "ljjluke/mcts-skill"
+      }
+    }
+  }
+}
+```
+
+### 方式二：直接复制到全局 skills 目录
+
+```bash
+# 将整个项目克隆到本地
+git clone https://github.com/ljjluke/mcts-skill.git
+cd mcts-skill
+
+# 复制到 Claude Code 的 skills 目录
+mkdir -p ~/.claude/skills/mcts-td-planner
+cp -r * ~/.claude/skills/mcts-td-planner/
+```
+
+### 方式三：项目级引用（在 CLAUDE.md 中配置）
+
+在项目根目录的 `CLAUDE.md` 中添加：
+
+```yaml
+---
+skills:
+  - mcts-td-planner
+---
+```
+
+### 验证安装
+
+启动 Claude Code，输入任意有多个实现方案的任务，如果看到以下输出说明安装成功：
+
+```
+⚡ [MCTS-TD] 检测到决策需求，启动决策引擎
+触发原因: 该任务有多种可行的实现方式（检测到多个合理方案）
+```
+
+### 注意事项
+
+- Skill 设置 `alwaysApply: true`，安装后自动生效，无需手动调用
+- 只有在检测到决策需求时才会启动，日常简单任务不受影响
+- 跨会话知识存储在 `memory/mcts-td-value-archive.md`，随项目目录保留
 
 ---
 
