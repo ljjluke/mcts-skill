@@ -80,12 +80,40 @@ AI: → 那 OAuth2 排除，JWT 和 Session 二选一
 ```bash
 /plugin marketplace add ljjluke/mcts-skill
 ```
+装好后输入任意任务，看到 ⚡ 标志说明生效。安装说明：[deploy/claude-code/](./deploy/claude-code/)
 
 ### Cursor
-将 `deploy/cursor/` 下的规则添加到 `.cursor/rules/` 目录。
+```bash
+# 将决策规则添加到 Cursor 的全局规则中
+cp deploy/cursor/.cursor/mcts-td-planner.json ~/.cursor/rules/
+```
+或者在项目级 `.cursor/rules/` 目录下创建同名文件。安装说明：[deploy/cursor/](./deploy/cursor/)
 
-### OpenCode / Trae / CodeX
-将 `rules/RULES.md` 的内容添加到对应的系统提示或项目规则中。各平台的具体部署说明在 `deploy/` 目录下。
+### OpenCode
+将 `rules/RULES.md` 的内容添加到 OpenCode 的系统提示或项目规则中：
+```bash
+# 方式一：自定义指令
+cat rules/RULES.md >> .opencode/instructions.md
+
+# 方式二：opencode.mdc 规则文件
+cp rules/RULES.md .opencode/rules/decision-engine.md
+```
+安装说明：[deploy/opencode/](./deploy/opencode/)
+
+### Trae
+将 `rules/RULES.md` 的内容添加到 Trae 的项目规则或自定义 AI 指令中：
+
+```
+你是一个结构化决策引擎。每次收到任务时，先检测是否存在多种合理方案。
+如果有，按 rules/RULES.md 中的流程执行：先收集约束、再列方案、
+逐个推演、比较选优、执行前自检、执行后总结。
+```
+安装说明：[deploy/trae/](./deploy/trae/)
+
+### CodeX
+将 `rules/RULES.md` 的核心指令添加到 CodeX 的 Agent 系统提示中。安装说明：[deploy/codex/](./deploy/codex/)
+
+> 所有平台的部署说明都在 [deploy/](./deploy/) 目录下。
 
 ---
 
