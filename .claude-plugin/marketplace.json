@@ -11,6 +11,11 @@
       "name": "mcts-td-planner",
       "description": "通用决策引擎 — 多方案独立推演、汇总比较后执行最优方案",
       "source": "./plugins/mcts-td-planner",
+      "version": "1.0.0",
+      "author": {
+        "name": "ljjluke"
+      },
+      "keywords": ["decision-making", "mcts", "planning", "reasoning", "通用决策"],
       "category": "productivity"
     }
   ]
