@@ -1,27 +1,8 @@
 # 更新日志
 
-## 1.2.0 (2026-06-03)
-
-### 重大变更
-- **项目结构重构**：从"Claude Code 专属"改为"通用规则 + 多平台部署"
-- 核心规则抽离到 `rules/RULES.md`，不绑定任何平台
-- 各平台部署文件放在 `deploy/` 目录下（Claude Code / Cursor / OpenCode / Trae / CodeX）
+## 1.1.1 (2026-06-03)
 
 ### 新增
-- `rules/RULES.md`：通用决策规则总纲（纯文本，不绑定平台）
-- `deploy/cursor/`：Cursor 部署配置
-- `deploy/opencode/`：OpenCode 部署说明
-- `deploy/trae/`：Trae 部署说明
-- `deploy/codex/`：CodeX 部署说明
-
-### 变更
-- 旧 `plugins/` 目录迁移到 `deploy/claude-code/`
-- `agents/` 目录迁移到 `deploy/claude-code/agents/`
-- 根目录 `README.md` 增加多平台安装说明
-
----
-
-## 1.1.1 (2026-06-03)
 - **推演结果自检**（第3.5步）：执行前自我质疑，找漏洞、反向思考、风险评估，防止推演错了还按错的执行
 - **跳过机制**：用户在任何阶段说"直接做""别推了"，立即中止推演进入执行
 - **熔断机制**：记录推演准确率，低于70%自动降级，低于50%暂停推演
