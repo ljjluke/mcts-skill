@@ -1,0 +1,8 @@
+{
+  "name": "mcts-td-planner",
+  "version": "1.0.0",
+  "description": "通用决策引擎 — 模拟人脑'先想清楚再做'的推演式决策机制。基于MCTS+TDL混合算法，多方案独立推演，汇总比较后选最优方案再执行。",
+  "author": {
+    "name": "ljjluke"
+  }
+}

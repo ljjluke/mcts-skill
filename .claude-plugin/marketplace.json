@@ -1,0 +1,17 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "mcts-td-planner",
+  "version": "1.0.0",
+  "description": "通用决策引擎 — 模拟人脑'先想清楚再做'的推演式决策机制。基于MCTS(蒙特卡洛树搜索)+TDL(时序差分学习)混合算法。",
+  "owner": {
+    "name": "ljjluke"
+  },
+  "plugins": [
+    {
+      "name": "mcts-td-planner",
+      "description": "通用决策引擎 — 多方案独立推演、汇总比较后执行最优方案",
+      "source": "./plugins/mcts-td-planner",
+      "category": "productivity"
+    }
+  ]
+}
