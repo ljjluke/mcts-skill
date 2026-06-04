@@ -47,7 +47,7 @@ ARCHIVED:    (无)
 | PROVISIONAL | 0.3 | 待验证，仅1-2次验证 |
 | DISPUTED | 0.2 | 有矛盾证据，保留但低权重 |
 | REFUTED | 0.0 | 已证伪，不参与召回 |
-| HYPOTHESIS | 0.1 | 新知识，低权重参与召回（仅用于探索） |
+| HYPOTHESIS | — | 新知识，不参与查询（尚未经过验证） |
 | SLEEPING | 0.3× | 超过30天未使用，权重减半 |
 | ARCHIVED | — | 超过90天未使用，不参与常规召回 |
 

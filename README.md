@@ -7,11 +7,7 @@
 <h1 align="center">🧠 MCTS-TD Planner</h1>
 
 <p align="center">
-  <b>通用决策引擎 — 像下棋一样，先在脑子里推演所有可能，再走那步最好的</b>
-</p>
-
-<p align="center">
-  <b>不绑定任何平台，但推荐在 Claude Code 中使用以获得完整体验</b>
+  <b>专为 Claude Code 设计 — 像下棋一样，先在脑子里推演所有可能，再走那步最好的</b>
 </p>
 
 <br>
@@ -70,39 +66,18 @@ AI: → 那 OAuth2 排除，JWT 和 Session 二选一
 | **经验越用越准** | 做过类似的事会自动参考，还会总结 |
 | **适合的才是最好的** | 不盲目选评分最高的，选最适合你当前情况的 |
 | **记忆不会丢** | 经验自动记住，更新 skill 也不丢失 |
-| **不绑定平台** | 推荐 Claude Code（完整三引擎），其他平台仅支持单文件规则 |
 
 ---
 
 ## 🚀 安装
 
-### Claude Code（推荐）
+在 Claude Code 中运行：
 
 ```bash
-# 方式一：从插件市场安装（需要联网）
 /plugin marketplace add ljjluke/mcts-skill
-
-# 方式二：本地安装（已克隆仓库）
-/plugin install .
 ```
 
 装好后输入任意任务，看到 ⚡ 标志说明生效。
-
-### 通用安装（任意平台）
-
-```bash
-# 克隆仓库
-git clone https://github.com/ljjluke/mcts-skill.git
-cd mcts-skill
-
-# 一键安装（适用于 Claude Code）
-bash scripts/install.sh
-```
-
-> ⚠️ **其他平台（Cursor / OpenCode / Trae / CodeX）说明**：  
-> 这些平台只支持单文件规则，无法像 Claude Code 那样引用多文件目录。  
-> 如需安装，请手动将 `SKILL.md` 或 `engine/mcts-core.md` 中的规则复制到对应平台的规则设置中，但体验会大幅简化（缺少模块化知识图谱和管理脚本）。  
-> **推荐使用 Claude Code 获得完整体验。**
 
 ### ⚡ 记忆数据安全
 
@@ -191,15 +166,16 @@ bash scripts/install.sh
 ```
 mcts-td-planner/
 ├── SKILL.md                ← 核心 Skill 定义（Claude Code 入口）
-├── plugin.json             ← 插件市场元数据
-├── marketplace.json        ← 插件市场清单
+│
+├── .claude-plugin/         ← 插件市场元数据
+│   ├── plugin.json
+│   └── marketplace.json
 │
 ├── engine/                 ← 引擎核心规则
 │   ├── mcts-core.md          推演引擎（MCTS 推演+自检+熔断）
 │   └── td-learner.md         学习引擎 + 知识图谱（TDL 价值管理）
 │
 ├── policies/               ← 决策策略
-│   ├── code-task-policy.md   代码任务推演格式与策略
 │   └── task-policy.md        通用推演格式与策略
 │
 ├── agents/                 ← Agent 定义
@@ -213,14 +189,7 @@ mcts-td-planner/
 │   └── archive/                长期归档（自动管理）
 │
 ├── scripts/                ← 辅助脚本
-├── install.sh            一键安装脚本（仅 Claude Code）
 │   └── manage_memory.py      记忆管理（归档/回忆/清理）
-│
-├── deploy/                 ← 其他平台部署参考（推荐 Claude Code）
-│   ├── cursor/                Cursor
-│   ├── opencode/              OpenCode
-│   ├── trae/                  Trae
-│   └── codex/                 CodeX
 │
 ├── .claude-plugin/         ← 插件元数据
 │   ├── plugin.json

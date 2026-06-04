@@ -1,7 +1,7 @@
 # MCTS-TD 通用决策规则
 
 > 一套模拟人脑"先想清楚再做"的推演式决策框架。
-> **不绑定任何 AI Agent 平台**，适用于 Claude Code、Cursor、OpenCode、Trae、CodeX 等任何产品。
+> **适用于 Claude Code。**
 
 ---
 
@@ -175,13 +175,3 @@ HYPOTHESIS → PROVISIONAL → CONFIRMED → DISPUTED → REFUTED(支持回滚)
 ```
 
 ---
-
-## 平台部署
-
-| 平台 | 部署方式 |
-|------|---------|
-| Claude Code | `/plugin marketplace add ljjluke/mcts-skill` |
-| Cursor | 复制 `deploy/cursor/rules/decision-engine.mdc` 到 `.cursor/rules/` |
-| OpenCode | 复制 `deploy/opencode/rules/decision-engine.mdc` 到 `.opencode/rules/` |
-| Trae | 将 `deploy/trae/instructions.md` 添加到项目规则 |
-| CodeX | 将 `deploy/codex/instructions.md` 添加到 Agent 系统提示 |

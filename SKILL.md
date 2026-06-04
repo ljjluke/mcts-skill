@@ -218,7 +218,7 @@ alwaysApply: true
 |------|------|------|
 | 分轮推演引擎 | `engine/mcts-core.md` | MCTS推演 + 推演自检 + 熔断机制 + 用户跳过 |
 | 事后学习引擎 | `engine/td-learner.md` | TD误差计算、价值更新、知识图谱、跨会话持久化 |
-| 推演格式与策略 | `policies/code-task-policy.md` | 通用方案生成规则、推演格式、评分标准 |
+| 推演格式与策略 | `policies/task-policy.md` | 通用方案生成规则、推演格式、评分标准、CLT-UCB排序 |
 | 算法原理 | `references/algorithm-reference.md` | MCTS/TDL算法原理与设计决策 |
 
 ---

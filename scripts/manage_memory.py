@@ -25,6 +25,8 @@ ACTIVE_FILE = DATA_DIR / "memory" / "mcts-td-value-archive.md"
 ARCHIVE_DIR = DATA_DIR / "memory" / "archive"
 
 # 如果 data 目录不存在（首次运行），从 skill 模板复制初始化
+# 注意：记忆数据必须存储在 data 目录，不能回退到项目目录
+# 因为 data 目录在 skill 更新时不会被覆盖，项目目录会
 SKILL_DIR = Path.home() / ".claude" / "skills" / "mcts-td-planner"
 if not ACTIVE_FILE.parent.exists():
     # 尝试从 skill 模板复制
@@ -35,11 +37,14 @@ if not ACTIVE_FILE.parent.exists():
         shutil.copy2(template_file, ACTIVE_FILE)
         print(f"ℹ️ 已从模板初始化 memory 文件: {ACTIVE_FILE}")
     else:
-        # 从项目目录回退
-        project_memory = Path(__file__).resolve().parent.parent / "memory"
-        if project_memory.exists():
-            ACTIVE_FILE = project_memory / "mcts-td-value-archive.md"
-            ARCHIVE_DIR = project_memory / "archive"
+        # 既没有 data 目录也没有 skill 模板——这是异常情况
+        # 不能回退到项目目录，因为更新 skill 时项目目录会被覆盖
+        # 记忆数据丢失不可恢复
+        print(f"❌ 错误: 记忆数据目录和 skill 模板都不存在")
+        print(f"   data: {ACTIVE_FILE}")
+        print(f"   template: {template_file}")
+        print(f"   请先安装 skill 或手动创建 data 目录")
+        sys.exit(1)
 
 # 确保目录存在
 ARCHIVE_DIR.mkdir(parents=True, exist_ok=True)

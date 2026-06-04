@@ -1,5 +1,20 @@
 # 更新日志
 
+## 1.3.0 (2026-06-04)
+
+### 修复
+- **memory/.gitignore 路径错误**：去掉多余路径前缀 `memory/`，使 gitignore 规则真正生效
+- **manage_memory.py 数据丢失路径**：移除危险的回退到项目目录逻辑，记忆数据目录不存在时直接报错
+- **知识状态机不一致**：补全 SLEEPING/ARCHIVED 状态转换规则，统一 HYPOTHESIS 权重为"不参与查询"
+- **UCB 公式分母硬编码**：将 `√(σ²/1)` 修复为 `√(σ²/n_i)`，n_i 为方案的推演次数
+- **重复策略文件**：合并 `code-task-policy.md` 到 `task-policy.md`，删除重复文件
+- **CHANGELOG 版本号同步**：从 1.1.1 更新到 1.3.0
+
+### 变更
+- `policies/task-policy.md` 新增 UCB 公式中 n_i 的说明
+
+---
+
 ## 1.1.1 (2026-06-03)
 
 ### 新增
