@@ -171,8 +171,11 @@ mcts-td-planner/
 │   ├── plugin.json
 │   └── marketplace.json
 │
-├── engine/                 ← 引擎核心规则
-│   ├── mcts-core.md          推演引擎（MCTS 推演+自检+熔断）
+├── engine/                 ← 引擎核心规则（拆分版）
+│   ├── mcts-constraint.md    需求约束收集（第0步）
+│   ├── mcts-diverge.md       发散引擎（第1步：六维地图+六路侦查+视角轮盘）
+│   ├── mcts-simulate.md      推演引擎（第2步：逐轮独立推演+知识注入+补全箱）
+│   ├── mcts-converge.md      仲裁引擎（第3~3.6步：汇总+自检+盲区审计+再推演）
 │   └── td-learner.md         学习引擎 + 知识图谱（TDL 价值管理）
 │
 ├── policies/               ← 决策策略

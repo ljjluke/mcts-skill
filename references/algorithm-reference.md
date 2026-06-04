@@ -15,7 +15,7 @@ metadata:
 
 | 创新点 | 原项目实现 | 本Skill适配 |
 |--------|----------|------------|
-| CLT-UCB选择 | `policy_clt` 函数 | `engine/mcts-core.md` 中的CLT-UCB选择规则 |
+| CLT-UCB选择 | `policy_clt` 函数 | `engine/mcts-converge.md` 中的CLT-UCB选择规则 |
 | Welford方差 | `backup_trace_obs` 中的方差更新 | `engine/td-learner.md` 中的Welford方差推理 |
 | Gamma折扣TD | `backup_trace_obs` 的折扣循环 | `engine/td-learner.md` 中的折扣反向传播 |
 | 状态投影去重 | `projection` 机制 + `obs_arrays` | `engine/td-learner.md` 中的状态投影规则 |
@@ -162,7 +162,7 @@ tetris_mcts/
 |-----------------|------|------------|
 | ValueSim.py | MCTS+TD+NN混合Agent | SKILL.md + 引擎文件 |
 | agent.py TreeAgent | 数组管理、节点分配 | 决策树推理内存 |
-| core.py select_trace | 选择路径 | engine/mcts-core.md Selection |
+| core.py select_trace | 选择路径 | engine/mcts-converge.md CLT-UCB排序 |
 | core.py backup_trace | 价值回溯 | engine/td-learner.md 价值更新 |
 | policy.py | 策略函数 | policies/code-task-policy.md |
 | model_vv.py | 价值+方差NN | Claude的内隐知识 |

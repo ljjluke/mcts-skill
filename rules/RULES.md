@@ -68,7 +68,10 @@
 ## 详细规则来源
 
 三引擎的完整规则定义在：
-- **推演引擎**（MCTS 核心）：[engine/mcts-core.md](../engine/mcts-core.md)
+- **约束收集**（需求约束）：[engine/mcts-constraint.md](../engine/mcts-constraint.md)
+- **发散引擎**（头脑风暴）：[engine/mcts-diverge.md](../engine/mcts-diverge.md)
+- **推演引擎**（MCTS 推演）：[engine/mcts-simulate.md](../engine/mcts-simulate.md)
+- **仲裁引擎**（汇总+自检+盲区审计）：[engine/mcts-converge.md](../engine/mcts-converge.md)
 - **学习引擎**（TD 学习 + 知识图谱）：[engine/td-learner.md](../engine/td-learner.md)
 - **策略规则**（方案生成 + 评分标准）：[policies/task-policy.md](../policies/task-policy.md)
 - **算法参考**： [references/algorithm-reference.md](../references/algorithm-reference.md)
