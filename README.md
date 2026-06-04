@@ -69,36 +69,59 @@ AI: → 那 OAuth2 排除，JWT 和 Session 二选一
 | **多方案推演** | 每个方案在脑子里走一遍，不实际执行 |
 | **经验越用越准** | 做过类似的事会自动参考，还会总结 |
 | **适合的才是最好的** | 不盲目选评分最高的，选最适合你当前情况的 |
-| **知识不会丢** | 经验自动记住，下次直接调用 |
+| **记忆不会丢** | 经验自动记住，更新 skill 也不丢失 |
 | **不绑定平台** | Claude Code、Cursor、OpenCode、Trae、CodeX 都能用 |
 
 ---
 
 ## 🚀 安装
 
-### Claude Code
+### Claude Code（推荐）
+
 ```bash
+# 方式一：从插件市场安装（需要联网）
 /plugin marketplace add ljjluke/mcts-skill
+
+# 方式二：本地安装（已克隆仓库）
+/plugin install .
 ```
+
 装好后输入任意任务，看到 ⚡ 标志说明生效。
 
-### Cursor
+### 通用安装（任意平台）
+
 ```bash
-cp deploy/cursor/rules/decision-engine.mdc .cursor/rules/decision-engine.mdc
+# 克隆仓库
+git clone https://github.com/ljjluke/mcts-skill.git
+cd mcts-skill
+
+# 一键安装（自动检测当前平台，复制文件到正确位置）
+bash scripts/install.sh
 ```
 
-### OpenCode
-```bash
-cp deploy/opencode/rules/decision-engine.mdc .opencode/rules/decision-engine.mdc
-```
+### 各平台手动安装
 
-### Trae
-将 `deploy/trae/instructions.md` 的内容添加到 Trae 的项目规则中。
+| 平台 | 安装方式 |
+|------|---------|
+| **Cursor** | `cp deploy/cursor/rules/decision-engine.mdc .cursor/rules/decision-engine.mdc` |
+| **OpenCode** | `cp deploy/opencode/rules/decision-engine.mdc .opencode/rules/decision-engine.mdc` |
+| **Trae** | 将 `deploy/trae/instructions.md` 的内容添加到 Trae 的项目规则中 |
+| **CodeX** | 将 `deploy/codex/instructions.md` 的内容添加到 CodeX 的 Agent 系统提示中 |
 
-### CodeX
-将 `deploy/codex/instructions.md` 的内容添加到 CodeX 的 Agent 系统提示中。
+> 各平台详细部署说明：[deploy/](./deploy/)
 
-> 各平台部署说明：[deploy/](./deploy/)
+### ⚡ 记忆数据安全
+
+本 Skill 的知识图谱存储在 `~/.claude/data/skills/mcts-td-planner/` 目录，与 skill 代码文件物理隔离。
+
+| 场景 | 记忆数据 | 说明 |
+|------|---------|------|
+| skill 初次安装 | ✅ 模板自动复制到 data 目录 | 首次安装时初始化空的知识图谱 |
+| skill 更新/重装 | ✅ **数据保留** | data 目录不会被覆盖 |
+| 卸载后重装 | ✅ **数据保留** | 除非手动删除 data 目录 |
+| 升级版本（如 1.3→1.4） | ✅ **数据保留** | 升级不影响已有知识条目 |
+
+> 想清空记忆重新积累知识，手动删除 `~/.claude/data/skills/mcts-td-planner/` 目录即可。
 
 ---
 
@@ -143,10 +166,14 @@ cp deploy/opencode/rules/decision-engine.mdc .opencode/rules/decision-engine.mdc
 ✅ 推演报告数 = 方案数 → 推演引擎已执行
 ✅ 有决策报告（含自检）→ 仲裁引擎已执行
 ```
-第3步: 汇总比较 — V_final = 技术评分×0.6 + 项目匹配度×0.4
-第3.5步: 推演自检 — 自我质疑，防止推演错了还执行
-第4步: 执行 — 只做选中的那个
-第5步: 总结 — 经验记下来，下次用得上
+
+### 执行流程
+
+```
+第1步: 汇总比较 — V_final = 技术评分×0.6 + 项目匹配度×0.4
+第2步: 推演自检 — 自我质疑，防止推演错了还执行
+第3步: 执行 — 只做选中的那个
+第4步: 总结 — 经验记下来，下次用得上
 ```
 
 ---
@@ -192,6 +219,7 @@ mcts-td-planner/
 │   └── archive/                长期归档（自动管理）
 │
 ├── scripts/                ← 辅助脚本
+│   ├── install.sh            一键安装脚本
 │   └── manage_memory.py      记忆管理（归档/回忆/清理）
 │
 ├── deploy/                 ← 各平台部署配置
