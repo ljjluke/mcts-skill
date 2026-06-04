@@ -22,17 +22,18 @@ description: MCTS-TD 决策引擎的"第2步"——推演引擎。真正的 MCTS
   方案A - 执行路径树:
       Root
        ├── Step1-成功 (n=3, w=2.8, V=0.93)
-       │    ├── Step2-路径a (n=2, w=1.6, V=0.80)
+       │    ├── Step2-路径a (n=2, w=1.6, V=0.80)  ← 参考了K005的经验
        │    │    └── Step3-完成 (n=1, w=0.7, V=0.70)
-       │    └── Step2-路径b (n=1, w=0.9, V=0.90) ← 后来发现更好的分支
+       │    └── Step2-路径b (n=1, w=0.9, V=0.90)  ← 后来发现更好
        └── Step1-失败 (n=1, w=0, V=0.00) ← 探索了失败路径
            └── 备用方案 (n=1, w=0.6, V=0.60)
 
   每轮迭代:
-    ① Selection: 从 Root 沿 UCB 最大的路径向下走到叶节点
-    ② Expansion: 在叶节点展开一个新分支（新的可能方向）
-    ③ Simulation: 从这个新分支快速推演到底
-    ④ Backpropagation: 把结果反向传播更新路径上所有节点
+    ① Selection: 沿 UCB 向下选 + 知识图谱偏置（历史经验影响选择）
+    ② Expansion: 在叶节点展开新分支
+    ③ Simulation: 快速推演到底
+    ④ Backpropagation: 反向传播更新树节点
+    ⑤ Knowledge Update: 将本轮经验写入知识图谱（每轮都可选写）
 ```
 
 ---
@@ -92,24 +93,69 @@ description: MCTS-TD 决策引擎的"第2步"——推演引擎。真正的 MCTS
 
 ---
 
-## ① SELECTION — UCB 驱动的路径选择
+## ① SELECTION — UCB 驱动的路径选择（含知识图谱偏置）
 
 ### 核心公式
 
 ```
-UCB(child) = V_child + c × √(ln(N_parent) / n_child)
+UCB(child) = V_child + c × √(ln(N_parent) / n_child) + K_bonus(child)
 
 其中:
   V_child   = 子节点的平均价值（w/n）
   N_parent  = 父节点的总访问次数
   n_child   = 子节点的访问次数
   c         = 探索常数（默认 √2 ≈ 1.414）
+  K_bonus(child) = 知识图谱偏置项（见下方说明）
 
 规则:
   - n_child = 0 的节点（未被访问过）→ UCB = +∞（优先探索）
   - V_child 高的节点 → 利用（Exploitation）
   - n_child 小的节点 → 探索（Exploration）
   - c 越大 → 越倾向探索；c 越小 → 越倾向利用
+```
+
+### 知识图谱偏置 K_bonus
+
+在 Selection 的每一步，查询知识图谱中是否有与该节点描述匹配的历史经验。如果有，临时调整该节点的 UCB 值，让"历史上被验证有效的方向"更容易被选中。
+
+```
+查询: 知识图谱（由 td-learner.md 管理）
+查询键: {节点描述, 任务类型, 技术栈, 上下文}
+
+偏置规则:
+  case 有高可信匹配 (CONFIRMED, n≥5) 且价值 ≥ 0.8:
+    K_bonus = +0.15     ← 历史说这个方向很好，增加被选中的机会
+    标记: "→ 知识图谱K00X偏置 +0.15"
+  
+  case 有中可信匹配 (PROVISIONAL, n<5) 且价值 ≥ 0.7:
+    K_bonus = +0.05     ← 历史说可以试试，小幅偏置
+    标记: "→ 知识图谱K00Y偏置 +0.05"
+  
+  case 有争议/失败匹配 (DISPUTED / REFUTED / 价值 < 0.5):
+    K_bonus = -0.10     ← 历史说这个方向容易出问题，降低被选中的机会
+    标记: "→ 知识图谱K00Z警告: 历史失败率较高，-0.10"
+  
+  case 无匹配:
+    K_bonus = 0.0       ← 冷启动，纯依赖 UCB 探索
+    标记: "冷启动探索"
+
+  注意: K_bonus 只在 n_child < 3 时生效（样本少时用先验引导，样本多了让数据说话）
+```
+
+### 首次迭代的特殊处理
+
+```
+第1轮迭代（所有节点 n=0）:
+  所有子节点的初始 UCB = +∞（都被认为是未探索的）
+  
+  此时不依赖 UCB 排序，而是用知识图谱给一个"初始排序":
+  1. 查知识图谱，看每个方案的"推荐度"（历史相似场景下各方案的加权平均V）
+  2. 按推荐度排序，先探索推荐度最高的方案
+  3. 如果知识图谱无数据 → 随机选择一个方案作为第一轮
+  
+  第一轮完成后，从第二轮开始就由 UCB 驱动了:
+    "知识图谱帮我们选择了第一轮的方向，
+     之后让 MCTS 自己的探索-利用机制来驱动决策"
 ```
 
 ### Selection 执行规则
@@ -286,6 +332,97 @@ for node in reversed(selection_path + [new_node]):
 下一轮 Selection 时:
   方案A-Step2-路径b 的 UCB 很高（n=1, V=0.85）→ 可能被再次选中验证
   方案A-Step1-成功 的 V 被拉低 → UCB 下降 → 其他子节点获得更多探索机会
+```
+
+---
+
+## ⑤ KNOWLEDGE UPDATE — 经验写回知识图谱
+
+每次 Backpropagation 完成后，**可选地**将本轮经验写回知识图谱。这是 MCTS-TD 混合算法的关键：树搜索负责短期决策，知识图谱负责长期记忆。
+
+### 写入时机
+
+```
+每轮迭代后检查是否写入:
+
+  写入条件（满足任意一条就写入）:
+    ① 该轮模拟的路径价值 V_leaf ≥ 0.8（高价值经验，值得记住）
+    ② 该轮模拟的路径价值 V_leaf ≤ 0.3（失败经验，记住避免重复）
+    ③ 该轮是第 5n 轮（每 5 轮写一次，批量积累）
+    ④ 最终收敛后（强制写入一次完整的树搜索总结）
+
+  不写入条件:
+    - 价值在 0.3~0.8 之间的普通经验（不写，避免知识图谱膨胀）
+    - 用户明确说"不记录这次经验"
+```
+
+### 写入格式
+
+```
+向知识图谱写入一条新经验（或更新已有经验）:
+
+查询知识图谱: 是否存在与当前节点描述匹配的条目?
+
+  如果存在匹配条目:
+    更新操作:
+      n_new = n_old + 1
+      q_new = q_old + (V_leaf - q_old) / n_new
+      σ²_new = Welford更新(σ²_old, V_leaf, n_new)
+      巩固分 += 5
+      last_verified = 当前时间
+    
+    如果更新后状态满足转换条件:
+      按 td-learner.md 状态机转换规则更新状态
+
+  如果不存在匹配条目:
+    创建新条目:
+      ID: K[自增编号]
+      特征: {task_type, domain, tech_stack, ...}
+      q: V_leaf
+      σ²: 0.25 (初始高方差，等待更多验证)
+      n: 1
+      状态: HYPOTHESIS
+      tags: [从节点描述提取的关键词]
+      上下文: {当前技术栈, 框架, 项目阶段}
+      巩固分: 5
+      创建时间: 当前时间
+    写入: 追加到 memory/mcts-td-value-archive.md 知识条目表
+```
+
+### 写入时的安全检查
+
+```
+写入前检查:
+  □ 该知识是否与已有知识矛盾?
+    如果新经验的 q 值与已有 CONFIRMED 条目的 q 值差 > 0.5:
+      → 创建独立的 HYPOTHESIS 条目（不覆盖已有条目）
+      → 标记为"潜在矛盾: 已有K00X q=0.85 vs 新经验 q=0.30"
+      → 只有当 n ≥ 3 次验证后，才触发状态转换（见 td-learner.md）
+
+  □ 该知识是否是"一次性的"（只适用于当前上下文）?
+    如果当前上下文与通用上下文差异很大:
+      → 创建时标注 specific_context = true
+      → 召回时降低权重（因为不通用）
+```
+
+### 知识图谱写入的示例
+
+```
+第3轮迭代后:
+  Selection: 方案A → Step1-成功 → Step2-路径b
+  Simulation: V_leaf = 0.90 ✓ 满足写入条件①
+
+写入:
+  查询知识图谱 → 无匹配条目
+  创建新条目:
+    K001: {
+      feature: "FEATURE|API|MED",
+      q: 0.90, σ²: 0.25, n: 1,
+      status: HYPOTHESIS,
+      tags: ["gin-jwt", "access+refresh token", "extend-existing"],
+      context: {tech: "Go+gin", framework: "gin-jwt", phase: "扩展"}
+    }
+  写入: "K001 创建 — gin-jwt扩展access+refresh token方案，V=0.90"
 ```
 
 ---
