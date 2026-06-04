@@ -8,6 +8,8 @@ alwaysApply: true
 
 # MCTS-TD Planner — 多方案独立推演决策引擎
 
+> **一句话**: 先理解需求 → 多轮头脑风暴想方案 → 每个方案独立推演 → 汇总决策。不脑补需求、不假装懂技术、不重复查同一份资料。
+
 > **核心能力**：当有多个候选方案时，每个方案都在内部独立走完完整的执行路径推演（不实际执行），然后汇总比较选出最优方案，最后才执行。
 
 ## 🚨 最高优先级：阶段性输出！（必须遵守，违反即违规）
@@ -400,23 +402,15 @@ alwaysApply: true
 |------|------|------|
 | 需求约束收集 | `engine/mcts-constraint.md` | 约束检测清单、约束来源、约束变化处理 |
 | 发散引擎 | `engine/mcts-diverge.md` | 六维领域地图 + 六路侦查 + 视角轮盘 + 粗筛 |
-| 推演引擎 | `engine/mcts-simulate.md` | 逐轮独立推演 + 知识注入 + 缺口检测 + 全局补全箱 |
-| 仲裁引擎 | `engine/mcts-converge.md` | CLT-UCB排序 + 结果自检 + 盲区审计 + 再推演 |
+| 推演引擎 | `engine/mcts-simulate.md` | MCTS树搜索：Selection→Expansion→Simulation→Backpropagation |
+| 仲裁引擎 | `engine/mcts-converge.md` | 汇总排序 + 结果自检 + 盲区审计 + TD更新写回 |
 | 事后学习引擎 | `engine/td-learner.md` | TD误差计算、价值更新、知识图谱、跨会话持久化 |
 | 推演格式与策略 | `policies/task-policy.md` | 通用方案生成规则、推演格式、评分标准 |
-| 算法原理 | `references/algorithm-reference.md` | MCTS/TDL算法原理与设计决策 |
+| 📖 算法原理 | `references/algorithm-reference.md` | 按需引用，不加载到每次推理上下文 |
+| 🖥 计算引擎 | `scripts/mcts_compute.py` | 纯数值计算（UCB/反向传播/收敛判定/状态机） |
 
 ---
 
 ## ⚡ 记忆数据安全
 
-本 Skill 的知识图谱存储在 **`~/.claude/data/skills/mcts-td-planner/`** 目录，与 skill 代码文件物理隔离。
-
-| 场景 | 记忆数据 | 说明 |
-|------|---------|------|
-| skill 初次安装 | ✅ 模板自动复制到 data 目录 | 首次安装时初始化空的知识图谱 |
-| skill 更新/重装 | ✅ **数据保留** | data 目录不会被覆盖 |
-| skill 卸载后重装 | ✅ **数据保留** | 除非手动删除 data 目录 |
-| 升级版本（如 1.3→1.4） | ✅ **数据保留** | 升级不影响已有知识条目 |
-
-> 如果想清空记忆重新积累知识，手动删除 `~/.claude/data/skills/mcts-td-planner/` 目录即可。
+知识图谱存储在 `~/.claude/data/skills/mcts-td-planner/`，与 skill 代码物理隔离。更新/重装/卸载均不影响记忆数据。清空记忆请手动删除该目录。
