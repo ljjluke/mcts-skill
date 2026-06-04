@@ -111,8 +111,11 @@ install_cursor() {
     cp "$PROJECT_DIR/deploy/cursor/rules/decision-engine.mdc" "$target_dir/"
     cp "$PROJECT_DIR/deploy/cursor/README.md" "$PROJECT_DIR/.cursor/" 2>/dev/null || true
 
+    # 统计文件行数，让用户知道是完整版
+    local line_count
+    line_count=$(wc -l < "$PROJECT_DIR/deploy/cursor/rules/decision-engine.mdc")
     ok "Cursor 安装完成！"
-    info "配置文件已复制到: $target_dir"
+    info "规则文件已复制到: $target_dir/decision-engine.mdc（${line_count}行，完整版）"
 }
 
 install_opencode() {
@@ -123,14 +126,17 @@ install_opencode() {
     cp "$PROJECT_DIR/deploy/opencode/rules/decision-engine.mdc" "$target_dir/"
     cp "$PROJECT_DIR/deploy/opencode/README.md" "$PROJECT_DIR/.opencode/" 2>/dev/null || true
 
+    local line_count
+    line_count=$(wc -l < "$PROJECT_DIR/deploy/opencode/rules/decision-engine.mdc")
     ok "OpenCode 安装完成！"
-    info "配置文件已复制到: $target_dir"
+    info "规则文件已复制到: $target_dir/decision-engine.mdc（${line_count}行，完整版）"
 }
 
 install_trae() {
-    info "检测到 Trae..."
-    warn "Trae 需要手动将配置文件内容添加到项目规则中。"
-    info "请打开 Trae 设置，并将以下文件内容添加到项目规则："
+    info "检测到 Trae（需手动配置）..."
+    info "此文件是完整规则集（内联自 engine/、policies/、agents/ 全部内容），与 Claude Code 版本功能对等。"
+    info ""
+    info "请打开 Trae 设置，将以下文件内容添加到项目规则中："
     info "  $PROJECT_DIR/deploy/trae/instructions.md"
     echo ""
     echo "--- 建议的操作 ---"
@@ -141,8 +147,9 @@ install_trae() {
 }
 
 install_codex() {
-    info "检测到 CodeX..."
-    warn "CodeX 需要手动将配置文件内容添加到 Agent 系统提示中。"
+    info "检测到 CodeX（需手动配置）..."
+    info "此文件是完整规则集（内联自 engine/、policies/、agents/ 全部内容），与 Claude Code 版本功能对等。"
+    info ""
     info "请将以下文件内容添加到 CodeX Agent 的系统提示："
     info "  $PROJECT_DIR/deploy/codex/instructions.md"
     echo ""
@@ -221,9 +228,9 @@ main() {
     echo ""
     info "各平台使用方法："
     echo "  Claude Code: 输入任意任务，看到 ⚡ 标志说明生效"
-    echo "  Cursor:      重启 Cursor 后生效"
-    echo "  OpenCode:    重启 OpenCode 后生效"
-    echo "  Trae/CodeX:  按上述说明完成手动配置后生效"
+    echo "  Cursor:      重启 Cursor 后生效（完整规则集，与 Claude Code 对等）"
+    echo "  OpenCode:    重启 OpenCode 后生效（完整规则集，与 Claude Code 对等）"
+    echo "  Trae/CodeX:  按上述说明完成手动配置后生效（完整规则集）"
     echo ""
 }
 

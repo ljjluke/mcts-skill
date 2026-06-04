@@ -101,12 +101,14 @@ bash scripts/install.sh
 
 ### 各平台手动安装
 
-| 平台 | 安装方式 |
-|------|---------|
-| **Cursor** | `cp deploy/cursor/rules/decision-engine.mdc .cursor/rules/decision-engine.mdc` |
-| **OpenCode** | `cp deploy/opencode/rules/decision-engine.mdc .opencode/rules/decision-engine.mdc` |
-| **Trae** | 将 `deploy/trae/instructions.md` 的内容添加到 Trae 的项目规则中 |
-| **CodeX** | 将 `deploy/codex/instructions.md` 的内容添加到 CodeX 的 Agent 系统提示中 |
+各平台的安装文件内联了 `engine/`、`policies/`、`agents/` 的**全部规则**，与 Claude Code 版本功能对等，不是阉割版。
+
+| 平台 | 安装方式 | 内容说明 |
+|------|---------|---------|
+| **Cursor** | `cp deploy/cursor/rules/decision-engine.mdc .cursor/rules/decision-engine.mdc` | 三引擎+知识图谱+记忆管理+熔断机制 完整版 |
+| **OpenCode** | `cp deploy/opencode/rules/decision-engine.mdc .opencode/rules/decision-engine.mdc` | 同上 |
+| **Trae** | 将 `deploy/trae/instructions.md` 的内容添加到 Trae 的项目规则中 | 同上 |
+| **CodeX** | 将 `deploy/codex/instructions.md` 的内容添加到 CodeX 的 Agent 系统提示中 | 同上 |
 
 > 各平台详细部署说明：[deploy/](./deploy/)
 
