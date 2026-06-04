@@ -1,0 +1,9 @@
+{
+  "scheduled_tasks": [
+    {
+      "cron": "0 3 * * 0",
+      "prompt": "/mcts-td-planner 运行记忆归档: 执行知识图谱归档，将超过60天未使用且巩固分≤3的知识移入archive",
+      "durable": true
+    }
+  ]
+}

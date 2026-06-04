@@ -65,7 +65,16 @@
 
 ---
 
-## 详细规则
+## 详细规则来源
+
+三引擎的完整规则定义在：
+- **推演引擎**（MCTS 核心）：[engine/mcts-core.md](../engine/mcts-core.md)
+- **学习引擎**（TD 学习 + 知识图谱）：[engine/td-learner.md](../engine/td-learner.md)
+- **策略规则**（方案生成 + 评分标准）：[policies/task-policy.md](../policies/task-policy.md)
+- **算法参考**： [references/algorithm-reference.md](../references/algorithm-reference.md)
+
+> ⚠️ rules/ 目录的规则文件已统一迁移到 engine/、policies/、references/ 目录下。  
+> 请使用上述链接访问完整内容。rules/RULES.md 仅保留总纲性质，不包含重复定义。
 
 ### 1. 用户需求理解
 

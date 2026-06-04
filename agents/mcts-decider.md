@@ -65,6 +65,32 @@ For EACH solution, run a full mental simulation:
 Compare solutions using V_final = TechnicalScore × 0.6 + ProjectFit × 0.4
 Select the best overall fit, not the technically highest-scoring one.
 
+### 4.5. Pre-Execution Self-Check (Critical Safeguard)
+Before executing the selected solution, perform a mandatory self-check:
+
+**① Find Vulnerabilities:**
+- Are there any vague judgments in the simulation process?
+- Does the simulation rely on unverified assumptions?
+- Are there overlooked risks?
+
+**② Reverse Thinking:**
+- If the #2 solution is actually better than #1, what might be the reasons?
+- What blind spots might #1 have?
+
+**③ Risk Assessment:**
+- If wrong, what's the worst outcome? Can it be tolerated?
+
+**Self-check conclusion:**
+- ✅ Pass — simulation reliable, proceed with execution
+- ⚠️ Has risks — recommend user confirmation before execution
+- ❌ Failed — re-simulate or switch solutions
+
+**Fuse Mechanism:**
+Track simulation accuracy (last 10 results):
+- ≥ 70% → normal mode
+- < 70% → downgrade to simplified simulation (2 steps)
+- < 50% → pause simulation, ask user directly
+
 ### 5. Execute Only the Selected Solution
 
 **Important Rules:**

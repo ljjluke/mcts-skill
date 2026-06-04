@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://img.shields.io/badge/版本-1.1.1-blue" alt="版本">
+  <img src="https://img.shields.io/badge/版本-1.3.0-blue" alt="版本">
   <img src="https://img.shields.io/badge/状态-稳定-green" alt="状态">
   <img src="https://img.shields.io/badge/许可-MIT-yellow" alt="许可">
 </p>
@@ -169,19 +169,40 @@ cp deploy/opencode/rules/decision-engine.mdc .opencode/rules/decision-engine.mdc
 
 ```
 mcts-td-planner/
-├── rules/                  ← 通用决策规则（核心，不绑定任何平台）
-│   ├── RULES.md              总纲
-│   ├── mcts-core.md          推演引擎
-│   ├── td-learner.md         学习引擎 + 知识图谱
-│   ├── task-policy.md        决策策略
-│   └── algorithm-reference.md 算法参考
+├── SKILL.md                ← 核心 Skill 定义（Claude Code 入口）
+├── plugin.json             ← 插件市场元数据
+├── marketplace.json        ← 插件市场清单
+│
+├── engine/                 ← 引擎核心规则
+│   ├── mcts-core.md          推演引擎（MCTS 推演+自检+熔断）
+│   └── td-learner.md         学习引擎 + 知识图谱（TDL 价值管理）
+│
+├── policies/               ← 决策策略
+│   ├── code-task-policy.md   代码任务推演格式与策略
+│   └── task-policy.md        通用推演格式与策略
+│
+├── agents/                 ← Agent 定义
+│   └── mcts-decider.md       决策子 Agent 行为指令
+│
+├── references/             ← 参考资料
+│   └── algorithm-reference.md 算法原理与设计决策
+│
+├── memory/                 ← 跨会话记忆持久化
+│   ├── mcts-td-value-archive.md  活跃知识图谱
+│   └── archive/                长期归档（自动管理）
+│
+├── scripts/                ← 辅助脚本
+│   └── manage_memory.py      记忆管理（归档/回忆/清理）
 │
 ├── deploy/                 ← 各平台部署配置
-│   ├── claude-code/           Claude Code (SKILL.md + plugin.json)
 │   ├── cursor/                Cursor
 │   ├── opencode/              OpenCode
 │   ├── trae/                  Trae
 │   └── codex/                 CodeX
+│
+├── .claude-plugin/         ← 插件元数据
+│   ├── plugin.json
+│   └── marketplace.json
 │
 ├── CHANGELOG.md
 └── README.md

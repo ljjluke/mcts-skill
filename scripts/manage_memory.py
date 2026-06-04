@@ -18,13 +18,17 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 # 路径配置
-SKILL_DIR = Path.home() / ".claude" / "skills" / "mcts-td-planner"
-ACTIVE_FILE = SKILL_DIR / "memory" / "mcts-td-value-archive.md"
-ARCHIVE_DIR = SKILL_DIR / "memory" / "archive"
+# 优先使用脚本所在项目的目录结构（从脚本位置推导项目根目录）
+SCRIPT_DIR = Path(__file__).resolve().parent.parent
+PROJECT_DIR = SCRIPT_DIR  # scripts/ 的父目录就是项目根
+ACTIVE_FILE = PROJECT_DIR / "memory" / "mcts-td-value-archive.md"
+ARCHIVE_DIR = PROJECT_DIR / "memory" / "archive"
 
-# 如果找不到 skill 目录，尝试用项目目录
-if not SKILL_DIR.exists():
-    SKILL_DIR = Path.cwd()
+# 如果项目目录下找不到 memory 目录，回退到 skill 插件目录
+SKILL_DIR = Path.home() / ".claude" / "skills" / "mcts-td-planner"
+if not ACTIVE_FILE.parent.exists() and SKILL_DIR.exists():
+    ACTIVE_FILE = SKILL_DIR / "memory" / "mcts-td-value-archive.md"
+    ARCHIVE_DIR = SKILL_DIR / "memory" / "archive"
 
 # 确保目录存在
 ARCHIVE_DIR.mkdir(parents=True, exist_ok=True)
