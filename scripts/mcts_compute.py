@@ -1529,10 +1529,313 @@ if __name__ == "__main__":
         result = synthesize_simulation_result(args.base_v, sub)
         print(json.dumps({"final_v_leaf": result}))
 
+    elif cmd == "identify-domain":
+        import argparse
+        parser = argparse.ArgumentParser()
+        parser.add_argument("--message", type=str, required=True)
+        parser.add_argument("--task", type=str, default="")
+        args = parser.parse_args(sys.argv[2:])
+        result = identify_domain(args.message, args.task)
+        print(json.dumps(result, ensure_ascii=False))
+
+    elif cmd == "get-dimensions":
+        import argparse
+        parser = argparse.ArgumentParser()
+        parser.add_argument("--domain", type=str, required=True)
+        args = parser.parse_args(sys.argv[2:])
+        result = get_dimensions(args.domain)
+        print(json.dumps(result, ensure_ascii=False))
+
+    elif cmd == "get-recon-paths":
+        import argparse
+        parser = argparse.ArgumentParser()
+        parser.add_argument("--domain", type=str, required=True)
+        args = parser.parse_args(sys.argv[2:])
+        result = get_recon_paths(args.domain)
+        print(json.dumps(result, ensure_ascii=False))
+
+    elif cmd == "get-perspectives":
+        import argparse
+        parser = argparse.ArgumentParser()
+        parser.add_argument("--domain", type=str, required=True)
+        args = parser.parse_args(sys.argv[2:])
+        result = get_perspective_map(args.domain)
+        print(json.dumps(result, ensure_ascii=False))
+
+    elif cmd == "check-learning-depth":
+        import argparse
+        parser = argparse.ArgumentParser()
+        parser.add_argument("--domain", type=str, required=True)
+        parser.add_argument("--complexity", type=str, default="medium")
+        parser.add_argument("--scores", type=str, required=True)
+        parser.add_argument("--coverage", type=str, required=True)
+        args = parser.parse_args(sys.argv[2:])
+        scores = json.loads(args.scores)
+        coverage = json.loads(args.coverage)
+        result = enforce_learning_gate(args.domain, args.complexity, scores, coverage)
+        print(json.dumps(result, ensure_ascii=False))
+
     else:
         print(f"未知命令: {cmd}")
-        print("可用命令: ucb, backprop, converge, status-transition, rank, rough-filter, welford, "
+        print("可用命令: ucb, converge, status-transition, rank, rough-filter, welford, "
               "k-bonus, classify-blindspot, get-activated-perspectives, should-write-kg, "
               "check-write-safety, needs-re-eval, check-final-convergence, get-fuse-mode, "
-              "handle-self-check, re-simulation-decide, trigger-check, get-lambda, get-status-weight")
+              "handle-self-check, re-simulation-decide, trigger-check, get-lambda, get-status-weight, "
+              "enter-simulation, begin-sub-diverge, end-sub-diverge, needs-sub-diverge, "
+              "diverge-depth, reset-depth, synthesize-sim, identify-domain, get-dimensions, "
+              "get-recon-paths, get-perspectives, check-learning-depth")
         sys.exit(1)
+
+
+# ============================================================================
+# 模块 15: 领域自适应 — 维度/侦查/视角的领域模板
+# ============================================================================
+
+DOMAIN_KEYWORDS = {
+    "software_engineering": {"keywords": ["代码","编程","API","数据库","框架","部署","编译","测试","重构","架构","微服务","前端","后端","中间件","缓存","git","docker","k8s","linux","react","vue","spring","算法","实现","开发","写","改","优化","debug","bug","接口","模块"], "label": "软件工程"},
+    "music": {"keywords": ["音乐","编曲","作曲","和弦","旋律","节奏","调性","和声","配器","混音","音色","乐器","演唱","演奏","录音","歌曲","乐章","音符","音阶","钢琴","吉他","鼓","交响","流行","爵士","古典","电子乐"], "label": "音乐创作"},
+    "education": {"keywords": ["教学","课程","备课","课堂","学生","学习","知识点","考试","作业","教案","教材","课件","讲授","评估","年级","学科","教学法","班主任","复习","预习","测验"], "label": "教育教学"},
+    "law": {"keywords": ["法律","合同","诉讼","法规","条款","判例","律师","法院","仲裁","知识产权","公司法","劳动法","税法","合规","尽职调查","起诉","应诉","辩护","法条","司法解释","合同审查"], "label": "法律"},
+    "design": {"keywords": ["设计","UI","UX","界面","配色","排版","字体","图标","原型","用户研究","交互","视觉","品牌","logo","海报","插画","动效","figma","美感","风格","色彩","布局"], "label": "设计创意"},
+    "business": {"keywords": ["商业","营销","市场","销售","客户","竞品","定价","战略","财务","预算","投资","融资","运营","增长","产品经理","roadmap","OKR","KPI","ROI","转化率","留存","营收"], "label": "商业决策"},
+    "writing": {"keywords": ["写作","文章","文案","小说","剧本","诗歌","散文","报道","采访","编辑","出版","翻译","标题","结构","修辞","文风","读者","公众号"], "label": "写作内容"},
+    "daily_life": {"keywords": ["旅行","旅游","做饭","菜谱","健身","锻炼","装修","买房","买车","搬家","婚礼","育儿","养宠","理财","保险","就医","挂号","签证","留学","购物","穿搭"], "label": "日常生活"},
+    "general": {"keywords": [], "label": "通用决策"},
+}
+
+DOMAIN_DIMENSIONS = {
+    "software_engineering": [
+        {"id":1,"name":"技术栈","desc":"涉及哪些技术/框架/库?版本限制?","detect":["任务涉及哪些技术?","项目已有技术栈?","版本/兼容性限制?"]},
+        {"id":2,"name":"架构模式","desc":"用什么架构?模块怎么划分?","detect":["常见架构?","当前架构?","改动在架构哪一层?"]},
+        {"id":3,"name":"业务逻辑","desc":"核心流程?实体和状态?","detect":["核心流程?","涉及数据实体?","异常/边界?"]},
+        {"id":4,"name":"安全合规","desc":"安全风险?合规要求?","detect":["安全风险?","合规要求?","最佳实践?"]},
+        {"id":5,"name":"部署运维","desc":"怎么上线?怎么监控?","detect":["部署方式?","监控/日志?","故障恢复?"]},
+        {"id":6,"name":"用户体验","desc":"用户怎么用?关心什么?","detect":["用户使用方式?","核心价值?","替代方案?"]},
+    ],
+    "music": [
+        {"id":1,"name":"风格流派","desc":"什么风格?参考作品?","detect":["目标风格?","参考作品?","风格融合?"]},
+        {"id":2,"name":"调性和声","desc":"用什么调?和声进行?","detect":["调性?","和声进行?","转调?"]},
+        {"id":3,"name":"配器编排","desc":"什么乐器?怎么搭配?","detect":["乐器选择?","声部安排?","音色搭配?"]},
+        {"id":4,"name":"情感表达","desc":"什么情绪?强弱安排?","detect":["情感目标?","力度变化?","速度处理?"]},
+        {"id":5,"name":"演奏难度","desc":"谁演奏?难度合适?","detect":["演奏者水平?","技术难点?","可行性?"]},
+        {"id":6,"name":"听众接受","desc":"听众是谁?喜欢什么?","detect":["目标听众?","审美偏好?","接受度?"]},
+    ],
+    "education": [
+        {"id":1,"name":"课标对齐","desc":"符合课程标准?","detect":["对应课标?","考试要求?","知识点覆盖?"]},
+        {"id":2,"name":"学生认知","desc":"学生水平?认知难点?","detect":["已有基础?","认知难点?","个体差异?"]},
+        {"id":3,"name":"教学方法","desc":"什么教学法?课堂组织?","detect":["教学法?","课堂结构?","互动设计?"]},
+        {"id":4,"name":"教学资源","desc":"需要什么材料?","detect":["教材教辅?","多媒体?","实验条件?"]},
+        {"id":5,"name":"评测方式","desc":"怎么检验学会?","detect":["形成性/终结性?","题型设计?","反馈机制?"]},
+        {"id":6,"name":"趣味吸引","desc":"怎么让学生感兴趣?","detect":["引入设计?","趣味元素?","注意力节奏?"]},
+    ],
+    "law": [
+        {"id":1,"name":"适用法条","desc":"哪部法律?哪个条款?","detect":["适用法律?","具体条款?","司法解释?"]},
+        {"id":2,"name":"判例参考","desc":"类似判例?法院倾向?","detect":["类似判例?","法院态度?","地区差异?"]},
+        {"id":3,"name":"风险敞口","desc":"最大风险?概率?","detect":["主要风险?","发生概率?","损失规模?"]},
+        {"id":4,"name":"文书格式","desc":"格式要求?提交流程?","detect":["文书格式?","提交机构?","时限?"]},
+        {"id":5,"name":"时效管理","desc":"时效限制?关键节点?","detect":["诉讼时效?","关键日期?","紧急程度?"]},
+        {"id":6,"name":"客户预期","desc":"客户目标/底线?","detect":["客户目标?","接受底线?","沟通策略?"]},
+    ],
+    "design": [
+        {"id":1,"name":"风格定位","desc":"什么设计风格?","detect":["风格方向?","参考案例?","品牌调性?"]},
+        {"id":2,"name":"视觉层次","desc":"信息层级?视觉重点?","detect":["信息优先级?","视觉焦点?","阅读路径?"]},
+        {"id":3,"name":"配色排版","desc":"色彩方案?字体?","detect":["色彩选择?","字体方案?","间距留白?"]},
+        {"id":4,"name":"交互体验","desc":"用户操作?流程顺畅?","detect":["用户路径?","操作步骤?","反馈机制?"]},
+        {"id":5,"name":"技术约束","desc":"实现限制?性能?","detect":["平台限制?","性能指标?","兼容性?"]},
+        {"id":6,"name":"用户偏好","desc":"用户喜欢/讨厌?","detect":["用户画像?","审美偏好?","使用习惯?"]},
+    ],
+    "business": [
+        {"id":1,"name":"市场机会","desc":"市场规模?竞争?","detect":["市场大小?","增长趋势?","主要竞品?"]},
+        {"id":2,"name":"商业模式","desc":"怎么赚钱?成本?","detect":["收入来源?","成本结构?","盈利模型?"]},
+        {"id":3,"name":"执行路径","desc":"怎么落地?资源?","detect":["执行步骤?","资源需求?","里程碑?"]},
+        {"id":4,"name":"风险评估","desc":"有什么风险?","detect":["主要风险?","发生概率?","应对?"]},
+        {"id":5,"name":"数据驱动","desc":"用什么指标衡量?","detect":["KPI?","数据来源?","追踪工具?"]},
+        {"id":6,"name":"利益相关方","desc":"谁受影响?谁决策?","detect":["利益方?","决策者?","阻力?"]},
+    ],
+    "writing": [
+        {"id":1,"name":"读者定位","desc":"写给谁?关心什么?","detect":["目标读者?","阅读场景?","读者期待?"]},
+        {"id":2,"name":"结构框架","desc":"怎么组织?起承转合?","detect":["开头设计?","主体结构?","结尾策略?"]},
+        {"id":3,"name":"文风修辞","desc":"语言风格?修辞?","detect":["语言风格?","修辞手法?","句式节奏?"]},
+        {"id":4,"name":"事实准确","desc":"数据/引文核实?","detect":["事实来源?","数据准确?","引用规范?"]},
+        {"id":5,"name":"传播渠道","desc":"什么平台?格式?","detect":["发布平台?","格式要求?","推荐机制?"]},
+        {"id":6,"name":"影响力","desc":"想达到什么效果?","detect":["目标效果?","传播指标?","行动号召?"]},
+    ],
+    "daily_life": [
+        {"id":1,"name":"成本预算","desc":"花多少钱?预算弹性?","detect":["预算范围?","弹性空间?","隐性成本?"]},
+        {"id":2,"name":"时间安排","desc":"什么时候做?紧迫?","detect":["时间约束?","优先级?","可并行?"]},
+        {"id":3,"name":"质量效果","desc":"做到什么程度?","detect":["质量标准?","验收方式?","最低标准?"]},
+        {"id":4,"name":"便利可行","desc":"操作方便?有门槛?","detect":["操作难度?","前置条件?","替代方案?"]},
+        {"id":5,"name":"他人影响","desc":"家人/朋友怎么看?","detect":["相关人?","态度?","需协调?"]},
+        {"id":6,"name":"长期价值","desc":"一时还是长期?","detect":["短期vs长期?","可持续?","后悔风险?"]},
+    ],
+    "general": [
+        {"id":1,"name":"资源条件","desc":"可用资源?约束?","detect":["可用?","限制?","必须满足?"]},
+        {"id":2,"name":"目标结果","desc":"想要什么?成功标准?","detect":["目标?","怎么算成功?","优先级?"]},
+        {"id":3,"name":"可选路径","desc":"不同做法?代价?","detect":["可选方案?","代价?","收益?"]},
+        {"id":4,"name":"风险未知","desc":"哪里可能出错?","detect":["不确定因素?","最坏结果?","能承受?"]},
+        {"id":5,"name":"时效紧迫","desc":"时间限制?依赖?","detect":["时间要求?","前置依赖?","可延迟?"]},
+        {"id":6,"name":"人的因素","desc":"谁参与?利益/偏好?","detect":["利益方?","偏好?","冲突可能?"]},
+    ],
+}
+
+DOMAIN_RECON_PATHS = {
+    "software_engineering": [
+        {"id":1,"name":"项目代码","required":True,"question":"项目现有代码怎么处理的?"},
+        {"id":2,"name":"技术文档","required":True,"question":"行业标准做法?"},
+        {"id":3,"name":"竞品方案","required":False,"question":"其他项目怎么解决的?"},
+        {"id":4,"name":"用户视角","required":False,"question":"用户关心什么?"},
+        {"id":5,"name":"失败案例","required":False,"question":"常见坑和失败模式?"},
+        {"id":6,"name":"技术趋势","required":False,"question":"技术发展方向?"},
+    ],
+    "general": [
+        {"id":1,"name":"既有经验","required":True,"question":"以前类似的事怎么处理的?"},
+        {"id":2,"name":"权威参考","required":True,"question":"有没有权威指南/标准做法?"},
+        {"id":3,"name":"他人做法","required":False,"question":"别人遇到这个怎么解决的?"},
+        {"id":4,"name":"受影响者视角","required":False,"question":"受影响的人关心什么?"},
+        {"id":5,"name":"失败教训","required":False,"question":"常见坑和失败模式?"},
+        {"id":6,"name":"趋势变化","required":False,"question":"环境在变?现在做的以后适用吗?"},
+    ],
+}
+
+DOMAIN_PERSPECTIVES = {
+    "software_engineering": {1:"技术选型",2:"架构设计",3:"业务逻辑",4:"安全优先",5:"运维优先",6:"用户体验",7:"性能优先",8:"最小成本",9:"激进创新",10:"反面视角"},
+    "general": {1:"资源最优",2:"顶层设计",3:"流程步骤",4:"风险控制",5:"执行可行",6:"人本体验",7:"效率速度",8:"最小投入",9:"理想方案",10:"反面视角"},
+}
+
+def identify_domain(user_message: str, task_description: str = "") -> dict:
+    text = user_message + " " + task_description
+    scores = {}
+    for domain, config in DOMAIN_KEYWORDS.items():
+        if domain == "general": continue
+        matched = [kw for kw in config["keywords"] if kw in text]
+        if matched: scores[domain] = len(matched)
+    if scores:
+        best = max(scores, key=scores.get)
+        return {"domain":best,"label":DOMAIN_KEYWORDS[best]["label"],"confidence":min(1.0,scores[best]/5),"matched_keywords":["..."]}
+    return {"domain":"general","label":"通用决策","confidence":0.5,"matched_keywords":[]}
+
+def get_dimensions(domain: str) -> list[dict]:
+    return DOMAIN_DIMENSIONS.get(domain, DOMAIN_DIMENSIONS["general"])
+
+def get_recon_paths(domain: str) -> list[dict]:
+    return DOMAIN_RECON_PATHS.get(domain, DOMAIN_RECON_PATHS["general"])
+
+def get_perspective_map(domain: str) -> dict:
+    return DOMAIN_PERSPECTIVES.get(domain, DOMAIN_PERSPECTIVES["general"])
+
+
+# ============================================================================
+# 模块 16: 学习深度门禁 — 学够了才能下结论
+# ============================================================================
+
+LEARNING_DEPTH_THRESHOLDS = {
+    "none": {"min_dimensions_covered": 0, "min_recon_paths": 0, "min_sources": 0,
+             "description": "不需要学习（已完全熟悉，可直接发散）"},
+    "light": {"min_dimensions_covered": 3, "min_recon_paths": 2, "min_sources": 1,
+              "description": "轻度学习（简单任务，快速了解即可）"},
+    "standard": {"min_dimensions_covered": 4, "min_recon_paths": 3, "min_sources": 2,
+                 "description": "标准学习（中等任务，需充分了解）"},
+    "deep": {"min_dimensions_covered": 5, "min_recon_paths": 4, "min_sources": 3,
+             "description": "深度学习（复杂任务，需系统研究）"},
+}
+
+def determine_required_learning_depth(domain: str, task_complexity: str,
+                                       dimension_scores: dict[str, int]) -> str:
+    """
+    决定需要多深的学习深度。
+
+    判断依据:
+      ① 领域熟悉度: 六维评分中 < 7 的维度多 → 需要更深学习
+      ② 任务复杂度: simple/medium/complex
+      ③ 领域类型: 高专业度领域（法律/医学）→ 默认更深
+
+    Returns: "none" | "light" | "standard" | "deep"
+    """
+    # 高专业度领域 → 至少 standard
+    high_stakes_domains = {"law", "software_engineering"}
+
+    # 盲区维度数
+    blindspot_count = sum(1 for s in dimension_scores.values() if s < 7)
+
+    if blindspot_count <= 0 and task_complexity == "simple":
+        return "none"
+    elif blindspot_count <= 1:
+        base = "light"
+    elif blindspot_count <= 3:
+        base = "standard"
+    else:
+        base = "deep"
+
+    # 高专业度领域强制提升一级
+    if domain in high_stakes_domains and base in ("none", "light"):
+        base = "standard"
+
+    return base
+
+
+def check_learning_depth(required_depth: str, actual_coverage: dict) -> dict:
+    """
+    检查学习深度是否达标。
+
+    Args:
+        required_depth: "none"|"light"|"standard"|"deep"
+        actual_coverage: {"dimensions_covered": int, "recon_paths_completed": int,
+                          "sources_cross_validated": int, "blindspots_remaining": list}
+
+    Returns:
+        {"passed": bool, "gaps": list, "must_fix": list, "suggestions": list}
+    """
+    threshold = LEARNING_DEPTH_THRESHOLDS[required_depth]
+    gaps = []
+    must_fix = []
+    suggestions = []
+
+    dims = actual_coverage.get("dimensions_covered", 0)
+    if dims < threshold["min_dimensions_covered"]:
+        gap = f"维度覆盖不足: {dims}/{threshold['min_dimensions_covered']}"
+        must_fix.append(gap)
+
+    paths = actual_coverage.get("recon_paths_completed", 0)
+    if paths < threshold["min_recon_paths"]:
+        gap = f"侦查路径不足: {paths}/{threshold['min_recon_paths']}"
+        must_fix.append(gap)
+
+    sources = actual_coverage.get("sources_cross_validated", 0)
+    if sources < threshold["min_sources"]:
+        gap = f"来源交叉验证不足: {sources}/{threshold['min_sources']}"
+        suggestions.append(gap)
+
+    blindspots = actual_coverage.get("blindspots_remaining", [])
+    if blindspots and required_depth in ("standard", "deep"):
+        must_fix.append(f"仍有盲区维度未补全: {blindspots}")
+
+    passed = len(must_fix) == 0
+
+    return {
+        "passed": passed,
+        "required_depth": required_depth,
+        "gaps": gaps,
+        "must_fix": must_fix,
+        "suggestions": suggestions,
+        "verdict": "✅ 学习深度达标，可以进入方案生成" if passed
+                   else f"⛔ 学习深度不达标({required_depth}级)，必须先补全以下缺口再进入方案生成",
+    }
+
+
+def enforce_learning_gate(domain: str, task_complexity: str,
+                           dimension_scores: dict[str, int],
+                           actual_coverage: dict) -> dict:
+    """
+    学习深度强制执行——学不够就堵住，不让进入方案生成。
+
+    这是防止"草草扫一眼就下结论"的关键门禁。
+
+    Returns:
+        如果 passed=True, 可以进入方案生成
+        如果 passed=False, 必须回到侦查阶段补全缺口
+    """
+    required = determine_required_learning_depth(domain, task_complexity, dimension_scores)
+    result = check_learning_depth(required, actual_coverage)
+    result["required_depth"] = required
+    result["required_thresholds"] = LEARNING_DEPTH_THRESHOLDS[required]
+    return result
