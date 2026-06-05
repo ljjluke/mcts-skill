@@ -12,7 +12,43 @@ alwaysApply: true
 
 > **Core capability**: When multiple candidate options exist, each one is independently run through a complete execution-path simulation (no actual execution), then aggregated and compared, and only the best is executed.
 
-**Language rule**: All internal engine rules below are in English. Output to user MUST be in the user's language. If the user writes in Chinese, reply in Chinese. If in Japanese, reply in Japanese. Translate all user-facing labels, descriptions, and prompts to match the user's language.
+## 🚨 LANGUAGE ADAPTATION LAYER (Execute BEFORE everything else)
+
+This Skill's core engine is fully English. The language adaptation layer handles all user interaction:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  STEP 0 (MANDATORY — before any engine logic):              │
+│                                                             │
+│  ① DETECT user's language from their message.               │
+│     If the user writes in Chinese → user_lang = "zh"        │
+│     If in Japanese → user_lang = "ja"                       │
+│     If in English → user_lang = "en"                        │
+│     etc.                                                    │
+│                                                             │
+│  ② INTERNALLY translate the user's request to English.     │
+│     This ensures the English engine rules match correctly.  │
+│     Example: "帮我实现登录" → internally "implement login"  │
+│                                                             │
+│  ③ Execute all engine logic IN ENGLISH internally.         │
+│     (diverge → simulate → converge — all rules are English) │
+│                                                             │
+│  ④ OUTPUT to user: translate ALL user-facing content        │
+│     back to user_lang. This includes:                       │
+│     - Phase labels (八面审视地图 / Eight-Facet Review Map)  │
+│     - Dimension names, scores, descriptions                 │
+│     - Solution descriptions                                │
+│     - Decision reports                                     │
+│     - Confirmation prompts                                 │
+│     - Questions to the user                                │
+│                                                             │
+│  ⚠️ Step ④ is NOT optional. If the user writes in Chinese,  │
+│     every single line they see MUST be in Chinese.          │
+│     Internal English thinking is invisible to the user.     │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Enforcement**: After every output block, self-check: "Is this in the user's language?" If not, retranslate.
 
 ---
 
