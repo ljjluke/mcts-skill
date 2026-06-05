@@ -1711,17 +1711,32 @@ def identify_domain(user_message: str, task_description: str = "") -> dict:
         if matched: scores[domain] = len(matched)
     if scores:
         best = max(scores, key=scores.get)
-        return {"domain":best,"label":DOMAIN_KEYWORDS[best]["label"],"confidence":min(1.0,scores[best]/5),"matched_keywords":["..."]}
-    return {"domain":"general","label":"通用决策","confidence":0.5,"matched_keywords":[]}
+        return {"domain":best,"label":DOMAIN_KEYWORDS[best]["label"],
+                "confidence":min(1.0,scores[best]/5),"mode":"template"}
+    # 没有匹配到写死模板 → 标记为 dynamic，由 LLM 自己生成维度
+    return {"domain":"dynamic","label":"动态识别(未匹配到预设领域)",
+            "confidence":0.0,"mode":"dynamic",
+            "instruction":"LLM需从任务语义中自动提取6个关键维度，参考general模板结构"}
+
 
 def get_dimensions(domain: str) -> list[dict]:
-    return DOMAIN_DIMENSIONS.get(domain, DOMAIN_DIMENSIONS["general"])
+    """获取领域维度。domain='dynamic'时返回空，由LLM自己生成。"""
+    return DOMAIN_DIMENSIONS.get(domain, [])
+
 
 def get_recon_paths(domain: str) -> list[dict]:
+    """获取侦查路径。domain='dynamic'时返回通用模板作为参考。"""
     return DOMAIN_RECON_PATHS.get(domain, DOMAIN_RECON_PATHS["general"])
 
+
 def get_perspective_map(domain: str) -> dict:
+    """获取视角映射。domain='dynamic'时返回通用模板作为参考。"""
     return DOMAIN_PERSPECTIVES.get(domain, DOMAIN_PERSPECTIVES["general"])
+
+
+def has_domain_template(domain: str) -> bool:
+    """检查该领域是否有预设模板。"""
+    return domain in DOMAIN_DIMENSIONS and domain != "general" and domain != "dynamic"
 
 
 # ============================================================================
