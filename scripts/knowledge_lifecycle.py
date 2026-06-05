@@ -496,11 +496,303 @@ def major_gc(long_term_entries: list[dict], gc_roots: set[str],
     return surviving, archived
 
 
-# CLI 入口更新
+# ============================================================================
+# 模块 3: 记忆追踪与自动维护
+# ============================================================================
+
+# GC Roots 追踪窗口
+GC_ROOTS_WINDOW = 20  # 最近N次任务
+
+
+def track_gc_roots(recent_task_ids: list[str], knowledge_graph: list[dict]) -> set[str]:
+    """
+    追踪 GC Roots — 最近N次任务中引用的知识条目。
+
+    被 GC Roots 引用的知识不会被回收。
+    """
+    roots = set()
+    for entry in knowledge_graph:
+        recalled_in = entry.get("recalled_in_tasks", [])
+        # 检查最近 N 次任务中是否有引用
+        recent_recalls = set(recalled_in) & set(recent_task_ids)
+        if recent_recalls:
+            roots.add(entry.get("id", ""))
+            entry["is_gc_root_referenced"] = True
+        else:
+            entry["is_gc_root_referenced"] = False
+    return roots
+
+
+def build_context_anchor(experience: dict) -> dict:
+    """
+    构建情境锚 — 记录知识产生时的上下文，用于后续情境匹配回忆。
+
+    Returns:
+        {"task_type": str, "tech_stack": str, "project_phase": str, "keywords": list}
+    """
+    return {
+        "task_type": experience.get("task_type", ""),
+        "tech_stack": experience.get("tech_stack", ""),
+        "project_phase": experience.get("project_phase", ""),
+        "keywords": experience.get("tags", [])[:5],
+    }
+
+
+def compute_context_match(current_context: dict, anchor: dict) -> float:
+    """
+    计算当前情境与存储情境的匹配度（情境锚回忆）。
+
+    Returns: 0.0~1.0
+    """
+    if not anchor:
+        return 0.0
+
+    score = 0.0
+    weight = 0.0
+
+    # 任务类型匹配
+    if current_context.get("task_type") and anchor.get("task_type"):
+        weight += 0.3
+        if current_context["task_type"] == anchor["task_type"]:
+            score += 0.3
+
+    # 技术栈匹配
+    if current_context.get("tech_stack") and anchor.get("tech_stack"):
+        weight += 0.35
+        overlap = len(set(current_context["tech_stack"].split("+")) &
+                      set(anchor["tech_stack"].split("+")))
+        total = max(len(set(anchor["tech_stack"].split("+"))), 1)
+        score += 0.35 * (overlap / total)
+
+    # 关键词匹配
+    if current_context.get("keywords") and anchor.get("keywords"):
+        weight += 0.35
+        ck = set(current_context["keywords"])
+        ak = set(anchor["keywords"])
+        overlap = len(ck & ak)
+        total = max(len(ak), 1)
+        score += 0.35 * (overlap / total)
+
+    if weight == 0:
+        return 0.0
+    return score / weight
+
+
+def try_recall_from_archive(current_context: dict, archived_entries: list[dict],
+                            threshold: float = 0.7) -> list[dict]:
+    """
+    尝试从归档中回忆知识。
+
+    情境匹配度 > 阈值 → 触发回忆 → 将该条目从归档中拉回。
+
+    Returns:
+        触发回忆的条目列表（已标记为待重新验证）
+    """
+    recalled = []
+    for entry in archived_entries:
+        anchor = entry.get("context_anchor", {})
+        match = compute_context_match(current_context, anchor)
+        if match > threshold:
+            entry["status"] = "PROVISIONAL"
+            entry["layer"] = "short_term"
+            entry["recall_triggered_by"] = f"context_match_{match:.2f}"
+            entry["last_recall"] = datetime.now().isoformat()
+            entry["consolidation_score"] = entry.get("consolidation_score", 0) + 3
+            recalled.append(entry)
+    return recalled
+
+
+def build_resonance_connections(new_entry: dict, knowledge_graph: list[dict],
+                                similarity_threshold: float = 0.5) -> list[str]:
+    """
+    建立回响连接 — 新知识激活旧记忆。
+
+    新知识和已有知识之间建立双向关联。
+
+    Returns:
+        被激活的旧知识ID列表
+    """
+    new_tags = set(new_entry.get("tags", []))
+    new_feature = new_entry.get("feature_key", "")
+    activated = []
+
+    for entry in knowledge_graph:
+        if entry.get("id") == new_entry.get("id"):
+            continue
+
+        existing_tags = set(entry.get("tags", []))
+        existing_feature = entry.get("feature_key", "")
+
+        tag_overlap = len(new_tags & existing_tags) / max(len(new_tags | existing_tags), 1)
+        feature_match = 1.0 if new_feature and new_feature == existing_feature else 0.0
+        similarity = tag_overlap * 0.6 + feature_match * 0.4
+
+        if similarity > similarity_threshold:
+            # 双向连接
+            refs = new_entry.get("resonance_refs", [])
+            if entry["id"] not in refs:
+                refs.append(entry["id"])
+            new_entry["resonance_refs"] = refs
+
+            refs2 = entry.get("resonance_refs", [])
+            if new_entry["id"] not in refs2:
+                refs2.append(new_entry["id"])
+            entry["resonance_refs"] = refs2
+
+            # 旧知识被激活 — 巩固分 +3
+            entry["consolidation_score"] = entry.get("consolidation_score", 0) + 3
+            entry["last_recall"] = datetime.now().isoformat()
+            activated.append(entry["id"])
+
+    return activated
+
+
+def compact_long_term_memory(entry: dict) -> dict:
+    """
+    记忆压实 — 长期记忆中知识被多次回忆后自动简化。
+
+    核心部分（反复出现的）保留，细节部分压缩到 details 字段。
+    """
+    recall_count = entry.get("recall_count", 0)
+    if recall_count < 5:
+        return entry  # 回忆次数太少，不压实
+
+    # 提取核心（每次回忆中都出现的稳定部分）
+    description = entry.get("description", "")
+    conditions = entry.get("conditions", "")
+    conclusion = entry.get("conclusion", "")
+
+    # 核心 = 条件 + 结论（最稳定的部分）
+    core = f"{conditions} → {conclusion}" if conditions and conclusion else description
+
+    # 细节 = 原始描述中不在核心里的部分
+    details = entry.get("details", "")
+    if not details and len(description) > len(core):
+        details = description
+
+    entry["core"] = core
+    entry["details"] = details
+    entry["compacted"] = True
+    entry["compacted_at"] = datetime.now().isoformat()
+
+    return entry
+
+
+def detect_and_clean_errors(knowledge_graph: list[dict]) -> list[dict]:
+    """
+    错误知识主动识别 — 检测图谱内部的矛盾并清理。
+
+    检测:
+      1. 同一特征键下两条 CONFIRMED 知识价值矛盾
+      2. 被多次证伪但仍未 REFUTED 的知识
+      3. 长期未被引用且门禁分低的 HYPOTHESIS
+
+    Returns:
+        被标记为需要清理的条目列表
+    """
+    to_clean = []
+
+    # 按特征键分组
+    by_feature = {}
+    for entry in knowledge_graph:
+        fk = entry.get("feature_key", "")
+        if fk not in by_feature:
+            by_feature[fk] = []
+        by_feature[fk].append(entry)
+
+    # 检测同特征键下的矛盾
+    for fk, entries in by_feature.items():
+        confirmed = [e for e in entries if e.get("status") == "CONFIRMED"]
+        if len(confirmed) >= 2:
+            values = [e.get("q", 0.0) for e in confirmed]
+            if max(values) - min(values) > 0.5:
+                # 价值矛盾 → 全部标记为 DISPUTED
+                for e in confirmed:
+                    e["status"] = "DISPUTED"
+                    e["dispute_reason"] = f"内部矛盾: 与同特征键下其他CONFIRMED知识价值差>0.5"
+                    to_clean.append(e)
+
+    # 检测应该被证伪但未更新状态的
+    for entry in knowledge_graph:
+        if entry.get("status") == "REFUTED":
+            continue
+        contradiction_count = entry.get("contradiction_count", 0)
+        if contradiction_count >= 3:
+            entry["status"] = "REFUTED"
+            to_clean.append(entry)
+
+    return to_clean
+
+
+def full_lifecycle_maintenance(knowledge_graph: list[dict],
+                                recent_task_ids: list[str],
+                                current_context: dict = None) -> dict:
+    """
+    完整生命周期维护 — 一次调用完成所有维护操作。
+
+    执行顺序:
+      1. GC Roots 追踪
+      2. 分层重判
+      3. Minor GC (短期)
+      4. Major GC (长期)
+      5. 归档回忆尝试
+      6. 错误检测
+      7. 长期记忆压实
+
+    Returns:
+        维护报告
+    """
+    report = {"gc_roots_count": 0, "minor_gc_collected": 0, "major_gc_archived": 0,
+              "recalled_from_archive": 0, "errors_detected": 0, "compacted": 0}
+
+    # 1. GC Roots
+    gc_roots = track_gc_roots(recent_task_ids, knowledge_graph)
+    report["gc_roots_count"] = len(gc_roots)
+
+    # 2. 分层
+    short_term, long_term, archive = [], [], []
+    for entry in knowledge_graph:
+        layer = determine_layer(entry)
+        entry["layer"] = layer
+        if layer == "short_term" or layer == "working":
+            short_term.append(entry)
+        elif layer == "long_term":
+            long_term.append(entry)
+        else:
+            archive.append(entry)
+
+    # 3. Minor GC
+    surviving_st, collected_st = minor_gc(short_term)
+    report["minor_gc_collected"] = len(collected_st)
+
+    # 4. Major GC
+    surviving_lt, archived_lt = major_gc(long_term, gc_roots)
+    report["major_gc_archived"] = len(archived_lt)
+
+    # 5. 归档回忆
+    if current_context:
+        recalled = try_recall_from_archive(current_context, archive)
+        report["recalled_from_archive"] = len(recalled)
+
+    # 6. 错误检测
+    errors = detect_and_clean_errors(surviving_st + surviving_lt)
+    report["errors_detected"] = len(errors)
+
+    # 7. 长期记忆压实
+    for entry in surviving_lt:
+        if entry.get("recall_count", 0) >= 5 and not entry.get("compacted"):
+            compact_long_term_memory(entry)
+            report["compacted"] += 1
+
+    return report
+
+
+# CLI 入口
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("用法: python knowledge_lifecycle.py <command> [args...]")
-        print("命令: gate-check, memory-strength, determine-layer, minor-gc, major-gc")
+        print("命令: gate-check, memory-strength, determine-layer, minor-gc, major-gc,"
+              " full-maintenance, context-match, recall-archive, detect-errors, compact")
         sys.exit(1)
 
     cmd = sys.argv[1]
@@ -559,6 +851,74 @@ if __name__ == "__main__":
         surviving, archived = major_gc(entries, gc_roots)
         print(json.dumps({"surviving_count": len(surviving), "archived_count": len(archived),
                           "archived_ids": [e.get("id") for e in archived]}, ensure_ascii=False))
+
+    elif cmd == "full-maintenance":
+        import argparse
+        parser = argparse.ArgumentParser()
+        parser.add_argument("--kg", type=str, required=True)
+        parser.add_argument("--recent-tasks", type=str, default="[]")
+        parser.add_argument("--context", type=str, default="{}")
+        args = parser.parse_args(sys.argv[2:])
+        kg = json.loads(args.kg)
+        recent = json.loads(args.recent_tasks)
+        ctx = json.loads(args.context) if args.context != "{}" else None
+        report = full_lifecycle_maintenance(kg, recent, ctx)
+        print(json.dumps(report, ensure_ascii=False))
+
+    elif cmd == "context-match":
+        import argparse
+        parser = argparse.ArgumentParser()
+        parser.add_argument("--current", type=str, required=True)
+        parser.add_argument("--anchor", type=str, required=True)
+        args = parser.parse_args(sys.argv[2:])
+        current = json.loads(args.current)
+        anchor = json.loads(args.anchor)
+        match = compute_context_match(current, anchor)
+        print(json.dumps({"match_score": match, "would_recall": match > 0.7}))
+
+    elif cmd == "recall-archive":
+        import argparse
+        parser = argparse.ArgumentParser()
+        parser.add_argument("--context", type=str, required=True)
+        parser.add_argument("--archive", type=str, required=True)
+        args = parser.parse_args(sys.argv[2:])
+        ctx = json.loads(args.context)
+        archive = json.loads(args.archive)
+        recalled = try_recall_from_archive(ctx, archive)
+        print(json.dumps({"recalled_count": len(recalled),
+                          "recalled_ids": [e.get("id") for e in recalled]}, ensure_ascii=False))
+
+    elif cmd == "detect-errors":
+        import argparse
+        parser = argparse.ArgumentParser()
+        parser.add_argument("--kg", type=str, required=True)
+        args = parser.parse_args(sys.argv[2:])
+        kg = json.loads(args.kg)
+        errors = detect_and_clean_errors(kg)
+        print(json.dumps({"errors_detected": len(errors),
+                          "error_ids": [e.get("id") for e in errors]}, ensure_ascii=False))
+
+    elif cmd == "compact":
+        import argparse
+        parser = argparse.ArgumentParser()
+        parser.add_argument("--entry", type=str, required=True)
+        args = parser.parse_args(sys.argv[2:])
+        entry = json.loads(args.entry)
+        result = compact_long_term_memory(entry)
+        print(json.dumps({"compacted": result.get("compacted", False),
+                          "core": result.get("core", "")}, ensure_ascii=False))
+
+    elif cmd == "resonance":
+        import argparse
+        parser = argparse.ArgumentParser()
+        parser.add_argument("--new-entry", type=str, required=True)
+        parser.add_argument("--kg", type=str, required=True)
+        args = parser.parse_args(sys.argv[2:])
+        new_entry = json.loads(args.new_entry)
+        kg = json.loads(args.kg)
+        activated = build_resonance_connections(new_entry, kg)
+        print(json.dumps({"activated_count": len(activated),
+                          "activated_ids": activated}, ensure_ascii=False))
 
     else:
         print(f"未知命令: {cmd}")
