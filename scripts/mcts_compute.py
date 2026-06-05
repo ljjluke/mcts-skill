@@ -1224,27 +1224,75 @@ DOMAIN_PERSPECTIVES = {
 }
 
 def identify_domain(user_message: str, task_description: str = "") -> dict:
-    text = user_message + " " + task_description
+    """
+    领域识别 — 仅作辅助信号。LLM 应基于八面镜自行判断，不要盲从此提示。
+    """
+    text = (user_message + " " + task_description).lower()
     scores = {}
     for domain, config in DOMAIN_KEYWORDS.items():
         if domain == "general": continue
-        cn_matched = [kw for kw in config.get("keywords", []) if kw in text]
-        en_matched = [kw for kw in config.get("keywords_en", []) if kw.lower() in text.lower()]
-        matched = cn_matched + en_matched
-        if matched: scores[domain] = len(matched)
+        cn = sum(1 for kw in config.get("keywords", []) if kw in text)
+        en = sum(1 for kw in config.get("keywords_en", []) if kw in text)
+        if cn + en > 0:
+            scores[domain] = cn + en
     if scores:
         best = max(scores, key=scores.get)
-        return {"domain":best,"label":DOMAIN_KEYWORDS[best]["label"],
-                "label_en":DOMAIN_KEYWORDS[best].get("label_en",""),
-                "confidence":min(1.0,scores[best]/5),"mode":"template"}
-    return {"domain":"dynamic","label":"动态识别","label_en":"Dynamic",
-            "confidence":0.0,"mode":"dynamic",
-            "instruction":"LLM must construct 8 review dimensions from task semantics using the Eight-Facet Mirror framework"}
+        return {
+            "hint": best,
+            "hint_label": DOMAIN_KEYWORDS[best]["label"],
+            "hint_label_en": DOMAIN_KEYWORDS[best].get("label_en", ""),
+            "hint_confidence": min(1.0, scores[best] / 10),
+            "note": "此仅为关键词匹配提示。LLM: 如果与用户实际上下文不符，请忽略它，基于八面镜自行确定领域。"
+        }
+    return {
+        "hint": None, "hint_label": None, "hint_label_en": None,
+        "hint_confidence": 0.0,
+        "note": "LLM: 请基于八面镜框架和用户需求自行确定领域。"
+    }
 
 
-def get_dimensions(domain: str) -> list[dict]:
-    """获取领域维度。domain='dynamic'时返回空，由LLM自己生成。"""
-    return DOMAIN_DIMENSIONS.get(domain, [])
+def get_dimensions(domain_hint: str = None) -> dict:
+    """
+    获取审视维度。
+
+    返回:
+      - facets: 八面镜的8个抽象面定义（永远返回，这是基准）
+      - template: 如果domain_hint匹配到预设模板，返回模板作为参考；否则为None
+      - 模板只是"这个领域通常怎么具体化八面"的示例，不是必须遵守的规则
+    """
+    eight_facets = [
+        {"id": 1, "facet": "力量之源", "facet_en": "Source of Force",
+         "abstract": "这件事的驱动力从哪来？", "abstract_en": "Where does the driving force come from?"},
+        {"id": 2, "facet": "根基承载", "facet_en": "Foundation & Capacity",
+         "abstract": "什么是做这件事的底盘？", "abstract_en": "What is the foundation this rests on?"},
+        {"id": 3, "facet": "变动突破", "facet_en": "Change & Disruption",
+         "abstract": "哪里可能发生意想不到的变化？", "abstract_en": "Where might the unexpected happen?"},
+        {"id": 4, "facet": "渗透传播", "facet_en": "Penetration & Diffusion",
+         "abstract": "怎么让效果真正渗透进去、扩散开来？", "abstract_en": "How does this actually penetrate and reach people?"},
+        {"id": 5, "facet": "风险深渊", "facet_en": "Risk & Abyss",
+         "abstract": "最深的坑在哪？最坏会怎样？怎么绕过去？", "abstract_en": "Where is the deepest pit? What is the worst case? How to avoid it?"},
+        {"id": 6, "facet": "显眼依附", "facet_en": "Visible & Dependent",
+         "abstract": "最引人注目的表面是什么？它底下依附于什么？", "abstract_en": "What is the shiny surface and what holds it up underneath?"},
+        {"id": 7, "facet": "边界止步", "facet_en": "Boundary & Limit",
+         "abstract": "有什么绝对不能碰的线？应该在哪里停下？", "abstract_en": "What line cannot be crossed? Where must we stop?"},
+        {"id": 8, "facet": "汇聚共赢", "facet_en": "Convergence & Mutual Benefit",
+         "abstract": "各方利益怎么平衡？有没有所有人都能接受的方案？", "abstract_en": "How to balance all interests? Is there a win-win for everyone?"},
+    ]
+
+    template = DOMAIN_DIMENSIONS.get(domain_hint) if domain_hint else None
+
+    return {
+        "facets": eight_facets,
+        "template": template,
+        "instruction": (
+            "以上8个facet是抽象基准，永远以此为审视框架。"
+            "如果template不为空，它是这8个面在'{domain}'领域的具体化示例，供参考。"
+            "LLM: 请结合用户需求的具体内容，对每一面确定它在本次任务中的具体维度名称和检测问题。"
+        ).format(domain=domain_hint) if template else (
+            "以上8个facet是抽象基准，永远以此为审视框架。"
+            "LLM: 请结合用户需求的具体内容，对每一面确定它在本次任务中的具体维度名称和检测问题。"
+        )
+    }
 
 
 def get_recon_paths(domain: str) -> list[dict]:
@@ -1674,9 +1722,9 @@ if __name__ == "__main__":
     elif cmd == "get-dimensions":
         import argparse
         parser = argparse.ArgumentParser()
-        parser.add_argument("--domain", type=str, required=True)
+        parser.add_argument("--domain-hint", type=str, default=None)
         args = parser.parse_args(sys.argv[2:])
-        result = get_dimensions(args.domain)
+        result = get_dimensions(args.domain_hint)
         print(json.dumps(result, ensure_ascii=False))
 
     elif cmd == "get-recon-paths":
