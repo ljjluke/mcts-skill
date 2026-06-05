@@ -66,13 +66,19 @@ Phase 2 — Output immediately: [Reconnaissance Report]
   Format: header line
   Content: per-facet recon findings + cross-validation conclusions
 
-Phase 3 — Output then PAUSE: [Converged Solution List]
+Phase 3 — Output then auto-proceed: [Converged Solution List]
   Format: header line + structured solution descriptions
   Content: 2~8 concrete solutions with facet coverage matrix
-  ⛔ MUST pause after output. WAIT for user confirmation!
-  User says continue/yes/go ahead → enter simulate engine
-  User says add/drop/merge → adjust list and re-output Phase 3
-  User says "just do X" → skip simulation, execute directly
+  → After output, AUTO-ENTER simulate engine. Do NOT pause for confirmation.
+  → The user can see the solutions. If they want to intervene, they will speak up.
+  → Do not ask "shall I continue?" — just show the solutions and start MCTS.
+
+Phase 3.5 — Only ask user when truly needed (after simulation):
+  After MCTS simulation completes, if two solutions are nearly tied:
+    python mcts_compute.py should-ask-user --ranked '<JSON>'
+    If should_ask=true → ask user about their specific usage needs
+    (not technical details — ask about usage scenarios, frequency, priorities)
+  If there is a clear winner → proceed to decision report directly.
 
 Phase 4 — Output after simulation completes: [Decision Report]
   Content: MCTS ranking + self-check verdict + blindspot audit + execution plan
@@ -82,7 +88,7 @@ Phase 4 — Output after simulation completes: [Decision Report]
 - ❌ Completing the eight-facet review internally without outputting it
 - ❌ Skipping the solution list and jumping straight to simulation
 - ❌ Collapsing the review map, recon report, and solution list into "one summary paragraph"
-- ❌ Entering simulation without user confirmation at Phase 3
+- ❌ Pausing after Phase 3 asking "shall I continue?" — just auto-proceed to simulation
 
 **If only 1 feasible option exists**: Still output Phases 1~3, then at Phase 3 state: "Only 1 feasible option. Execute directly?" (in user's language).
 
@@ -212,13 +218,9 @@ User intent understanding
 
 | Rule | Description |
 |------|-------------|
-| **Phases 1~2 non-blocking** | Review map and recon report are informational — output and continue naturally |
-| **Phase 3 MUST pause** | After solution list, MUST wait for user confirmation before simulation |
-| **User skip right** | User says "just do it" / "skip simulation" → skip all simulation, execute directly |
-| **User add right** | User says "add a solution from X perspective" → go back, add, re-output Phase 3 |
-| **User drop right** | User says "drop solution X" → remove it, continue with remaining |
-| **Simulation uninterrupted** | Once simulation begins, output per-round summaries but don't pause for each |
-| **Only 1 solution** | Still output Phases 1~3, then ask "Only 1 option. Execute directly?" |
+| **Phases 1~3 auto-proceed** | Review map, recon report, and solution list are informational — output and continue naturally. Do NOT pause after Phase 3. |
+| **Only ask user when needed** | Ask only when: (a) critical info missing — ask for facts, not opinions; (b) two solutions nearly tied after simulation — ask about usage context, not technical details |
+| **User can interrupt anytime** | User says "just do X" → execute. "add/drop X" → adjust. "stop" → halt. |
 
 ### Phase 3 Confirmation Prompt (in user's language)
 

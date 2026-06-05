@@ -1426,6 +1426,238 @@ def enforce_learning_gate(domain: str, task_complexity: str,
     result["required_thresholds"] = LEARNING_DEPTH_THRESHOLDS[required]
     return result
 
+
+# ============================================================================
+# 模块 17: 收敛取舍引擎 — P0~P5 淘汰逻辑代码化
+# ============================================================================
+
+def cull_solutions(solutions: list[dict], constraints: dict,
+                   facet_scores: dict[str, dict]) -> dict:
+    """
+    P0~P5 取舍逻辑——LLM只需提供结构化输入，代码做淘汰决策。
+
+    Args:
+        solutions: [{"id": "A", "name": "...", "facet_coverage": {"F1": "good", "F2": "ok", ...},
+                      "violations": [...], "resource_need": float, "capability_match": float,
+                      "worst_case": str, "worst_severity": str}, ...]
+        constraints: {"hard_constraints": [...], "resource_limit": float, ...}
+        facet_scores: {"F7": {"boundaries": [...]}, "F2": {"resources": {...}}, ...}
+
+    Returns:
+        {"kept": [...], "culled": [{"id":...,"reason":...,"level":...}], "merged": [...],
+         "coverage_matrix": {...}, "summary": str}
+    """
+    culled = []
+    merged = []
+    kept = [s for s in solutions]  # mutable copy
+
+    # ── P0: 边界淘汰（对应面7）──
+    hard = constraints.get("hard_constraints", [])
+    p0_cull = []
+    for s in kept[:]:
+        violations = s.get("violations", [])
+        for v in violations:
+            if v in hard:
+                p0_cull.append(s)
+                culled.append({"id": s["id"], "reason": f"P0 boundary: violates '{v}'",
+                               "level": "P0"})
+                break
+    kept = [s for s in kept if s not in p0_cull]
+
+    # ── P1: 根基淘汰（对应面2）──
+    res_limit = constraints.get("resource_limit", 1.0)
+    p1_cull = []
+    p1_downgrade = []
+    for s in kept[:]:
+        need = s.get("resource_need", 0.5)
+        ratio = need / res_limit if res_limit > 0 else 999
+        if ratio > 2.0:
+            p1_cull.append(s)
+            culled.append({"id": s["id"], "reason": f"P1 foundation: resource need {ratio:.1f}x exceeds 2x limit", "level": "P1"})
+        elif ratio > 1.0:
+            p1_downgrade.append(s["id"])
+            s["priority"] = s.get("priority", 0) - 1  # 降优先级
+    kept = [s for s in kept if s not in p1_cull]
+
+    # ── P2: 力量淘汰（对应面1）──
+    p2_cull = []
+    p2_downgrade = []
+    for s in kept[:]:
+        match = s.get("capability_match", 0.5)
+        if match < 0.2:
+            p2_cull.append(s)
+            culled.append({"id": s["id"], "reason": f"P2 force: capability match {match:.1f} too low", "level": "P2"})
+        elif match < 0.5:
+            p2_downgrade.append(s["id"])
+            s["priority"] = s.get("priority", 0) - 1
+    kept = [s for s in kept if s not in p2_cull]
+
+    # ── P3: 风险淘汰（对应面5）──
+    p3_cull = []
+    p3_downgrade = []
+    irreversible = ["data_loss", "legal_consequence", "physical_harm", "irreversible_damage"]
+    for s in kept[:]:
+        severity = s.get("worst_severity", "")
+        if severity in irreversible:
+            p3_cull.append(s)
+            culled.append({"id": s["id"], "reason": f"P3 risk: irreversible worst case '{severity}'", "level": "P3"})
+        elif severity in ("severe_but_tolerable", "moderate"):
+            p3_downgrade.append(s["id"])
+            s["variance_penalty"] = s.get("variance_penalty", 0) + 0.1
+    kept = [s for s in kept if s not in p3_cull]
+
+    # ── P4: 比较淘汰（对应面8，多方向横向比较）──
+    p4_cull = []
+    p4_merge = []
+    if len(kept) >= 2:
+        for i, a in enumerate(kept):
+            for j, b in enumerate(kept):
+                if i >= j: continue
+                a_facets = a.get("facet_coverage", {})
+                b_facets = b.get("facet_coverage", {})
+                all_facets = set(list(a_facets.keys()) + list(b_facets.keys()))
+
+                score_map = {"good": 2, "ok": 1, "poor": 0}
+                a_better = 0
+                b_better = 0
+                equal = 0
+                a_sig_better = 0
+                b_sig_better = 0
+
+                for f in all_facets:
+                    av = score_map.get(a_facets.get(f, "poor"), 0)
+                    bv = score_map.get(b_facets.get(f, "poor"), 0)
+                    if av > bv:
+                        a_better += 1
+                        if av - bv >= 2: a_sig_better += 1
+                    elif bv > av:
+                        b_better += 1
+                        if bv - av >= 2: b_sig_better += 1
+                    else:
+                        equal += 1
+
+                total = len(all_facets)
+
+                # A dominates B: ≥6 facets better or equal, ≥2 significantly
+                if a_better + equal >= 6 and a_sig_better >= 2:
+                    if b not in p4_cull:
+                        p4_cull.append(b)
+                        culled.append({"id": b["id"], "reason": f"P4 compare: dominated by {a['id']} ({a_better} facets better, {a_sig_better} significant)", "level": "P4"})
+                elif b_better + equal >= 6 and b_sig_better >= 2:
+                    if a not in p4_cull:
+                        p4_cull.append(a)
+                        culled.append({"id": a["id"], "reason": f"P4 compare: dominated by {b['id']}", "level": "P4"})
+                # Near-identical: ≥5 facets equal
+                elif equal >= 5:
+                    pair = tuple(sorted([a["id"], b["id"]]))
+                    if pair not in [(m["a"], m["b"]) for m in p4_merge]:
+                        p4_merge.append({"a": a["id"], "b": b["id"], "reason": f"P4 merge: {equal}/{total} facets identical"})
+
+    kept = [s for s in kept if s not in p4_cull]
+
+    # ── P5: 最少保留 ──
+    p5_action = None
+    if len(kept) < 2:
+        p5_action = "back_to_diverge"
+    elif len(kept) > 8:
+        # 按 priority 排序保留前8
+        kept.sort(key=lambda s: s.get("priority", 0), reverse=True)
+        overflow = kept[8:]
+        kept = kept[:8]
+        for s in overflow:
+            culled.append({"id": s["id"], "reason": "P5 overflow: capped at 8", "level": "P5"})
+
+    # ── 构建覆盖矩阵 ──
+    coverage_matrix = build_coverage_matrix(kept)
+
+    # ── 处理合并建议 ──
+    merge_suggestions = []
+    for m in p4_merge:
+        merge_suggestions.append({"ids": [m["a"], m["b"]], "reason": m["reason"]})
+
+    return {
+        "kept": [s["id"] for s in kept],
+        "culled": culled,
+        "merge_suggestions": merge_suggestions,
+        "coverage_matrix": coverage_matrix,
+        "need_rediverge": p5_action == "back_to_diverge",
+        "summary": f"Input: {len(solutions)} directions → P0:{len(p0_cull)} P1:{len(p1_cull)} P2:{len(p2_cull)} P3:{len(p3_cull)} P4:{len(p4_cull)} → Kept: {len(kept)}"
+    }
+
+
+def build_coverage_matrix(solutions: list[dict]) -> dict:
+    """
+    计算八面覆盖矩阵。
+
+    Returns:
+        {"matrix": {"F1": ["A","B"], ...}, "facets": [...], "uncovered": [...],
+         "coverage_rate": float, "core_facets": [...], "weak_facets": [...]}
+    """
+    all_facets = ["F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8"]
+    matrix = {f: [] for f in all_facets}
+
+    for s in solutions:
+        for f in all_facets:
+            coverage = s.get("facet_coverage", {}).get(f, "poor")
+            if coverage in ("good", "ok"):
+                matrix[f].append(s["id"])
+
+    uncovered = [f for f in all_facets if not matrix[f]]
+    covered = len(all_facets) - len(uncovered)
+    coverage_rate = covered / len(all_facets)
+
+    # 核心面: 被≥70%方案覆盖的面
+    threshold = max(1, len(solutions) * 0.7)
+    core = [f for f in all_facets if len(matrix[f]) >= threshold]
+    # 弱面: 只被≤1个方案覆盖的面
+    weak = [f for f in all_facets if len(matrix[f]) <= 1]
+
+    return {
+        "matrix": matrix,
+        "facets": all_facets,
+        "uncovered": uncovered,
+        "coverage_rate": coverage_rate,
+        "core_facets": core,
+        "weak_facets": weak,
+    }
+
+
+def should_ask_user_after_simulation(ranked: list[dict]) -> dict:
+    """
+    判断推演完成后是否需要问用户——仅当两个方案难分高下时。
+
+    条件:
+      ① 前两名 V差距 < 0.04 (极接近)
+      ② 且两者的 n(访问次数)都不够高(<5) → 差异可能是噪音
+      ③ 或两者 V差距 < 0.02 (几乎无差异) → 不论n多少
+
+    Returns:
+        {"should_ask": bool, "reason": str, "ask_about": list[str]}
+    """
+    if len(ranked) < 2:
+        return {"should_ask": False, "reason": "只有一个方案，无需选择"}
+
+    first, second = ranked[0], ranked[1]
+    v_diff = first.get("v", 0) - second.get("v", 0)
+
+    if v_diff < 0.02:
+        return {
+            "should_ask": True,
+            "reason": f"Two solutions nearly identical (ΔV={v_diff:.3f}). Need user context to differentiate.",
+            "ask_about": ["usage_scenario", "priority_preference"]
+        }
+    elif v_diff < 0.04 and first.get("n", 0) < 5 and second.get("n", 0) < 5:
+        return {
+            "should_ask": True,
+            "reason": f"Close ranking (ΔV={v_diff:.3f}) with low confidence (n1={first['n']}, n2={second['n']}). Need user's specific needs.",
+            "ask_about": ["constraint_detail", "usage_frequency"]
+        }
+    else:
+        return {
+            "should_ask": False,
+            "reason": f"Clear winner (ΔV={v_diff:.3f}), n1={first['n']}, decision is reliable."
+        }
+
 # CLI 入口
 # ============================================================================
 
@@ -1756,15 +1988,50 @@ if __name__ == "__main__":
         result = enforce_learning_gate(args.domain, args.complexity, scores, coverage)
         print(json.dumps(result, ensure_ascii=False))
 
+    elif cmd == "cull":
+        # python mcts_compute.py cull --solutions '<JSON>' --constraints '<JSON>' --facet-scores '<JSON>'
+        import argparse
+        parser = argparse.ArgumentParser()
+        parser.add_argument("--solutions", type=str, required=True)
+        parser.add_argument("--constraints", type=str, default="{}")
+        parser.add_argument("--facet-scores", type=str, default="{}")
+        args = parser.parse_args(sys.argv[2:])
+        solutions = json.loads(args.solutions)
+        constraints = json.loads(args.constraints)
+        facet_scores = json.loads(args.facet_scores)
+        result = cull_solutions(solutions, constraints, facet_scores)
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+
+    elif cmd == "coverage-matrix":
+        # python mcts_compute.py coverage-matrix --solutions '<JSON>'
+        import argparse
+        parser = argparse.ArgumentParser()
+        parser.add_argument("--solutions", type=str, required=True)
+        args = parser.parse_args(sys.argv[2:])
+        solutions = json.loads(args.solutions)
+        result = build_coverage_matrix(solutions)
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+
+    elif cmd == "should-ask-user":
+        # python mcts_compute.py should-ask-user --ranked '<JSON>'
+        import argparse
+        parser = argparse.ArgumentParser()
+        parser.add_argument("--ranked", type=str, required=True)
+        args = parser.parse_args(sys.argv[2:])
+        ranked = json.loads(args.ranked)
+        result = should_ask_user_after_simulation(ranked)
+        print(json.dumps(result, ensure_ascii=False))
+
     else:
-        print(f"未知命令: {cmd}")
-        print("可用命令: ucb, converge, status-transition, rank, rough-filter, welford, "
+        print(f"Unknown command: {cmd}")
+        print("Available: ucb, converge, status-transition, rank, rough-filter, welford, "
               "k-bonus, classify-blindspot, get-activated-perspectives, should-write-kg, "
               "check-write-safety, needs-re-eval, check-final-convergence, get-fuse-mode, "
               "handle-self-check, re-simulation-decide, trigger-check, get-lambda, get-status-weight, "
               "enter-simulation, begin-sub-diverge, end-sub-diverge, needs-sub-diverge, "
               "diverge-depth, reset-depth, synthesize-sim, identify-domain, get-dimensions, "
-              "get-recon-paths, get-perspectives, check-learning-depth")
+              "get-recon-paths, get-perspectives, check-learning-depth, cull, coverage-matrix, "
+              "should-ask-user")
         sys.exit(1)
 
 
