@@ -1,210 +1,278 @@
 <p align="center">
-  <img src="https://img.shields.io/badge/版本-1.3.0-blue" alt="版本">
-  <img src="https://img.shields.io/badge/状态-稳定-green" alt="状态">
-  <img src="https://img.shields.io/badge/许可-MIT-yellow" alt="许可">
+  <img src="https://img.shields.io/badge/version-1.4.0-blue" alt="version">
+  <img src="https://img.shields.io/badge/status-stable-green" alt="status">
+  <img src="https://img.shields.io/badge/license-MIT-yellow" alt="license">
 </p>
 
 <h1 align="center">🧠 MCTS-TD Planner</h1>
 
 <p align="center">
-  <b>专为 Claude Code 设计 — 像下棋一样，先在脑子里推演所有可能，再走那步最好的</b>
+  <b>Think like a chess grandmaster — simulate every move in your head, then play the best one.</b><br>
+  <sub>A Claude Code skill that brings MCTS (Monte Carlo Tree Search) + TD (Temporal Difference) learning to your decision-making workflow.</sub>
 </p>
 
 <br>
 
----
-
-## 🎯 它解决什么问题
-
-### 你肯定遇到过这种事
-
-```
-你说: "帮我实现用户登录"
-AI: 好 → 咔咔咔写完了
-你: "呃...我们公司规定不能用外部依赖"
-AI: 哦 → 删了重写
-你: "还有...我们只能用MySQL"
-AI: 好 → 又删了重写
-```
-
-**一次对话，三次返工。** 问题出在哪？不是 AI 不行，是**它没先问清楚就动手了。**
-
-### 装了它之后
-
-```
-你说: "帮我实现用户登录"
-AI: ⚡ 这事有好几种做法，我先问清楚你的情况
-    → "有什么限制条件吗？"
-你: "不能引入外部依赖，只能用 MySQL"
-AI: → 那 OAuth2 排除，JWT 和 Session 二选一
-    → 推演两种方案的结果
-    → 选最合适你的那个
-    → 一次性写好 ✅
-```
-
-**一次过，不返工。** 区别就在于：**先想清楚，再动手。**
+> 🌐 中文用户请查看 [README_CN.md](./README_CN.md)
 
 ---
 
-## ✨ 亮点
+## 🎯 What It Solves
 
-### 像高手下棋一样做决策
+### You've been here before
 
-| 高手下棋 | 你做决策 |
-|---------|---------|
-| 不走一步看一步 | 不想到一个方案就直接干 |
-| 脑内推演所有可能走法 | 脑内推演所有可行方案 |
-| 选最优那步再落子 | 选最合适的那个再执行 |
-| 输了的棋复盘总结 | 做完的事总结经验，下次更准 |
+```
+You: "Add user authentication to my app"
+AI: OK → writes code immediately
+You: "Uh, we can't use external dependencies..."
+AI: Oh → deletes and rewrites
+You: "Also, we're on MySQL only"
+AI: OK → deletes and rewrites again
+```
 
-### 它的核心能力
+**Three rewrites in one conversation.** The problem? **It didn't ask before acting.**
 
-| 能力 | 说人话 |
-|------|--------|
-| **问清楚再动手** | 信息不全就问你，不自己瞎猜 |
-| **多方案推演** | 每个方案在脑子里走一遍，不实际执行 |
-| **经验越用越准** | 做过类似的事会自动参考，还会总结 |
-| **适合的才是最好的** | 不盲目选评分最高的，选最适合你当前情况的 |
-| **记忆不会丢** | 经验自动记住，更新 skill 也不丢失 |
+### With MCTS-TD Planner
+
+```
+You: "Add user authentication to my app"
+AI: ⚡ There are multiple ways to do this. Let me think first.
+    → "Any constraints I should know?"
+You: "No external deps. MySQL only."
+AI: → OAuth2 is out. JWT vs Session are the options.
+    → Simulates both approaches in my head.
+    → Picks the one that fits your context best.
+    → Writes it right the first time. ✅
+```
+
+**One shot, no rework.** The difference? **Think first, act second.**
 
 ---
 
-## 🚀 安装
+## ✨ Why It's Different
 
-在 Claude Code 中运行：
+### It thinks like a chess player
+
+| Grandmaster at chess | You making decisions |
+|---------------------|---------------------|
+| Doesn't move impulsively | Doesn't jump at the first idea |
+| Simulates every possible line in their head | Simulates every viable approach mentally |
+| Picks the best move before touching a piece | Picks the best solution before writing code |
+| Reviews lost games to improve | Learns from outcomes, gets better over time |
+
+### Core capabilities
+
+| Capability | What it means |
+|-----------|--------------|
+| **Ask before assuming** | Gathers constraints upfront — no guessing what you need |
+| **Multi-branch simulation** | Runs each candidate solution through a full mental execution path |
+| **Gets smarter with experience** | Cross-session knowledge graph — references past successes and failures |
+| **Context-aware ranking** | Technical score is not enough — ranks by project fit, not just raw merit |
+| **Persistent memory** | Knowledge survives skill updates and reinstalls |
+
+---
+
+## 🚀 Install
+
+In Claude Code:
 
 ```bash
 /plugin marketplace add ljjluke/mcts-skill
 ```
 
-装好后输入任意任务，看到 ⚡ 标志说明生效。
+Type any task. When you see the ⚡ badge, it's working.
 
-### ⚡ 记忆数据安全
+### ⚡ Memory Safety
 
-本 Skill 的知识图谱存储在 `~/.claude/data/skills/mcts-td-planner/` 目录，与 skill 代码文件物理隔离。
-
-| 场景 | 记忆数据 | 说明 |
-|------|---------|------|
-| skill 初次安装 | ✅ 模板自动复制到 data 目录 | 首次安装时初始化空的知识图谱 |
-| skill 更新/重装 | ✅ **数据保留** | data 目录不会被覆盖 |
-| 卸载后重装 | ✅ **数据保留** | 除非手动删除 data 目录 |
-| 升级版本（如 1.3→1.4） | ✅ **数据保留** | 升级不影响已有知识条目 |
-
-> 想清空记忆重新积累知识，手动删除 `~/.claude/data/skills/mcts-td-planner/` 目录即可。
+The knowledge graph lives at `~/.claude/data/skills/mcts-td-planner/` — physically separate from skill code. Updates, reinstalls, and upgrades all preserve your accumulated knowledge. To reset, delete that directory.
 
 ---
 
-## 🔧 三引擎决策流程
+## 🔧 The Three-Engine Pipeline
 
-本引擎由三个独立引擎组成，**每个引擎有可验证的产出，不可跳过**：
+Every decision goes through three independent engines. Each produces a verifiable output — no skipping.
 
 ```
-用户需求理解 → 先听懂用户说了什么
+User intent → Understand what you're asking
        │
        ▼
-┌───────────────────────────────┐
-│  发散引擎（头脑风暴，可多轮）    │
-│                               │
-│  发散 → 缺信息? → 问用户       │
-│  → 获得新信息 → 再来一轮发散    │
-│  → 收敛 → 输出方案清单         │
-└───────────┬───────────────────┘
-            │
-            ▼
-┌───────────────────────────────┐
-│  推演引擎（子 agent 独立推演）  │
-│                               │
-│  子A ⟳ 子B ⟳ 子C（互不知对方） │
-│  独立推演 → 记录问题 → 继续     │
-│  ★ 问用户不阻塞其他子agent     │
-└───────────┬───────────────────┘
-            │
-            ▼
-┌───────────────────────────────┐
-│  仲裁引擎（汇总与决策）         │
-│                               │
-│  汇总结果+问题 → 统一问用户    │
-│  → 重新评估 → 自检 → 决策     │
-└───────────────────────────────┘
+┌──────────────────────────────────┐
+│  DIVERGE ENGINE (brainstorm)      │
+│                                   │
+│  ① Six-Dimension Map: rate 0-10   │
+│     on tech/arch/biz/security/    │
+│     ops/ux → identify blindspots  │
+│  ② Six-Path Recon: project code   │
+│     + docs + competitors + user   │
+│     perspective + failure cases   │
+│  ③ Perspective Wheel: 4~8 of 10   │
+│     perspectives, 1 solution each │
+│  ④ Rough filter if >8 solutions   │
+│                                   │
+│  ⚠️ Output: Solution list          │
+│  ⭐ Pauses for your confirmation  │
+└──────────────┬───────────────────┘
+               │
+               ▼
+┌──────────────────────────────────┐
+│  SIMULATE ENGINE (MCTS tree)      │
+│                                   │
+│  Multi-round iteration:           │
+│  ① Selection: UCB + knowledge     │
+│     bias picks the best node path │
+│  ② Expansion: open new branches   │
+│  ③ Simulation: rollout to the end │
+│     (with recursive depth guard   │
+│      and knowledge acquisition    │
+│      priority tree)               │
+│  ④ Backpropagation: update all    │
+│     ancestor nodes with results   │
+│  ⑤ Knowledge Update: write back   │
+│     to the knowledge graph         │
+│                                   │
+│  Stops when converged (V stable,  │
+│  enough n, low σ²)                │
+│                                   │
+│  ⚠️ Output: Tree search results    │
+│     (per-solution n/V/σ²/confidence)│
+└──────────────┬───────────────────┘
+               │
+               ▼
+┌──────────────────────────────────┐
+│  CONVERGE ENGINE (arbitration)    │
+│                                   │
+│  ① Rank by converged V            │
+│  ② Self-check: find blindspots   │
+│     → reverse thinking            │
+│     → risk assessment             │
+│  ③ Blindspot audit: perspective   │
+│     coverage vs six-dim map       │
+│  ④ Re-simulation if needed        │
+│  ⑤ Output: decision report        │
+│     (ranking + self-check +        │
+│      blindspot audit + TD update) │
+└──────────────────────────────────┘
 ```
 
-### 验证规则
+### Verification
 
 ```
-✅ 有发散和收敛记录 → 发散引擎已执行
-✅ 推演报告数 = 方案数 → 推演引擎已执行
-✅ 有决策报告（含自检）→ 仲裁引擎已执行
-```
-
-### 执行流程
-
-```
-第1步: 汇总比较 — V_final = 技术评分×0.6 + 项目匹配度×0.4
-第2步: 推演自检 — 自我质疑，防止推演错了还执行
-第3步: 执行 — 只做选中的那个
-第4步: 总结 — 经验记下来，下次用得上
+✅ Has divergence & convergence records → Diverge engine executed
+✅ Simulation count = solution count    → Simulate engine executed
+✅ Has decision report with self-check  → Converge engine executed
 ```
 
 ---
 
-## 🧠 模拟人脑的哪些能力
+## 🧠 How It Mimics Human Memory
 
-| 人脑能力 | 引擎模拟 |
-|---------|---------|
-| 看到问题想到相关经验 | 联想回忆 — 最相关的知识自动浮现 |
-| 记不清了努力回想 | 碎片补全 — 顺着已有线索拼凑完整 |
-| 想不起来去查资料 | 外部求证 — 查文档/问用户 |
-| 经验可能过时了 | 纠偏机制 — 发现矛盾就标记，不强化错误 |
-| 旧知识和新知识打架 | 状态机 — 假设/验证/确认/争议/证伪/回滚 |
-| 很久不用的事慢慢忘了 | 记忆衰减 — 不用的知识自动归档 |
-| 被人一提又想起来了 | 回忆触发 — 相关线索出现时从归档中找回 |
+| Human ability | Engine simulation |
+|--------------|-------------------|
+| See a problem → recall related experience | Associative recall — most relevant knowledge surfaces naturally |
+| Can't quite remember → try to piece it together | Fragment completion — follow clues to reconstruct the full picture |
+| Still can't remember → look it up | External verification — search docs, check code, ask user |
+| Realize old knowledge may be outdated | Correction mechanism — flag contradictions, don't reinforce errors |
+| Old and new knowledge conflict | State machine — hypothesis→verify→confirm→dispute→refute→rollback |
+| Unused knowledge fades over time | Memory decay — auto-archive unused entries after 30 days |
+| Someone mentions it → suddenly remember | Recall trigger — related cues bring archived knowledge back |
 
 ---
 
-## 📁 项目结构
+## 📁 Project Structure
 
 ```
 mcts-td-planner/
-├── SKILL.md                ← 核心 Skill 定义（Claude Code 入口）
+├── SKILL.md                ← Entry point (Claude Code skill definition)
+├── .claude-plugin/         ← Plugin marketplace metadata
 │
-├── .claude-plugin/         ← 插件市场元数据
-│   ├── plugin.json
-│   └── marketplace.json
+├── engine/                 ← Core engine rules
+│   ├── mcts-constraint.md    Constraint collection (Step 0)
+│   ├── mcts-diverge.md       Diverge engine (Step 1: 6D map + recon + perspective wheel)
+│   ├── mcts-simulate.md      Simulate engine (Step 2: MCTS tree search)
+│   ├── mcts-converge.md      Converge engine (Step 3~3.6: ranking + self-check + blindspot audit)
+│   └── td-learner.md         TD learning engine + knowledge graph state machine
 │
-├── engine/                 ← 引擎核心规则（拆分版）
-│   ├── mcts-constraint.md    需求约束收集（第0步）
-│   ├── mcts-diverge.md       发散引擎（第1步：六维地图+六路侦查+视角轮盘）
-│   ├── mcts-simulate.md      推演引擎（第2步：逐轮独立推演+知识注入+补全箱）
-│   ├── mcts-converge.md      仲裁引擎（第3~3.6步：汇总+自检+盲区审计+再推演）
-│   └── td-learner.md         学习引擎 + 知识图谱（TDL 价值管理）
+├── scripts/                ← Computational engines (Python)
+│   ├── mcts_compute.py       UCB/backprop/convergence/state machine/ranking (42 functions, 19 CLI)
+│   └── manage_memory.py      Knowledge graph archive/recall/cleanup
 │
-├── policies/               ← 决策策略
-│   └── task-policy.md        通用推演格式与策略
+├── policies/               ← Decision policies
+│   └── task-policy.md        General simulation format and scoring rubric
 │
-├── agents/                 ← Agent 定义
-│   └── mcts-decider.md       决策子 Agent 行为指令
+├── agents/                 ← Agent definitions
+│   └── mcts-decider.md       Decision sub-agent behavior instructions
 │
-├── references/             ← 参考资料
-│   └── algorithm-reference.md 算法原理与设计决策
+├── references/             ← Reference (on-demand, not loaded in context)
+│   └── algorithm-reference.md  Algorithm principles and design decisions
 │
-├── memory/                 ← 跨会话记忆持久化
-│   ├── mcts-td-value-archive.md  活跃知识图谱
-│   └── archive/                长期归档（自动管理）
-│
-├── scripts/                ← 辅助脚本
-│   └── manage_memory.py      记忆管理（归档/回忆/清理）
-│
-├── .claude-plugin/         ← 插件元数据
-│   ├── plugin.json
-│   └── marketplace.json
+├── memory/                 ← Cross-session persistent knowledge
+│   ├── mcts-td-value-archive.md  Active knowledge graph
+│   └── archive/                  Long-term archive (auto-managed)
 │
 ├── CHANGELOG.md
-└── README.md
+├── README.md
+└── README_CN.md
 ```
+
+---
+
+## 📊 Architecture
+
+```
+User Message
+    │
+    ▼
+┌─────────────┐    ┌──────────────────┐    ┌─────────────────┐
+│  Diverge    │───▶│  Simulate        │───▶│  Converge       │
+│  Engine     │    │  Engine          │    │  Engine         │
+│             │    │                  │    │                 │
+│  6D Map     │    │  MCTS Tree       │    │  Ranking        │
+│  6 Recon    │    │  Selection(UCB)  │    │  Self-check     │
+│  10 Views   │    │  Expansion       │    │  Blindspot      │
+│  Solutions  │    │  Simulation      │    │  Re-sim         │
+│             │    │  Backprop        │    │  TD Update      │
+└─────────────┘    └────────┬─────────┘    └─────────────────┘
+                            │
+                            ▼
+                   ┌─────────────────┐
+                   │  Knowledge      │
+                   │  Graph          │
+                   │  (td-learner)   │
+                   │                 │
+                   │  State Machine  │
+                   │  HYPOTHESIS→    │
+                   │  PROVISIONAL→   │
+                   │  CONFIRMED→     │
+                   │  DISPUTED→      │
+                   │  REFUTED→       │
+                   │  SLEEPING→      │
+                   │  ARCHIVED       │
+                   └─────────────────┘
+```
+
+---
+
+## 🖥 Compute Engine
+
+Pure numerical logic extracted from Markdown into Python (`scripts/mcts_compute.py`):
+
+| Module | Functions | CLI Commands |
+|--------|----------|-------------|
+| UCB/CLT-UCB | `compute_ucb`, `compute_clt_ucb`, `select_best_child` | `ucb` |
+| Backpropagation | `welford_update`, `backpropagate_path`, `gamma_backpropagate` | `welford` |
+| Convergence | `check_value_stability`, `should_stop_iteration`, `check_final_convergence` | `converge`, `check-final-convergence` |
+| State Machine | `check_status_transition`, `get_status_weight_full`, `handle_contradiction` | `status-transition`, `get-status-weight` |
+| Scoring | `get_reward_signal`, `get_learning_rate`, `get_confidence_level` | — |
+| Ranking | `rough_filter`, `rank_by_converged_v`, `handle_close_ranking` | `rank`, `rough-filter`, `needs-re-eval` |
+| Knowledge Bias | `compute_k_bonus`, `should_write_to_knowledge_graph`, `check_write_safety` | `k-bonus`, `should-write-kg`, `check-write-safety` |
+| Diverge Helpers | `classify_blindspot`, `get_activated_perspectives` | `classify-blindspot`, `get-activated-perspectives` |
+| Recursion Guard | `enter_simulation`, `begin_sub_diverge`, `needs_sub_diverge` | `enter-simulation`, `begin-sub-diverge`, `needs-sub-diverge` |
+| TD Update | `td_update_workflow`, `synthesize_simulation_result` | `synthesize-sim` |
+| Trigger | `quick_trigger_check` | `trigger-check`, `get-lambda` |
 
 ---
 
 <p align="center">
-  <b>别急着动手，先想清楚。</b><br>
+  <b>Don't just do it. Think it through first.</b><br>
   <i>— MCTS-TD Planner</i>
 </p>
