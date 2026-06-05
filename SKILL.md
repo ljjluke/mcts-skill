@@ -1,292 +1,301 @@
 ---
 name: mcts-td-planner
-description: 通用决策引擎 — 每次收到用户消息，强制启动发散引擎：先拆解多需求→再多角度发散→然后收敛为可行方案列表。有多个方案则启动推演引擎（子Agent独立因果链推演）→仲裁引擎（汇总比较+执行前自检），选出最优方案再执行。基于MCTS(蒙特卡洛树搜索)+TDL(时序差分学习)混合算法。适用于技术选型、架构设计、方案比较、问题排查等任何需要多方案评估的决策场景。
+description: Universal decision engine — on every user message, force-start the diverge engine: decompose multiple needs → multi-angle divergence → converge into feasible options. When multiple options exist, launch the simulate engine (sub-agent independent causal chain simulation) → converge engine (aggregate comparison + pre-execution self-check), select and execute the optimal option. Based on MCTS (Monte Carlo Tree Search) + TD (Temporal Difference) hybrid algorithm. Suitable for any decision scenario requiring multi-option evaluation.
 version: 1.4.0
 license: MIT
 alwaysApply: true
 ---
 
-# MCTS-TD Planner — 多方案独立推演决策引擎
+# MCTS-TD Planner — Multi-Option Independent Simulation Decision Engine
 
-> **一句话**: 先理解需求 → 多轮头脑风暴想方案 → 每个方案独立推演 → 汇总决策。不脑补需求、不假装懂技术、不重复查同一份资料。
+> **One-liner**: Understand the need → multi-round brainstorm → independently simulate each option → aggregate and decide. Never fill in missing requirements. Never pretend to know what you don't. Never research the same thing twice.
 
-> **核心能力**：当有多个候选方案时，每个方案都在内部独立走完完整的执行路径推演（不实际执行），然后汇总比较选出最优方案，最后才执行。
+> **Core capability**: When multiple candidate options exist, each one is independently run through a complete execution-path simulation (no actual execution), then aggregated and compared, and only the best is executed.
 
-## 🚨 最高优先级：阶段性输出！（必须遵守，违反即违规）
-
-**无论你是主会话还是子 agent，执行本 Skill 时必须按以下节奏输出，禁止跳过中间阶段：**
-
-```
-阶段1 — 立即输出: 【八面审视地图】
-  格式: "──────────────────────── 【八面审视地图】... ────────────────────────"
-  内容: 8个决策面 → 8个具体维度的评分 + 盲区识别
-  ⚠️ 不输出这个就进入下一步 = 违规
-
-阶段2 — 立即输出: 【八路侦查报告】
-  格式: "──────────────────────── 【八路侦查报告】... ────────────────────────"
-  内容: 每面的侦查发现 + 交叉验证
-
-阶段3 — 输出后暂停: 【八面视角】+ 【方案列表】
-  格式: "──────────────────────── 【八面视角】... ────────────────────────"
-  内容: 8个方案视角的结构化描述
-  ⛔ 输出后必须暂停，等待用户"继续"指令！
-  用户说"继续"/"可以"/"推演" → 进入推演引擎
-  用户说"加方案"/"删方案" → 调整方案列表后重新输出阶段3
-
-阶段4 — 推演完成后一次性输出: 【决策报告】
-  内容: CLT-UCB 方案排序 + 自检结论 + 盲区审计 + 执行计划
-```
-
-**禁止行为**:
-- ❌ 禁止在内部思考完六维地图但不输出
-- ❌ 禁止跳过方案列表直接开始推演
-- ❌ 禁止把六维地图、侦查报告、方案列表"汇总成一段话"省略掉
-- ❌ 禁止在阶段3没有用户确认的情况下进入推演
-
-**如果只有1个可行方案**: 仍然输出阶段1~3，然后在阶段3末尾说明"只有1个方案，直接执行吗？"
-
-此 Skill 将 **MCTS（蒙特卡洛树搜索）** 和 **TDL（时序差分学习）** 的算法思想注入到 Claude 的推理过程中。它不是实际的数值计算引擎，而是**将算法的核心决策逻辑转化为结构化的推理规则**，让 Claude 在面对复杂决策时，能够像拥有"内部推演棋盘"一样，系统地、逐个地推演每个候选方案，再综合比较。
-
-> 本项目受 [hrpan/tetris_mcts](https://github.com/hrpan/tetris_mcts) 启发，该项目的 MCTS-TD 混合架构在俄罗斯方块游戏中取得了超越人类水平的成绩。
+**Language rule**: All internal engine rules below are in English. Output to user MUST be in the user's language. If the user writes in Chinese, reply in Chinese. If in Japanese, reply in Japanese. Translate all user-facing labels, descriptions, and prompts to match the user's language.
 
 ---
 
-## 三引擎决策流程
+## 🚨 HIGHEST PRIORITY: Phased Output (Mandatory — Violation = Failure)
+
+**Whether you are the main session or a sub-agent executing this Skill, you MUST follow this output cadence. Skipping intermediate phases is FORBIDDEN.**
 
 ```
-                    ╔══════════════════════════════════════╗
-                    ║      三引擎决策流程                   ║
-                    ║      每个引擎有可验证产出，不能跳过    ║
-                    ╚══════════════════════════════════════╝
+Phase 1 — Output immediately: [Eight-Facet Review Map]
+  Format: header line with the task name + domain
+  Content: 8 facets → 8 concrete dimensions with scores + blindspot identification
+  ⚠️ Not outputting this before proceeding = VIOLATION
 
-用户需求理解（先听懂用户说了什么）
+Phase 2 — Output immediately: [Reconnaissance Report]
+  Format: header line
+  Content: per-facet recon findings + cross-validation conclusions
+
+Phase 3 — Output then PAUSE: [Converged Solution List]
+  Format: header line + structured solution descriptions
+  Content: 2~8 concrete solutions with facet coverage matrix
+  ⛔ MUST pause after output. WAIT for user confirmation!
+  User says continue/yes/go ahead → enter simulate engine
+  User says add/drop/merge → adjust list and re-output Phase 3
+  User says "just do X" → skip simulation, execute directly
+
+Phase 4 — Output after simulation completes: [Decision Report]
+  Content: MCTS ranking + self-check verdict + blindspot audit + execution plan
+```
+
+**Forbidden behaviors**:
+- ❌ Completing the eight-facet review internally without outputting it
+- ❌ Skipping the solution list and jumping straight to simulation
+- ❌ Collapsing the review map, recon report, and solution list into "one summary paragraph"
+- ❌ Entering simulation without user confirmation at Phase 3
+
+**If only 1 feasible option exists**: Still output Phases 1~3, then at Phase 3 state: "Only 1 feasible option. Execute directly?" (in user's language).
+
+This Skill injects the algorithmic thinking of **MCTS (Monte Carlo Tree Search)** and **TDL (Temporal Difference Learning)** into Claude's reasoning process. It is not a numerical computation engine — it translates the core decision logic of these algorithms into structured reasoning rules, enabling Claude to systematically simulate each candidate option before choosing, like having an "internal simulation board."
+
+> Inspired by [hrpan/tetris_mcts](https://github.com/hrpan/tetris_mcts), whose MCTS-TD hybrid architecture achieved superhuman performance in Tetris.
+
+---
+
+## Three-Engine Decision Pipeline
+
+```
+User intent → Understand what the user is asking
     │
     ▼
 ┌─────────────────────────────────────────────────────────────┐
-│  发散引擎 — 发散 × 收敛（头脑风暴 + 提炼方案）              │
+│  DIVERGE ENGINE — Diverge × Converge                        │
 │                                                             │
-│  发散阶段: 八面镜反复审视 + 交叉关联 → 想法碎片 + 盲区补全    │
-│  收敛阶段: 归类 → 补全 → 取舍 → 成形 → 2~8个结构化方案       │
+│  Diverge phase: Eight-Facet Mirror iterative review         │
+│    + cross-facet association → idea fragments + blindspots  │
+│  Converge phase: Cluster → Complete → Cull → Crystallize    │
+│    → 2~8 structured solutions                               │
 │                                                             │
-│  ⚠️ 产出: 方案列表 + 八面覆盖矩阵                              │
-                           ▼
-┌─────────────────────────────────────────────────────────────┐
-│  推演引擎 — MCTS 树搜索（多轮迭代）                            │
-│                                                             │
-│  每轮迭代: Selection→Expansion→Simulation→Backpropagation    │
-│  ① Selection:  用 UCB 选择最有探索价值的节点路径               │
-│  ② Expansion:  在节点上展开新的执行分支                       │
-│  ③ Simulation: 从新分支快速推演到终点                         │
-│  ④ Backprop:   结果反向传播更新整条路径的价值                  │
-│                                                             │
-│  迭代控制: 收敛判定（V稳定 | n足够 | 方差小）自动停止           │
-│  进度可见: 每轮输出当前树状态摘要                              │
-│                                                             │
-│  ⚠️ 产出: 树搜索结果（每方案 n次模拟 + V/σ²/信心）             │
+│  Output: Solution list + facet coverage matrix              │
+│  ⭐ Pause for user confirmation before simulation           │
 └──────────────────────────┬──────────────────────────────────┘
                            │
                            ▼
 ┌─────────────────────────────────────────────────────────────┐
-│  仲裁引擎 — 汇总与决策                                       │
+│  SIMULATE ENGINE — MCTS Tree Search (multi-round)           │
 │                                                             │
-│  ① 汇总推演结果                                              │
-│  ② 汇总待解决问题 → 统一问用户                                │
-│  ③ 获取答案 → 重新评估受影响方案                              │
-│  ④ 执行前自检 → 质疑推演结果                                  │
-│  ⑤ 盲区审计 → 检查视角覆盖是否全面                            │
-│  ⑥ 输出最优方案 + 执行计划                                   │
+│  Per round: Selection→Expansion→Simulation→Backpropagation  │
+│  Selection: UCB + knowledge bias picks the best node path   │
+│  Expansion: Open new execution branches at the node         │
+│  Simulation: Roll out from new branch to termination        │
+│  Backprop: Propagate results back up, update all ancestors  │
 │                                                             │
-│  ⚠️ 产出: 决策报告（必须有自检、盲区审计和决策结论）            │
+│  Iteration control: auto-stop on convergence                │
+│  Progress visible: tree state summary after each round      │
+│                                                             │
+│  Output: Tree search results (per-option n/V/σ²/confidence) │
+└──────────────────────────┬──────────────────────────────────┘
+                           │
+                           ▼
+┌─────────────────────────────────────────────────────────────┐
+│  CONVERGE ENGINE — Aggregation & Decision                   │
+│                                                             │
+│  ① Aggregate simulation results                            │
+│  ② Collect open questions → ask user once                   │
+│  ③ Re-evaluate affected options with new answers            │
+│  ④ Pre-execution self-check → challenge the conclusion      │
+│  ⑤ Blindspot audit → check facet coverage completeness     │
+│  ⑥ Output optimal option + execution plan                   │
+│                                                             │
+│  Output: Decision report (self-check + blindspot audit)     │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-## 验证规则
+## Verification Rules
 
-确保三个引擎都执行了，没有跳过：
+Ensure all three engines executed — no skipping:
 
-- ✅ 有"发散阶段"和"收敛阶段"的记录 → 发散引擎已执行
-- ✅ 推演报告数量等于方案数量 → 推演引擎已执行
-- ✅ 有决策报告（含自检和盲区审计）→ 仲裁引擎已执行
+- ✅ Has divergence & convergence records → Diverge engine executed
+- ✅ Simulation report count = solution count → Simulate engine executed
+- ✅ Has decision report (with self-check + blindspot audit) → Converge engine executed
 
-## 三种运行模式
+## Three Operating Modes
 
-| 模式 | 适用场景 | 流程 |
-|------|---------|------|
-| **完整模式** | 方案数 ≤ 5 | 枚举方案 → 逐轮推演 → 汇总比较(CLT-UCB) → 执行 → TD更新 |
-| **快速推演** | 方案数 > 5 | 直觉粗筛 → 保留 top-3~5 → 逐轮推演 → 汇总比较 → 执行 |
-| **再推演** | 执行途中遇到意外 | 记录TD误差 → 重新推演剩余方案 → 切换执行 |
+| Mode | When | Flow |
+|------|------|------|
+| **Full** | ≤5 solutions | Enumerate → multi-round simulate → aggregate → execute → TD update |
+| **Quick** | >5 solutions | Rough filter → keep top 3~5 → simulate → aggregate → execute |
+| **Re-simulate** | Unexpected during execution | Record TD error → re-simulate remaining → switch |
 
 ---
 
-## ⭐ 阶段性输出规则（用户可见 + 可干预）
+## ⭐ Phased Output Rules (User-Visible & Interruptible)
 
-> **核心原则**: 发散引擎的每一步产出必须**先展示给用户**，用户确认方案列表后才进入推演引擎。
-> 这不是"问用户怎么选"，而是"让用户看到你在想什么"——方案你来推演和决策，但用户有权在看到方案列表后说"再加一个XX视角的方案"或"方案C不用推演了"。
+> **Core principle**: Every diverge engine output must be shown to the user. The user confirms the solution list before simulation begins.
+> This is not "asking the user to choose" — it's "showing the user what you're thinking." You decide the ranking, but the user can say "add one more solution from perspective X" or "skip solution C."
 
-### 输出节奏
+### Output Cadence (user-facing labels in user's language)
 
 ```
-用户需求理解
+User intent understanding
     │
     ▼
-┌─ 阶段1: 六维领域地图 ──────────────────────────────┐
-│  输出: 【六维领域地图】                               │
-│  内容: 6个维度的评分 + 盲区识别 + 补资料优先级         │
-│  等待: 用户看到后自然继续（不阻塞）                    │
-│  用户可干预: "维度X你评低了" / "维度Y不用考虑"         │
-└────────────────────────────────────────────────────┘
-    │
-    ▼
-┌─ 阶段2: 六路侦查报告 ──────────────────────────────┐
-│  输出: 【六路侦查报告】                               │
-│  内容: 各路径发现 + 交叉验证结论                      │
-│  等待: 用户看到后自然继续（不阻塞）                    │
-│  用户可干预: "路径X你没查" / "这个发现不对"            │
-└────────────────────────────────────────────────────┘
-    │
-    ▼
-┌─ 阶段3: 视角轮盘 + 方案列表 ────────────────────────┐
-│  输出: 【视角轮盘选择】+【方案列表】                    │
-│  内容: 激活了哪些视角 + 每个方案的结构化描述            │
-│  ⚠️ 此处暂停，等待用户确认方案列表                     │
-│  用户可干预:                                           │
-│    "可以，继续推演" → 进入推演引擎                     │
-│    "加一个XX视角的方案" → 补充方案后重新展示            │
-│    "方案C不用推演了" → 移除方案C后继续                 │
-│    "方案A和B合并" → 合并后继续                        │
-│    "直接做方案A，不用推演了" → 跳过推演，直接执行       │
-└────────────────────────────────────────────────────┘
-    │ 用户确认
-    ▼
-┌─ 阶段4: MCTS树搜索 + 仲裁 ──────────────────────────────┐
-│  推演引擎: 多轮迭代（Selection→Expansion→Simulation→Backprop）│
-│  每轮输出树状态摘要，收敛后自动停止                          │
-│  仲裁引擎: 基于多轮收敛结果的排序 + 自检 + 盲区审计          │
-│  输出: 【MCTS树搜索结论】+【决策报告】                       │
-│  内容: 方案排序(V/n/σ²) + 自检结论 + 盲区审计 + 执行计划     │
-│  用户可干预: "选方案B" / "再推3轮" / "直接做"              │
+┌─ Phase 1: Eight-Facet Review Map ─────────────────────────┐
+│  Output: [Review Map] with 8 facets → concrete dimensions  │
+│  Content: per-facet scores + blindspots + priority          │
+│  Wait: natural continuation (non-blocking)                  │
+│  User may intervene: "You rated facet X too low" etc.       │
 └────────────────────────────────────────────────────────────┘
     │
     ▼
-  执行
+┌─ Phase 2: Reconnaissance Report ──────────────────────────┐
+│  Output: [Recon Report]                                    │
+│  Content: per-path findings + cross-validation             │
+│  Wait: natural continuation (non-blocking)                  │
+│  User may intervene: "You missed path X" etc.              │
+└────────────────────────────────────────────────────────────┘
+    │
+    ▼
+┌─ Phase 3: Converged Solution List ────────────────────────┐
+│  Output: [Solution List] with structured descriptions      │
+│  Content: 2~8 solutions with facet coverage matrix         │
+│  ⚠️ PAUSE HERE. Wait for user confirmation.               │
+│  User may: confirm / add solution / drop solution /        │
+│            merge solutions / skip simulation & execute      │
+└────────────────────────────────────────────────────────────┘
+    │ user confirms
+    ▼
+┌─ Phase 4: MCTS Tree Search + Arbitration ─────────────────┐
+│  Simulate: multi-round Selection→Expansion→Sim→Backprop    │
+│  Tree state summary after each round, auto-stop on converge│
+│  Converge: ranking + self-check + blindspot audit          │
+│  Output: [MCTS Conclusion] + [Decision Report]             │
+│  Content: ranking(V/n/σ²) + self-check + audit + plan     │
+│  User may: "pick option B" / "run 3 more rounds" / "just do it" │
+└────────────────────────────────────────────────────────────┘
+    │
+    ▼
+  Execute
 ```
 
-### 关键规则
+### Key Rules
 
-| 规则 | 说明 |
-|------|------|
-| **阶段1~2不阻塞** | 六维地图和六路侦查是"信息展示"，输出后自然继续，不停下来等用户 |
-| **阶段3必须暂停** | 方案列表展示后，**必须等待用户确认**才能进入推演引擎 |
-| **用户跳过权** | 用户说"直接做"→ 跳过所有推演，直接执行最优方案 |
-| **用户追加权** | 用户说"加一个XX方案"→ 回到视角轮盘，补充后重新展示 |
-| **用户删除权** | 用户说"方案X不用推演"→ 从列表中移除，继续推演其余方案 |
-| **推演过程不打断** | 推演引擎启动后不逐步展示（太啰嗦），推演完成后一次性输出决策报告 |
-| **只有1个方案时** | 如果视角轮盘只生成1个可行方案 → 跳过推演，直接问"就这个方案，执行吗？" |
+| Rule | Description |
+|------|-------------|
+| **Phases 1~2 non-blocking** | Review map and recon report are informational — output and continue naturally |
+| **Phase 3 MUST pause** | After solution list, MUST wait for user confirmation before simulation |
+| **User skip right** | User says "just do it" / "skip simulation" → skip all simulation, execute directly |
+| **User add right** | User says "add a solution from X perspective" → go back, add, re-output Phase 3 |
+| **User drop right** | User says "drop solution X" → remove it, continue with remaining |
+| **Simulation uninterrupted** | Once simulation begins, output per-round summaries but don't pause for each |
+| **Only 1 solution** | Still output Phases 1~3, then ask "Only 1 option. Execute directly?" |
 
-### 阶段3 确认提示格式
+### Phase 3 Confirmation Prompt (in user's language)
 
 ```
 ────────────────────────────
- 【方案列表确认】
+ [Solution List Confirmation]
 
- 以上是发散引擎产出的 X 个方案（覆盖 Y/8 个决策面）。
+ Above are X solutions from the diverge engine (covering Y/8 decision facets).
 
- 接下来将对每个方案进行独立推演，预计需要 Z 轮推演。
+ Next: MCTS tree search simulation for each solution (~Z rounds).
 
- 请确认:
-   ✅ "继续" / "可以" / "推演吧" → 进入推演引擎
-   ➕ "加一个XX视角的方案" → 补充方案
-   ➖ "方案X不用了" → 移除方案
-   ⚡ "直接做方案X" → 跳过推演，直接执行
+ Confirm:
+   ✅ "continue" / "go" / "yes" → Enter simulation
+   ➕ "add X" → Add solution
+   ➖ "drop X" → Remove solution
+   ⚡ "just do X" → Skip simulation, execute directly
  ────────────────────────────
 ```
 
 ---
 
-## 🚀 启动规则（强制触发）
+## 🚀 Activation Rules (Mandatory Trigger)
 
-**`alwaysApply: true` 意味着每次收到用户消息都必须执行本 Skill。**
+**`alwaysApply: true` means this Skill MUST execute on every user message.**
 
-### 强制触发清单
+### Mandatory Trigger Checklist
 
-触发检查: `python scripts/mcts_compute.py trigger-check --message "<用户消息>"`
-包含动作词(做/实现/开发/写/改/优化/重构/帮助/帮/设计/策划/安排/选/挑/...)或
-决策疑问(怎么/如何/用什么/选哪个/哪种方案/哪个好)或
-领域关键词(音乐/教学/法律/商业/设计/写作/旅行/健身/...)→触发
-排除: 问候语/纯信息查询("什么意思"/"是什么")/已指定具体方案/纯代码审查
-≥2个可行方案是必要条件（由后续分析确认）
+Code hint (optional): `python scripts/mcts_compute.py trigger-check --message "<user message>"`
+The trigger keyword list is in Python. LLM should use semantic understanding as the primary trigger mechanism — keywords are only a fallback hint.
 
-### 启动信号
+Trigger conditions (any one triggers activation):
+- User requests to create/implement/develop/build/write/fix/optimize/refactor/design/plan/arrange/choose something
+- User asks "how to" / "what to use" / "which one" / "what's the best way"
+- User describes a problem or need without specifying the exact solution
+- User asks to analyze/evaluate/compare/review something
+- The message implicitly requires choosing among multiple reasonable approaches
 
-满足触发条件后，**必须立即输出启动信号**，不能默默开始：
+Do NOT trigger for:
+- Pure greetings / small talk
+- Pure information lookup ("what does X mean", "how does Y work")
+- User already specified the exact solution with no room for choice
+- Pure code review / explanation requests
+
+### Activation Signal
+
+When triggered, MUST output the activation signal immediately — do not start silently:
 
 ```
 ═══════════════════════════════════════
- ⚡ [MCTS-TD] 检测到决策需求，启动决策引擎
- 触发原因: [具体原因]
- 启动模式: [完整推演/简化推演/再推演]
+ ⚡ [MCTS-TD] Decision demand detected. Starting decision engine.
+ Trigger: [specific reason]
+ Mode: [full / quick / re-simulate]
 ═══════════════════════════════════════
 ```
 
-### 触发即启动，不自我怀疑
+### Trigger = Activate. No Self-Doubt.
 
 ```
-★ 关键规则: 不要自己判断"这个是不是太简单了不需要推演" ★
+★ KEY RULE: Do NOT judge "this is too simple, no need to simulate" ★
 
-错误判断: "登录功能很简单，不需要推演，直接用JWT就行"
-  → ❌ 这是替用户做决策，跳过了发散引擎
+Wrong: "Login is simple, just use JWT, no need to simulate."
+  → ❌ You're making the decision FOR the user, skipping the diverge engine.
 
-正确做法: "登录功能有JWT/Session/OAuth等多种方案，启动发散引擎"
-  → ✅ 让用户看到有哪些选择，用户决定是否需要推演
+Right: "Login has JWT/Session/OAuth options. Starting diverge engine."
+  → ✅ Let the user see what options exist. They decide whether to simulate.
 
-即使最终只有1个方案，也必须走完阶段1~3（六维地图→侦查→方案列表），
-然后在阶段3告诉用户"只有1个可行方案，直接执行吗？"
+Even if only 1 option exists, still run Phases 1~3, then say so at Phase 3.
 ```
 
-### 第1步：需求拆解
+### Step 1: Need Decomposition
 
-如果用户一句话里包含多个独立需求，先拆解。每个子需求独立走发散→推演→仲裁流程。
-
-```
-拆解原则: 找"方案选择点"——每个可以独立选择方案的地方就是一个子需求。
-  "帮我做一个博客系统，支持markdown，还要有评论功能"
-    → 子需求A: 博客框架选型 | 子需求B: Markdown渲染方案 | 子需求C: 评论系统方案
-  "帮我写一个用户登录功能"
-    → 单一需求，直接进入发散
-```
-
-### 第2步：发散引擎 — 发散 × 收敛
-
-**详细规则见 `engine/mcts-diverge.md`**。
-
-发散: 八面镜反复审视 + 交叉关联，收集想法碎片，补全盲区。
-收敛: 归类 → 补全 → 取舍 → 成形，从碎片中提炼2~8个结构化方案。
-
-### 第3步：收敛与决策
+If the user's message contains multiple independent needs, decompose first. Each sub-need independently goes through diverge→simulate→converge.
 
 ```
-收敛后:
-  ≥2 个可行方案 → 进入推演引擎
-  只有1种合理做法 → 不启动推演，直接执行
-  信息不足 → 追问用户后重新发散
+Decomposition principle: Find "decision points" — each point where an independent choice must be made.
+  "Build me a blog with markdown support and comments"
+    → Sub-need A: Blog framework choice | B: Markdown rendering | C: Comment system
+  "Add user login to my app"
+    → Single need, proceed directly to diverge
 ```
 
-## 引擎文件索引
+### Step 2: Diverge Engine — Diverge × Converge
 
-| 功能 | 文件 | 说明 |
-|------|------|------|
-| 需求约束收集 | `engine/mcts-constraint.md` | 约束检测清单、约束来源、约束变化处理 |
-| 发散引擎 | `engine/mcts-diverge.md` | 八面镜发散 + 归类/补全/取舍/成形收敛 |
-| 推演引擎 | `engine/mcts-simulate.md` | MCTS树搜索：Selection→Expansion→Simulation→Backpropagation |
-| 仲裁引擎 | `engine/mcts-converge.md` | 汇总排序 + 结果自检 + 盲区审计 + TD更新写回 |
-| 事后学习引擎 | `engine/td-learner.md` | TD误差计算、价值更新、知识图谱、跨会话持久化 |
-| 🧠 记忆存储引擎 | `scripts/knowledge_lifecycle.py` | L-GCMS: 门禁过滤+分层存储+遗忘曲线+情境回忆 |
-| 推演格式与策略 | `policies/task-policy.md` | 通用方案生成规则、推演格式、评分标准 |
-| 📖 算法原理 | `references/algorithm-reference.md` | 按需引用，不加载到每次推理上下文 |
-| 🖥 计算引擎 | `scripts/mcts_compute.py` | 纯数值计算（UCB/反向传播/收敛判定/状态机） |
+**Detailed rules in `engine/mcts-diverge.md`**.
+
+Diverge: Eight-Facet Mirror iterative review + cross-facet association → idea fragments + blindspot completion.
+Converge: Cluster → Complete → Cull → Crystallize → 2~8 structured solutions.
+
+### Step 3: Post-Convergence Decision
+
+```
+After convergence:
+  ≥2 feasible solutions → Enter simulate engine
+  Only 1 viable approach → Skip simulation, execute directly
+  Insufficient information → Ask user, then re-diverge
+```
+
+## Engine File Index
+
+| Function | File | Description |
+|----------|------|-------------|
+| Constraint Collection | `engine/mcts-constraint.md` | Constraint checklist, sources, change handling |
+| Diverge Engine | `engine/mcts-diverge.md` | Eight-Facet Mirror diverge + Cluster/Complete/Cull/Crystallize converge |
+| Simulate Engine | `engine/mcts-simulate.md` | MCTS tree search: Selection→Expansion→Simulation→Backpropagation |
+| Converge Engine | `engine/mcts-converge.md` | Aggregation + self-check + blindspot audit + TD update write-back |
+| TD Learning Engine | `engine/td-learner.md` | TD error, value update, knowledge graph, cross-session persistence |
+| 🧠 Memory Engine | `scripts/knowledge_lifecycle.py` | L-GCMS: gate filtering + tiered storage + forgetting curve + context recall |
+| Simulation Format | `policies/task-policy.md` | General solution generation rules, simulation format, scoring rubric |
+| 📖 Algorithm Ref | `references/algorithm-reference.md` | On-demand reference, not loaded in reasoning context |
+| 🖥 Compute Engine | `scripts/mcts_compute.py` | Numerical computation (UCB/backprop/convergence/state machine) |
 
 ---
 
-## ⚡ 记忆数据安全
+## ⚡ Memory Data Safety
 
-知识图谱存储在 `~/.claude/data/skills/mcts-td-planner/`，与 skill 代码物理隔离。更新/重装/卸载均不影响记忆数据。清空记忆请手动删除该目录。
+Knowledge graph stored at `~/.claude/data/skills/mcts-td-planner/`. Physically isolated from skill code. Updates/reinstalls/uninstalls do not affect accumulated knowledge. Delete that directory to reset memory.
