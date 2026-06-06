@@ -1,6 +1,12 @@
 ---
 name: mcts-td-planner
-description: Universal decision engine — on every user message, force-start the diverge engine: decompose multiple needs → multi-angle divergence → converge into feasible options. When multiple options exist, launch the simulate engine (sub-agent independent causal chain simulation) → converge engine (aggregate comparison + pre-execution self-check), select and execute the optimal option. Based on MCTS (Monte Carlo Tree Search) + TD (Temporal Difference) hybrid algorithm. Suitable for any decision scenario requiring multi-option evaluation.
+description: |
+  Universal decision engine with language adaptation. MANDATORY RULES:
+  1. DETECT user language via: python scripts/language_adapter.py detect --message "<msg>"
+  2. ALL user-facing output MUST be in detected language (zh→中文, ja→日本語, ko→한국어, en→English)
+  3. Execute phases: [Review Map] → [Recon Report] → [Solution List] → [Decision Report]
+  4. Use language_adapter.py for labels: python scripts/language_adapter.py labels --lang <lang>
+  Internal reasoning is English; user sees their language. This is NON-NEGOTIABLE.
 version: 1.4.0
 license: MIT
 alwaysApply: true
@@ -20,11 +26,11 @@ This Skill's core engine is fully English. The language adaptation layer handles
 ┌─────────────────────────────────────────────────────────────┐
 │  STEP 0 (MANDATORY — before any engine logic):              │
 │                                                             │
-│  ① DETECT user's language from their message.               │
-│     If the user writes in Chinese → user_lang = "zh"        │
-│     If in Japanese → user_lang = "ja"                       │
-│     If in English → user_lang = "en"                        │
-│     etc.                                                    │
+│  ① DETECT user's language (CODE-ENFORCED):                  │
+│     python scripts/language_adapter.py detect               │
+│       --message "<user message>"                            │
+│     → Returns {"lang": "zh"|"ja"|"ko"|"en"|...}            │
+│     → Also sets language state for session                  │
 │                                                             │
 │  ② INTERNALLY translate the user's request to English.     │
 │     This ensures the English engine rules match correctly.  │
@@ -33,14 +39,16 @@ This Skill's core engine is fully English. The language adaptation layer handles
 │  ③ Execute all engine logic IN ENGLISH internally.         │
 │     (diverge → simulate → converge — all rules are English) │
 │                                                             │
-│  ④ OUTPUT to user: translate ALL user-facing content        │
-│     back to user_lang. This includes:                       │
-│     - Phase labels (八面审视地图 / Eight-Facet Review Map)  │
-│     - Dimension names, scores, descriptions                 │
-│     - Solution descriptions                                │
-│     - Decision reports                                     │
-│     - Confirmation prompts                                 │
-│     - Questions to the user                                │
+│  ④ OUTPUT to user (CODE-ENFORCED LABELS):                   │
+│     For FIXED LABELS, use code:                             │
+│       python scripts/language_adapter.py labels --lang zh   │
+│       python scripts/language_adapter.py template           │
+│         --phase review_map --lang zh --task "登录功能"      │
+│                                                             │
+│     For DYNAMIC CONTENT, LLM translates:                    │
+│       - Solution descriptions                               │
+│       - Risk descriptions                                   │
+│       - Dimension-specific analysis                         │
 │                                                             │
 │  ⚠️ Step ④ is NOT optional. If the user writes in Chinese,  │
 │     every single line they see MUST be in Chinese.          │
@@ -48,7 +56,10 @@ This Skill's core engine is fully English. The language adaptation layer handles
 └─────────────────────────────────────────────────────────────┘
 ```
 
-**Enforcement**: After every output block, self-check: "Is this in the user's language?" If not, retranslate.
+**Enforcement**: 
+- **Code-enforced**: Language detection and fixed labels via `language_adapter.py`
+- **Prompt-enforced**: After every output block, self-check: "Is this in the user's language?" If not, retranslate.
+- **State tracking**: `language_adapter.py state --check` to verify consistency
 
 ---
 
@@ -327,6 +338,7 @@ After convergence:
 | Simulate Engine | `engine/mcts-simulate.md` | MCTS tree search: Selection→Expansion→Simulation→Backpropagation |
 | Converge Engine | `engine/mcts-converge.md` | Aggregation + self-check + blindspot audit + TD update write-back |
 | TD Learning Engine | `engine/td-learner.md` | TD error, value update, knowledge graph, cross-session persistence |
+| 🌐 Language Adapter | `scripts/language_adapter.py` | **CODE-ENFORCED** language detection + labels + templates |
 | 🧠 Memory Engine | `scripts/knowledge_lifecycle.py` | L-GCMS: gate filtering + tiered storage + forgetting curve + context recall |
 | Simulation Format | `policies/task-policy.md` | General solution generation rules, simulation format, scoring rubric |
 | 📖 Algorithm Ref | `references/algorithm-reference.md` | On-demand reference, not loaded in reasoning context |

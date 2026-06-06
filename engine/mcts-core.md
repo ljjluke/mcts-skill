@@ -1,42 +1,45 @@
 ---
 name: mcts-core
-description: (已归档) 本文件已被拆分为 4 个独立的引擎文件。请直接使用新文件。
+description: (Archived) This file has been split into 4 independent engine files. Please use the new files directly.
 ---
 
-# ⚠️ 本文件已拆分
+# ⚠️ This File Has Been Split
 
-`mcts-core.md` (原 1703 行) 已被拆分为 4 个独立引擎文件，**不要再引用本文件**。
+`mcts-core.md` (originally 1703 lines) has been split into 4 independent engine files. **Do not reference this file anymore**.
 
-## 新文件索引
+## New File Index
 
-| 原章节 | 新文件 |
-|--------|--------|
-| 第0步：需求约束收集 | [`engine/mcts-constraint.md`](./mcts-constraint.md) |
-| 第1步：六维地图+六路侦查+视角轮盘+粗筛 | **[`engine/mcts-diverge.md`](./mcts-diverge.md)** ← 发散引擎，重点升级 |
-| 第2步：逐轮独立推演+知识注入+补全箱 | [`engine/mcts-simulate.md`](./mcts-simulate.md) |
-| 第3~3.6步：汇总+自检+盲区审计+再推演 | **[`engine/mcts-converge.md`](./mcts-converge.md)** ← 仲裁引擎，新增盲区审计 |
-| 学习引擎 | [`engine/td-learner.md`](./td-learner.md) (未变) |
+| Original Section | New File |
+|------------------|----------|
+| Step 0: Requirement Constraint Collection | [`engine/mcts-constraint.md`](./mcts-constraint.md) |
+| Step 1: Six-Dimension Map + Six-Path Recon + Perspective Wheel + Rough Filter | **[`engine/mcts-diverge.md`](./mcts-diverge.md)** ← Diverge Engine, major upgrade |
+| Step 2: Round-by-round Independent Simulation + Knowledge Injection + Completion Box | [`engine/mcts-simulate.md`](./mcts-simulate.md) |
+| Step 3~3.6: Aggregate + Self-check + Blindspot Audit + Re-simulation | **[`engine/mcts-converge.md`](./mcts-converge.md)** ← Converge Engine, added blindspot audit |
+| Learning Engine | [`engine/td-learner.md`](./td-learner.md) (unchanged) |
 
-## 变更概要
+## Change Summary
 
 ```
-拆分前 (1.3.0):                     拆分后 (1.4.0):
-engine/mcts-core.md (1703行)         engine/mcts-constraint.md (约束)
-  ├─ 第0步: 约束收集                  engine/mcts-diverge.md (发散)
-  ├─ 第1步: 已知检测+资料+方案+粗筛     engine/mcts-simulate.md (推演)
-  ├─ 第2步: 逐轮推演+知识+缺口的查     engine/mcts-converge.md (仲裁+自检)
-  ├─ 第3步: 汇总比较                  engine/td-learner.md (学习，未变)
-  ├─ 第3.5步: 自检+熔断
-  ├─ 第3.6步: 盲区审计 (新增)
-  └─ 再推演+TD误差
+Before Split (1.3.0):                  After Split (1.4.0):
+engine/mcts-core.md (1703 lines)       engine/mcts-constraint.md (Constraints)
+  ├─ Step 0: Constraint Collection      engine/mcts-diverge.md (Diverge)
+  ├─ Step 1: Known Detection +          engine/mcts-simulate.md (Simulate)
+  │         Resources + Solutions +     engine/mcts-converge.md (Converge +
+  │         Rough Filter                           Self-check)
+  ├─ Step 2: Round Simulation +         engine/td-learner.md (Learning, unchanged)
+  │         Knowledge + Gap Check
+  ├─ Step 3: Aggregate Comparison
+  ├─ Step 3.5: Self-check + Fuse
+  ├─ Step 3.6: Blindspot Audit (new)
+  └─ Re-simulation + TD Error
 ```
 
-## 版本更新说明
+## Version Update Notes
 
-**1.3.0 → 1.4.0 的升级内容包括:**
-1. 引擎文件从 1 个拆分为 4 个，职责清晰
-2. 领域熟悉度检测 → **六维领域地图**（6维评分+盲区识别）
-3. 资料收集 → **六路侦查**（6条情报路径+交叉验证）
-4. 方案生成 → **视角轮盘**（10种视角+4~8个强制覆盖）
-5. 新增 **第3.6步: 领域盲区审计**（检查视角覆盖度）
-6. 全局补全箱升级为 **V2：知识缺口 + 视角覆盖追踪**
+**1.3.0 → 1.4.0 upgrade includes:**
+1. Engine files split from 1 to 4, clear responsibilities
+2. Domain familiarity detection → **Six-Dimension Domain Map** (6-dimension scoring + blindspot identification)
+3. Resource collection → **Six-Path Recon** (6 intel paths + cross-validation)
+4. Solution generation → **Perspective Wheel** (10 perspectives + 4~8 mandatory coverage)
+5. Added **Step 3.6: Domain Blindspot Audit** (check perspective coverage)
+6. Global completion box upgraded to **V2: Knowledge Gaps + Perspective Coverage Tracking**

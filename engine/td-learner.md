@@ -1,92 +1,93 @@
 ---
 name: td-learner
-description: TDL(时序差分学习)引擎的核心推理规则。基于知识图谱+状态机的价值函数管理，支持多版本知识共存、冲突检测、状态转换和回滚机制。
+description: TDL (Temporal Difference Learning) Engine's core inference rules. Based on knowledge graph + state machine value function management, supports multi-version knowledge coexistence, conflict detection, state transition and rollback mechanism.
 ---
 
-# TD 学习引擎
+# TD Learning Engine
 
-## 概述
+## Overview
 
-本引擎将 TD(λ) 算法的核心机制转化为推理规则，核心能力包括：
-1. **知识图谱价值管理**：每条知识独立存储，有生命周期状态
-2. **多版本冲突检测**：同一特征的多条矛盾知识可以共存，查询时加权投票
-3. **状态机转换**：知识从假设→验证→确认→争议→证伪，完整生命周期
-4. **回滚机制**：被推翻的知识可以回滚到上一个稳定版本
-5. **Gamma 折扣价值回溯**：标准的 TD 价值更新
+This engine transforms TD(λ) algorithm's core mechanisms into inference rules. Core capabilities include:
+1. **Knowledge Graph Value Management**: Each piece of knowledge stored independently, has lifecycle state
+2. **Multi-version Conflict Detection**: Multiple contradictory knowledge for same feature can coexist, weighted voting at query time
+3. **State Machine Transitions**: Knowledge goes through hypothesis→verified→confirmed→disputed→refuted, complete lifecycle
+4. **Rollback Mechanism**: Overturned knowledge can rollback to previous stable version
+5. **Gamma Discounted Value Backpropagation**: Standard TD value update
 
 ---
 
-## 核心公式的推理映射
+## Core Formula Inference Mapping
 
-### 原版公式
+### Original Formula
 
 $$TD\_target = r_{t+1} + \gamma V(s_{t+1})$$
 $$TD\_error = TD\_target - V(s_t)$$
 $$V(s_t) \leftarrow V(s_t) + \alpha \times TD\_error$$
 
-### 推理映射
+### Inference Mapping
 
 ```
-TD_target = 局部反馈 + γ × 后续步骤的预期价值
-TD_error = TD_target - 当前步骤的旧预期价值
-新预期价值 = 旧预期价值 + α × TD_error
+TD_target = Local feedback + γ × Expected value of subsequent steps
+TD_error = TD_target - Old expected value of current step
+New expected value = Old expected value + α × TD_error
 ```
 
-| 公式符号 | 推理对应 | 获取方式 |
-|---------|---------|---------|
-| $V(s_t)$ | 步骤 t 的成功预期 | 知识图谱查询（加权投票） |
-| $r_{t+1}$ | 局部反馈 | 编译/测试/lint 结果 |
-| $V(s_{t+1})$ | 后续步骤预期 | 知识图谱查询 |
-| $\alpha$ | 学习率 | 按任务类型设定 |
-| $\gamma$ | 折扣因子 | 按任务类型设定 |
+| Formula Symbol | Inference Correspondence | Acquisition Method |
+|---------------|-------------------------|---------------------|
+| $V(s_t)$ | Success expectation at step t | Knowledge graph query (weighted voting) |
+| $r_{t+1}$ | Local feedback | Compile/test/lint results |
+| $V(s_{t+1})$ | Subsequent step expectation | Knowledge graph query |
+| $\alpha$ | Learning rate | Set by task type |
+| $\gamma$ | Discount factor | Set by task type |
 
 ---
 
-## 反馈收集规则
+## Feedback Collection Rules
 
-### 奖励信号定义
+### Reward Signal Definition
 
-反馈收集发生在任务执行的每个步骤后：
+Feedback collection occurs after each step of task execution:
 
 ```
 r_t = 
-  +1.0  − 编译/测试完全通过
-  +0.5  − 部分通过（编译通过但警告）
-   0.0  − 无显著反馈
-  -0.3  − 编译警告或lint错误
-  -0.7  − 测试失败
-  -1.0  − 编译失败/引入新Bug
+  +1.0  − Compile/test completely pass
+  +0.5  − Partial pass (compile passes but warnings)
+   0.0  − No significant feedback
+  -0.3  − Compile warnings or lint errors
+  -0.7  − Test failure
+  -1.0  − Compile failure/introduced new bug
 ```
 
-### 终止状态价值
+### Terminal State Value
 
 ```
 V(s_terminal) =
-  +1.0  − 任务完全成功（所有目标达成）
-  +0.5  − 部分成功（主要功能完成，边缘情况未处理）
-   0.0  − 中性（任务完成但质量一般）
-  -0.5  − 有副作用（修改了A但破坏了B）
-  -1.0  − 任务失败/需要回滚
+  +1.0  − Task completely successful (all goals achieved)
+  +0.5  − Partial success (main function complete, edge cases unhandled)
+   0.0  − Neutral (task complete but quality mediocre)
+  -0.5  − Side effects (modified A but broke B)
+  -1.0  − Task failed/need rollback
 ```
 
 ---
 
-## 价值更新规则
+## Value Update Rules
 
-### Gamma 折扣反向传播
+### Gamma Discounted Backpropagation
 
-从 tetris_mcts 的 `backup_trace_obs` 函数移植的推理规则：
+Inference rules ported from tetris_mcts's `backup_trace_obs` function:
 
 ```
-输入：决策轨迹 [s_0, s_1, ..., s_T], 叶节点价值 V_leaf, 叶节点方差 σ²_leaf
+Input: Decision trace [s_0, s_1, ..., s_T], leaf node value V_leaf, 
+       leaf node variance σ²_leaf
 
-从 t=T 到 t=0 反向遍历：
-    1. 获取节点 s_t 的即时分数 score(s_t)
+Traverse backwards from t=T to t=0:
+    1. Get node s_t's immediate score score(s_t)
     
-    2. 去除即时分数得到纯价值
+    2. Remove immediate score to get pure value
        V_corrected = current_value - score(s_t)
     
-    3. 更新 s_t 的价值估计（Welford算法）
+    3. Update s_t's value estimate (Welford algorithm)
        if visit(s_t) == 0:
            value(s_t) = V_corrected
            variance(s_t) = σ²_leaf
@@ -97,28 +98,28 @@ V(s_terminal) =
            variance(s_t) += (delta × delta2 - variance(s_t)) / (visit(s_t) + 1)
        visit(s_t) += 1
     
-    4. Gamma 折扣后传递到前一个节点
+    4. Gamma discount then pass to previous node
        current_value = γ × V_corrected + score(s_t)
 ```
 
-### 学习率 α 的选择
+### Learning Rate α Selection
 
-| 历史数据量 | α | 说明 |
-|-----------|---|------|
-| 0-5 次 | 0.5 | 快速适应，少量数据快速调整 |
-| 6-20 次 | 0.2 | 中等速度 |
-| 21-100 次 | 0.1 | 稳定学习 |
-| >100 次 | 0.05 | 微调，防止震荡 |
+| Historical Data Volume | α | Explanation |
+|----------------------|---|-------------|
+| 0-5 times | 0.5 | Fast adaptation, quick adjustment with little data |
+| 6-20 times | 0.2 | Medium speed |
+| 21-100 times | 0.1 | Stable learning |
+| >100 times | 0.05 | Fine-tuning, prevent oscillation |
 
 ---
 
-## Welford 方差推理规则
+## Welford Variance Inference Rules
 
-从 tetris_mcts 的 Welford 在线方差算法移植：
+Ported from tetris_mcts's Welford online variance algorithm:
 
 ```
-方差更新（单步）：
-    输入: 历史均值 μ_old, 历史M2_old, 计数 n, 新值 x
+Variance Update (single step):
+    Input: Historical mean μ_old, historical M2_old, count n, new value x
     
     n_new = n + 1
     delta = x - μ_old
@@ -126,11 +127,11 @@ V(s_terminal) =
     delta2 = x - μ_new
     M2_new = M2_old + delta × delta2
     
-    方差 = M2_new / n_new
-    标准差 = √(方差)
+    Variance = M2_new / n_new
+    Standard deviation = √(Variance)
 
-方差更新（批量，用于资格迹回溯）：
-    输入: 轨迹 [x_1, x_2, ..., x_k], 折扣因子 γ
+Variance Update (batch, for eligibility trace backpropagation):
+    Input: Trace [x_1, x_2, ..., x_k], discount factor γ
     
     current_value = x_k
     for i = k-1 to 1:
@@ -138,23 +139,24 @@ V(s_terminal) =
         current_value = discounted
 ```
 
-### 方差的使用规则
+### Variance Usage Rules
 
 ```
-方差→信心映射: `python scripts/mcts_compute.py` get_confidence_level
-σ²<0.1→高 | 0.1~0.3→中 | ≥0.3→低
+Variance→Confidence mapping:
+  `python scripts/mcts_compute.py` get_confidence_level
+  σ²<0.1→High | 0.1~0.3→Medium | ≥0.3→Low
 ```
 
 ---
 
-## 状态投影去重（Projection）
+## State Projection Deduplication
 
-从 tetris_mcts 的 projection 机制移植：
+Ported from tetris_mcts's projection mechanism:
 
 ```
-概念：两个"相同"的状态特征应该共享知识图谱查询
+Concept: Two "identical" state features should share knowledge graph query
 
-在 Claude Code 中，状态的"相等"由状态特征向量决定：
+In Claude Code, state "equality" is determined by state feature vector:
   State = {
       task_type: BUG_FIX | FEATURE | REFACTOR | DEBUG | TEST
       domain: WEB | API | CLI | DB | CONFIG | GENERAL
@@ -164,544 +166,584 @@ V(s_terminal) =
       novelty: LOW | MED | HIGH
   }
 
-查询规则：
-  使用完整特征向量作为查询键，查找知识图谱中所有匹配的知识条目。
-  完全匹配 → 返回所有匹配条目（可能有多条）
-  部分匹配 → 返回最接近的条目 + 标记"部分匹配"
-  无匹配 → 返回空（冷启动）
+Query Rules:
+  Use complete feature vector as query key, find all matching knowledge
+  entries in knowledge graph.
+  Exact match → Return all matching entries (may be multiple)
+  Partial match → Return closest entry + mark "partial match"
+  No match → Return empty (cold start)
 ```
 
 ---
 
-## 资格迹（Eligibility Trace）推理规则
+## Eligibility Trace Inference Rules
 
-从 TD(λ) 算法移植：
+Ported from TD(λ) algorithm:
 
-### 概念
+### Concept
 
-资格迹解决"信用分配"问题——当最终得到反馈时，**哪些步骤应该为这个结果负责？**
+Eligibility trace solves "credit assignment" problem — when final feedback is received, **which steps should be responsible for this result?**
 
 ```
-模拟场景：
-  步骤1: 选择了方案A        ← 这是关键决策吗？
-  步骤2: 修改了文件x        ← 还是这里？
-  步骤3: 编译失败           ← 还是这里？
+Simulation scenario:
+  Step 1: Chose Solution A        ← Is this the key decision?
+  Step 2: Modified file x          ← Or here?
+  Step 3: Compile failed           ← Or here?
   
-  资格迹 λ = 0.8 意味着：
-    步骤1 获得 20% 的信用
-    步骤2 获得 80% 的信用
-    步骤3 获得 100% 的信用
+  Eligibility trace λ = 0.8 means:
+    Step 1 gets 20% of credit
+    Step 2 gets 80% of credit
+    Step 3 gets 100% of credit
 ```
 
-### 规则
+### Rules
 
 ```
-资格迹衰减：步骤 t 的资格 = λ^(T-t)
-推荐 λ: `python scripts/mcts_compute.py get-lambda --steps <N>`
-→ 1-3步:0.0 | 4-8步:0.5 | 9+步:0.8
-```
-
----
-
-## 经验回放与在线学习
-
-从 tetris_mcts 的 `store_nodes` 和 `train_nodes` 移植：
-
-### 经验收集
-
-```
-每次搜索完成后，收集以下经验：
-  - state: 当前状态特征向量
-  - value: 搜索得到的价值估计
-  - variance: 搜索得到的方差估计
-  - weight: 访问次数（置信度权重）
-
-存储条件：
-  - 访问次数 >= min_visits_to_store（默认=10）
-  - 非终止状态（终止状态的V=0，无学习价值）
-```
-
-### 经验回放
-
-```
-当收集到足够经验（N >= 阈值）时：
-  1. 汇总所有经验
-  2. 按权重排序，保留 Top-K 条
-  3. 使用加权平均更新知识图谱
-  4. 记忆持久化到文件
-
-阈值设计：
-  min_experiences = 20  （最少积累20条经验才回放）
-  max_experiences = 500 （最多保留500条，超出则丢弃旧数据）
+Eligibility trace decay: Step t's eligibility = λ^(T-t)
+Recommended λ: `python scripts/mcts_compute.py get-lambda --steps <N>`
+→ 1-3 steps: 0.0 | 4-8 steps: 0.5 | 9+ steps: 0.8
 ```
 
 ---
 
-## ⚠️ 价值函数管理（知识图谱 + 状态机）
+## Experience Replay and Online Learning
 
-这是本引擎的核心升级——从"每特征一行聚合统计"升级为"每条知识独立管理"的知识图谱模式。
+Ported from tetris_mcts's `store_nodes` and `train_nodes`:
 
-### 根本性问题
-
-旧模式（聚合统计）无法处理的场景：
+### Experience Collection
 
 ```
-旧模式: {BUG_FIX, WEB, LOW} → q=0.85, n=30, σ²=0.05
+After each search completes, collect following experiences:
+  - state: Current state feature vector
+  - value: Value estimate from search
+  - variance: Variance estimate from search
+  - weight: Visit count (confidence weight)
 
-问题1: 如果这个0.85是技术栈v1下的数据，技术栈升级到v2后实际价值降到0.3
-        → 旧模式只能取平均，结果0.575，两个版本都不准
-
-问题2: 如果0.85这个知识本身是错的（初始数据偏差）
-        → n越大，错误越"可信"，无法纠偏
-
-问题3: 如果后来验证了新知识0.3也是错的，旧知识0.85才是对的
-        → 旧值已被覆盖，无法回滚
+Storage Conditions:
+  - Visit count >= min_visits_to_store (default=10)
+  - Non-terminal state (terminal state V=0, no learning value)
 ```
 
-### 新模式：知识条目 + 状态机
-
-每条知识是一个独立条目，有自己的生命周期：
+### Experience Replay
 
 ```
-知识条目 = {
-    id: "K001",                    // 唯一标识
-    feature_key: "BUG_FIX|WEB|LOW", // 状态特征
-    value: 0.85,                   // 价值估计
-    variance: 0.05,                // 方差
-    n: 30,                         // 验证次数
-    status: "CONFIRMED",           // 当前状态（见状态机）
-    context: {                     // 知识成立的上下文
+When enough experience collected (N >= threshold):
+  1. Aggregate all experiences
+  2. Sort by weight, keep Top-K
+  3. Update knowledge graph using weighted average
+  4. Persist memory to file
+
+Threshold Design:
+  min_experiences = 20  (Minimum 20 experiences before replay)
+  max_experiences = 500 (Maximum 500 retained, discard old data if exceeded)
+```
+
+---
+
+## ⚠️ Value Function Management (Knowledge Graph + State Machine)
+
+This is this engine's core upgrade — from "one row per feature aggregate statistics" to "each knowledge piece independently managed" knowledge graph mode.
+
+### Fundamental Problem
+
+Old mode (aggregate statistics) cannot handle scenarios:
+
+```
+Old mode: {BUG_FIX, WEB, LOW} → q=0.85, n=30, σ²=0.05
+
+Problem 1: If this 0.85 was data under tech stack v1, after tech stack
+           upgrades to v2, actual value drops to 0.3
+           → Old mode can only average, result 0.575, neither version accurate
+
+Problem 2: If this 0.85 knowledge itself is wrong (initial data bias)
+           → Larger n, more "credible" the error, cannot correct
+
+Problem 3: If later verified new knowledge 0.30 is also wrong, old
+           knowledge 0.85 was actually correct
+           → Old value already overwritten, cannot rollback
+```
+
+### New Mode: Knowledge Entry + State Machine
+
+Each piece of knowledge is an independent entry with its own lifecycle:
+
+```
+Knowledge Entry = {
+    id: "K001",                    // Unique identifier
+    feature_key: "BUG_FIX|WEB|LOW", // State feature
+    value: 0.85,                   // Value estimate
+    variance: 0.05,                // Variance
+    n: 30,                         // Verification count
+    status: "CONFIRMED",           // Current status (see state machine)
+    context: {                     // Context where knowledge holds
         tech_stack: "v1.0",
-        project_phase: "早期",
-        constraints: "无特殊约束"
+        project_phase: "early",
+        constraints: "no special constraints"
     },
     created: "2026-05-01",
     last_verified: "2026-06-01",
-    source: "经验积累（30次任务）",
-    conflict_log: []               // 冲突记录
+    source: "Experience accumulation (30 tasks)",
+    conflict_log: []               // Conflict records
 }
 ```
 
-### 知识状态机
+### Knowledge State Machine
 
-每条知识条目在生命周期中经历以下状态转换：
+Each knowledge entry undergoes following state transitions in its lifecycle:
 
 ```
                         ┌─────────────────────┐
-                        │   HYPOTHESIS        │  ← 初始状态：新知识，尚未验证
-                        │   (假设)             │
-                        │   权重: 0.1 (低权重 │
-                        │   参与，用于探索引导)│
+                        │   HYPOTHESIS        │  ← Initial state: new knowledge,
+                        │   (Hypothesis)       │    not yet verified
+                        │   Weight: 0.1 (low   │
+                        │   weight participation│
+                        │   for exploration    │
+                        │   guidance)          │
                         └──────────┬──────────┘
-                                   │ 首次被引用且有正面反馈
+                                   │ First reference with positive feedback
                                    ▼
                         ┌─────────────────────┐
                   ┌─────│   PROVISIONAL       │──────┐
-                  │     │   (待验证)           │      │
-                  │     │   权重: 0.3         │      │
+                  │     │   (Pending          │      │
+                  │     │   Verification)     │      │
+                  │     │   Weight: 0.3       │      │
                   │     └──────────┬──────────┘      │
                   │                │                  │
-                  │    积累≥3次     │  出现矛盾证据    │ 出现反例
-                  │    正面验证    │                  │
+                  │   Accumulated  │  Contradictory  │ Counterexample
+                  │   ≥3 positive  │  evidence       │ appears
+                  │   verifications │  appears        │
                   ▼                ▼                  ▼
           ┌──────────────┐ ┌──────────────┐ ┌──────────────┐
           │  CONFIRMED   │ │  DISPUTED    │ │  REFUTED     │
-          │  (已确认)     │ │  (争议)       │ │  (已证伪)     │
-          │  权重: 1.0   │ │  权重: 0.2   │ │  权重: 0.0   │
+          │  (Confirmed) │ │  (Disputed)  │ │  (Refuted)   │
+          │  Weight: 1.0 │ │  Weight: 0.2 │ │  Weight: 0.0 │
           └──────┬───────┘ └──────┬───────┘ └──────────────┘
                  │                │
-                 │ 出现反例       │ 新证据支持
+                 │ Counterexample │ New evidence
+                 │ appears        │ supports
                  ▼                ▼
           ┌──────────────┐ ┌──────────────┐
-          │  DISPUTED    │ │  CONFIRMED   │  ← 回滚
-          │  (争议)       │ │  (已确认)     │
+          │  DISPUTED    │ │  CONFIRMED   │  ← Rollback
+          │  (Disputed)  │ │  (Confirmed) │
           └──────────────┘ └──────────────┘
 
-                    ▼ [超过30天未使用]
+                    ▼ [Unused for >30 days]
           ┌─────────────────────┐
-          │   SLEEPING          │  ← 休眠：超过30天未使用，权重减半
-          │   (休眠)             │
-          │   权重: 0.3×0.5     │
+          │   SLEEPING          │  ← Sleeping: unused >30 days, weight halved
+          │   (Sleeping)        │
+          │   Weight: 0.3×0.5   │
           └──────────┬──────────┘
-                     │ 被再次触发回忆
+                     │ Triggered by recall again
                      ▼
           ┌─────────────────────┐
-          │   PROVISIONAL       │  ← 恢复待验证状态（需重新验证）
-          │   权重: 0.3         │
+          │   PROVISIONAL       │  ← Return to pending verification state
+          │   Weight: 0.3       │    (needs re-verification)
           └─────────────────────┘
 
-                    ▼ [超过90天未使用]
+                    ▼ [Unused for >90 days]
           ┌─────────────────────┐
-          │   ARCHIVED          │  ← 归档：不参与常规召回
-          │   (归档)             │
-          │   权重: 不参与查询   │
-          └─────────────────────┘
+          │   ARCHIVED          │  ← Archived: doesn't participate in
+          │   (Archived)         │    routine recall
+          │   Weight: Not       │
+          │   participating     │
+          │   in queries        │
+          └──────────┬──────────┘
                      │
-                     │ 被联想回忆触发
+                     │ Triggered by associative recall
                      ▼
           ┌─────────────────────┐
-          │   HYPOTHESIS        │  ← 回忆出来，需要重新验证
-          │   权重: 0.1 (低权重 │
-          │   参与，用于探索引导)│
+          │   HYPOTHESIS        │  ← Recalled, needs re-verification
+          │   Weight: 0.1 (low  │
+          │   weight            │
+          │   participation     │
+          │   for exploration   │
+          │   guidance)         │
           └─────────────────────┘
 ```
 
-### 状态转换规则
+### State Transition Rules
 
-状态转换由代码引擎计算: `python scripts/mcts_compute.py check_status_transition`
-权重查询: `python scripts/mcts_compute.py get-status-weight --status <状态>`
+State transitions calculated by code engine:
+`python scripts/mcts_compute.py check_status_transition`
+Weight query: `python scripts/mcts_compute.py get-status-weight --status <status>`
 
-核心规则: HYPOTHESIS→(验证1次)→PROVISIONAL/REFUTED | PROVISIONAL→(n≥3)→CONFIRMED
-           CONFIRMED→(矛盾≥2次)→DISPUTED | DISPUTED→(矛盾≥3次)→REFUTED
-           回滚: DISPUTED→(新证据支持)→CONFIRMED | ARCHIVED→(回忆触发)→HYPOTHESIS
+Core rules:
+  HYPOTHESIS→(verified 1 time)→PROVISIONAL/REFUTED |
+  PROVISIONAL→(n≥3)→CONFIRMED |
+  CONFIRMED→(contradiction≥2)→DISPUTED |
+  DISPUTED→(contradiction≥3)→REFUTED |
+  Rollback: DISPUTED→(new evidence supports)→CONFIRMED |
+  ARCHIVED→(recall triggered)→HYPOTHESIS
 
-### 权重体系
+### Weight System
 
-每种状态的知识条目在查询时赋予不同权重：
+Each status's knowledge entry receives different weight at query time:
 
-| 状态 | 权重 | 含义 |
-|------|------|------|
-| CONFIRMED | 1.0 | 可信知识，完全参与价值计算 |
-| PROVISIONAL | 0.3 | 待验证知识，低权重参与 |
-| DISPUTED | 0.2 | 争议知识，保留但不信任 |
-| REFUTED | 0.0 | 证伪知识，不参与查询（仅追溯） |
-| HYPOTHESIS | 0.1 | 新知识，低权重参与召回（用于探索引导） |
-| SLEEPING | 0.15 | 休眠知识，30天未使用，权重减半 |
-| ARCHIVED | — | 归档知识，不参与常规召回 |
-```
+| Status | Weight | Meaning |
+|--------|--------|---------|
+| CONFIRMED | 1.0 | Trusted knowledge, fully participates in value calculation |
+| PROVISIONAL | 0.3 | Pending verification, low weight participation |
+| DISPUTED | 0.2 | Controversial knowledge, retained but not trusted |
+| REFUTED | 0.0 | Refuted knowledge, doesn't participate in queries (trace only) |
+| HYPOTHESIS | 0.1 | New knowledge, low weight participation in recall (for exploration) |
+| SLEEPING | 0.15 | Sleeping knowledge, unused >30 days, weight halved |
+| ARCHIVED | — | Archived knowledge, doesn't participate in routine recall |
 
-### 权重体系
+### ⚠️ Knowledge Recall Algorithm (Core)
 
-每种状态的知识条目在查询时赋予不同权重：
+> Human brain's way of recalling knowledge is not "multi-path parallel lookup + score sorting",
+> but: **See problem → Most relevant memory automatically surfaces (possibly incomplete)
+> → Follow associations to complete fragments → If still not enough, look up external info**
 
-| 状态 | 权重 | 含义 |
-|------|------|------|
-| CONFIRMED | 1.0 | 可信知识，完全参与价值计算 |
-| PROVISIONAL | 0.3 | 待验证知识，低权重参与 |
-| DISPUTED | 0.2 | 争议知识，保留但不信任 |
-| REFUTED | 0.0 | 证伪知识，不参与查询（仅追溯） |
-| HYPOTHESIS | 0.1 | 新知识，低权重参与召回（用于探索引导） |
+This engine simulates this human brain process with three stages:
+**Associative Recall → Fragment Completion → External Verification**.
 
-### ⚠️ 知识召回算法（核心）
-
-> 人脑回忆知识的方式不是"多路并行查表+算分排序"，而是：
-> **看到问题 → 最相关的记忆自动浮现（可能残缺）→ 顺着联想补全碎片 → 如果还不够就去查资料**
-
-本引擎模拟人脑的这个过程，分为三个环节：**联想回忆 → 碎片补全 → 外部求证**。
-
-#### 回忆流程概览
+#### Recall Process Overview
 
 ```
-查询请求: {当前任务描述, 当前上下文}
+Query Request: {Current task description, Current context}
 
           ┌─────────────────────────────────┐
-          │  第1步: 联想回忆                 │
-          │  不是"查"，而是"想起来"           │
-          │  → 最相关的几条知识自动浮现       │
-          │  → 浮现的知识可能残缺             │
+          │  Step 1: Associative Recall      │
+          │  Not "lookup", but "remember"    │
+          │  → Most relevant few knowledge   │
+          │    pieces automatically surface  │
+          │  → Surfaced knowledge may be     │
+          │    incomplete                    │
           └──────────────┬──────────────────┘
                          ▼
           ┌─────────────────────────────────┐
-          │  第2步: 碎片补全                 │
-          │  回忆起来的知识如果不完整:        │
-          │  → 顺着已有碎片联想出去           │
-          │  → 关联到其他相关知识             │
-          │  → 拼凑出更完整的画面             │
+          │  Step 2: Fragment Completion    │
+          │  If recalled knowledge          │
+          │  incomplete:                     │
+          │  → Follow existing fragments to  │
+          │    associate outward            │
+          │  → Link to other related        │
+          │    knowledge                    │
+          │  → Piece together more complete  │
+          │    picture                      │
           └──────────────┬──────────────────┘
                          ▼
           ┌─────────────────────────────────┐
-          │  第3步: 外部求证                 │
-          │  如果碎片补全后仍然残缺:          │
-          │  → 知道自己"缺什么"              │
-          │  → 去查资料/问用户补全            │
+          │  Step 3: External Verification  │
+          │  If still incomplete after       │
+          │  fragment completion:            │
+          │  → Know "what's missing"        │
+          │  → Look up resources/ask user   │
+          │    to complete                  │
           └─────────────────────────────────┘
 ```
 
 ---
 
-#### 第1步：联想回忆
+#### Step 1: Associative Recall
 
-不是"用特征向量去查"，而是模拟人脑的"看到问题就想起相关经验"。
-
-```
-联想方式:
-
-① 直接联想（最强烈的记忆最先浮现）
-   "这个问题我以前遇到过类似的"
-   → 条件: 特征部分匹配（task_type + domain 一致）
-   → 浮现: 该特征下所有 CONFIRMED 状态的条目
-   → 特点: 想起来的是"最常用"的那些，不是全部
-
-② 模式联想（看到问题模式想起对应解法）
-   "这个问题的模式我见过，虽然领域不同"
-   → 条件: tags 有重叠，或者问题描述中的关键词匹配
-   → 浮现: 匹配的知识条目（不论状态）
-   → 特点: 想起来的是"同样的问题模式"，不分领域
-
-③ 上下文联想（当前上下文触发相关记忆）
-   "这个项目用的是 Python，我记得之前 Python 项目遇到类似问题是怎么处理的"
-   → 条件: 当前上下文与技术栈匹配
-   → 浮现: 相同或相似技术栈下的条目
-   → 特点: 想起的是"同环境下的经验"
-
-联想的产出:
-  不是评分排序后的列表，而是"浮现在脑海中的几条知识"。
-  每条知识可能完整，也可能残缺（只记得大概，细节模糊）。
-  
-  产出格式:
-    "想起了K005: 之前修复FastAPI参数校验时遇到过类似问题...
-     → 记得用了Pydantic的validator，但具体写法记不清了"
-    "想起了K001: 之前Go项目也有空指针问题...
-     → 记得是gin中间件的问题，但技术栈不同，不确定是否适用"
-```
-
-##### 联想浮现的规则
+Not "query with feature vector", but simulating human brain's "see problem, recall relevant experience".
 
 ```
-不是"查所有知识再排序"，而是"最相关的自然浮现"。
+Association Methods:
 
-浮现的优先级:
-  1. 使用频率高的（巩固分高的）
-     → "经常想起来的记忆，最容易再次想起来"
-  
-  2. 最近用过的（最后验证时间近的）
-     → "刚用过的东西，还在脑子里"
-  
-  3. 与当前场景匹配度高的
-     → "同样的问题场景，最容易触发回忆"
-  
-  4. 印象深刻的（状态变化多的）
-     → "有过争议/回滚的知识，记忆更深刻"
+① Direct Association (strongest memories surface first)
+   "I've encountered similar problem before"
+   → Condition: Feature partial match (task_type + domain match)
+   → Surfaces: All CONFIRMED status entries under that feature
+   → Characteristic: What surfaces is "most frequently used", not all
 
-浮现数量: 一般2~4条, >5条截断为top-3, 0条→外部求证
+② Pattern Association (see problem pattern, recall corresponding solution)
+   "I've seen this problem pattern, though different domain"
+   → Condition: tags overlap, or keywords in problem description match
+   → Surfaces: Matching knowledge entries (regardless of status)
+   → Characteristic: What surfaces is "same problem pattern", regardless of domain
+
+③ Context Association (current context triggers related memory)
+   "This project uses Python, I remember handling similar issue in
+    Python project before"
+   → Condition: Current context matches tech stack
+   → Surfaces: Entries with same or similar tech stack
+   → Characteristic: What surfaces is "experience from same environment"
+
+Association Output:
+  Not a list sorted by score, but "a few pieces of knowledge surfacing in mind".
+  Each knowledge piece may be complete or incomplete (remember the gist, details fuzzy).
+  
+  Output Format:
+    "Recalled K005: Encountered similar issue when fixing FastAPI param
+     validation before...
+     → Remember using Pydantic's validator, but specific syntax unclear"
+    "Recalled K001: Go project also had nil pointer issue...
+     → Remember it was gin middleware issue, but different tech stack,
+       uncertain if applicable"
+```
+
+##### Association Surfacing Rules
+
+```
+Not "query all knowledge then sort", but "most relevant naturally surfaces".
+
+Surfacing Priority:
+  1. High usage frequency (high consolidation score)
+     → "Frequently recalled memories most easily surface again"
+  
+  2. Recently used (recent last verification time)
+     → "Just used things still in mind"
+  
+  3. High match with current scenario
+     → "Same problem scenario most easily triggers recall"
+  
+  4. Memorable (many status changes)
+     → "Knowledge that was disputed/rolled back is more memorable"
+
+Surfacing Count: Generally 2~4 entries, >5 truncated to top-3, 0→external verification
 ```
 
 ---
 
-#### 第2步：碎片补全
+#### Step 2: Fragment Completion
 
-回忆起来的知识往往是残缺的。需要顺着已有的碎片联想出去，补全画面。
-
-```
-残缺的类型:
-
-① 价值模糊: "记得上次这么干效果不错，但具体好多少记不清了"
-   → 补全: 查看该条目的 q 值（精确价值）
-   → 如果 q 值也是旧的 → 标记为"需要重新验证"
-
-② 上下文模糊: "记得是在一个Python项目里用的，但记不清是不是同一个框架"
-   → 补全: 查看该条目的 context 字段
-   → 如果 context 不完整 → 标记为"上下文缺失"
-
-③ 解法模糊: "记得用了某种校验方式，但具体写法忘了"
-   → 补全: 查看该条目的 description 或关联的决策序列
-   → 如果还是没有 → 标记为"解法缺失，需要查资料"
-
-④ 结果模糊: "记得最后是解决了，但有没有副作用来着？"
-   → 补全: 查看该条目的副作用记录或关联的矛盾报告
-   → 如果没有记录 → 标记为"结果不完整"
-```
-
-##### 碎片补全的方式
+Recalled knowledge is often incomplete. Need to follow existing fragments to associate outward, complete the picture.
 
 ```
-方式一: 顺着碎片联想（不需要查外部资料）
+Types of Incompleteness:
 
-  "记得是FastAPI的参数校验问题..."
-  → 顺着"FastAPI"联想: "FastAPI用的是Pydantic"
-  → 顺着"参数校验"联想: "Pydantic有validator和field_validator"
-  → 拼凑: "应该用的是field_validator，但具体装饰器写法不确定"
+① Value Fuzzy: "Remember last time this worked well, but not sure exactly
+                how well"
+   → Complete: Check that entry's q value (precise value)
+   → If q value also old → Mark "needs re-verification"
 
-  补全结果:
-  - 核心信息: 已知（Pydantic校验）
-  - 细节信息: 残缺（装饰器写法）
-  - 残缺程度: 部分残缺（不影响推演，推演时标注"写法待确认"）
+② Context Fuzzy: "Remember it was in a Python project, but not sure if
+                   same framework"
+   → Complete: Check that entry's context field
+   → If context incomplete → Mark "context missing"
 
+③ Solution Fuzzy: "Remember using some validation method, but forgot
+                    specific syntax"
+   → Complete: Check that entry's description or linked decision sequence
+   → If still none → Mark "solution missing, need to look up resources"
 
-方式二: 关联知识补全（查知识图谱中的其他条目）
-
-  "K005是关于FastAPI参数校验的..."
-  → 查知识图谱中 tags 包含 "FastAPI" 或 "Pydantic" 的其他条目
-  → 发现K008也是FastAPI项目，且包含具体的代码示例
-  → 用K008补全K005的细节
-
-  补全结果:
-  - 核心信息: 已知
-  - 细节信息: 从K008补全
-  - 残缺程度: 完整
+④ Result Fuzzy: "Remember it was solved, but were there side effects?"
+   → Complete: Check that entry's side effect records or linked
+               contradiction reports
+   → If no records → Mark "result incomplete"
 ```
 
-##### 补全后的三种状态
+##### Fragment Completion Methods
 
 ```
-补全后评估:
+Method 1: Follow fragments to associate (no need to look up external resources)
 
-  完整: 所有关键信息都有 → 可以直接用于推演
-    "想起来了，也补全了，可以直接用"
+  "Remember it was FastAPI param validation issue..."
+  → Follow "FastAPI" association: "FastAPI uses Pydantic"
+  → Follow "param validation" association: "Pydantic has validator and
+                                            field_validator"
+  → Piece together: "Should use field_validator, but specific decorator
+                     syntax uncertain"
+
+  Completion Result:
+  - Core info: Known (Pydantic validation)
+  - Detail info: Incomplete (decorator syntax)
+  - Incompleteness level: Partial (doesn't affect simulation, annotate
+                              "syntax to confirm" during simulation)
+
+
+Method 2: Related knowledge completion (check other entries in knowledge graph)
+
+  "K005 is about FastAPI param validation..."
+  → Check knowledge graph for other entries with tags containing "FastAPI"
+    or "Pydantic"
+  → Find K008 is also FastAPI project, and contains specific code examples
+  → Use K008 to complete K005's details
+
+  Completion Result:
+  - Core info: Known
+  - Detail info: Completed from K008
+  - Incompleteness level: Complete
+```
+
+##### Three States After Completion
+
+```
+Post-completion Assessment:
+
+  Complete: All key info available → Can use directly for simulation
+    "Remembered, also completed, can use directly"
   
-  部分残缺: 核心信息有，细节模糊 → 推演时标注"待确认"
-    "大概知道怎么做的，但具体API记不清了，推演时注明"
+  Partially Incomplete: Core info present, details fuzzy → Annotate
+                        "pending confirmation" during simulation
+    "Roughly know how to do, but specific API unclear,
+     annotate during simulation"
   
-  严重残缺: 核心信息缺失 → 进入第3步外部求证
-    "只记得有这么个事，但怎么解决的一点都想不起来了"
+  Severely Incomplete: Core info missing → Enter Step 3 external verification
+    "Only remember something happened, but no clue how solved"
 ```
 
 ---
 
-#### 第3步：外部求证
+#### Step 3: External Verification
 
-如果碎片补全后仍然残缺，或者知识本身可能过时了，就需要去查外部资料。
-
-```
-触发条件:
-  ① 碎片补全后仍处于"严重残缺"状态
-  ② 知识是 CONFIRMED 但最后验证时间超过 30 天（可能过时了）
-  ③ 知识的上下文与当前上下文明显不匹配（技术栈变了）
-  ④ 回忆起来的知识之间存在矛盾
-
-求证方式（按成本从低到高）:
-
-  方式一: 利用 Claude 内置知识
-    "我记得Pydantic有validator，但具体写法不确定...
-     不过我的训练数据里有Pydantic的文档，可以直接确认"
-    → 成本: 低（不需要调工具）
-    → 适用: 常见技术点的细节确认
-
-  方式二: 查项目代码
-    "不确定这个项目用的是哪个版本的gin...
-     看一下go.mod就知道了"
-    → 成本: 中（需要读文件）
-    → 适用: 与当前项目相关的技术细节
-
-  方式三: 搜索外部资料
-    "这个新技术我没接触过，需要查一下文档"
-    → 成本: 高（需要网络搜索）
-    → 适用: 新知识/不熟悉的领域
-```
-
-##### 求证后的知识更新
+If still incomplete after fragment completion, or knowledge itself may be outdated, need to look up external resources.
 
 ```
-外部求证不只是"补全当前缺口"，还要把求证结果记回知识图谱:
+Trigger Conditions:
+  ① Still "severely incomplete" after fragment completion
+  ② Knowledge is CONFIRMED but last verification >30 days (may be outdated)
+  ③ Knowledge context clearly mismatched with current context (tech stack changed)
+  ④ Contradictions between recalled knowledge pieces
 
-  ① 如果确认了某个细节 → 更新到对应知识条目的 description
-  ② 如果发现知识过时了 → 标记矛盾，触发纠偏机制
-  ③ 如果学到了新知识 → 创建新的 HYPOTHESIS 条目
-  ④ 如果确认知识仍然有效 → 更新 last_verified 时间
+Verification Methods (from lowest to highest cost):
 
-这样下次回忆时，知识就更完整、更准确了。
+  Method 1: Use Claude's built-in knowledge
+    "I remember Pydantic has validator, but syntax uncertain...
+     But my training data has Pydantic docs, can confirm directly"
+    → Cost: Low (no tool call needed)
+    → Applicable: Common technical point detail confirmation
+
+  Method 2: Check project code
+    "Not sure which gin version this project uses...
+     Just check go.mod"
+    → Cost: Medium (need to read file)
+    → Applicable: Technical details related to current project
+
+  Method 3: Search external resources
+    "I haven't touched this new technology, need to check docs"
+    → Cost: High (need web search)
+    → Applicable: New knowledge/unfamiliar domains
+```
+
+##### Knowledge Update After Verification
+
+```
+External verification is not just "complete current gap", but also write
+verification result back to knowledge graph:
+
+  ① If confirmed certain detail → Update to corresponding knowledge entry's
+                                   description
+  ② If discovered knowledge outdated → Mark contradiction, trigger correction
+                                      mechanism
+  ③ If learned new knowledge → Create new HYPOTHESIS entry
+  ④ If confirmed knowledge still valid → Update last_verified time
+
+This way, next recall will have more complete, more accurate knowledge.
 ```
 
 ---
 
-#### 与旧方案的核心区别
+#### Core Difference from Old Approach
 
 ```
-旧方案（多路并行召回）:
-  输入 → 5条路径同时查 → 算分排序 → top-5 → 直接拿来用
-  问题: 复杂、死板、回忆起来的知识直接当真理用
+Old Approach (Multi-path Parallel Recall):
+  Input → 5 paths query simultaneously → Score sort → Top-5 → Use directly
+  Problem: Complex, rigid, recalled knowledge treated as truth
 
-新方案（联想回忆+碎片补全）:
-  输入 → 最相关的自然浮现 → 顺着碎片补全 → 残缺就去查 → 确认后再用
-  优势: 简单、灵活、知道"自己记得不一定对"
+New Approach (Associative Recall + Fragment Completion):
+  Input → Most relevant naturally surfaces → Follow fragments to complete →
+  If incomplete, look up → Confirm before use
+  Advantage: Simple, flexible, knows "memory may not be correct"
 ```
 
-### 推演矛盾报告
+### Simulation Contradiction Report
 
-当推演引擎发现某条知识不准时，生成矛盾报告：
+When Simulate Engine discovers certain knowledge inaccurate, generate contradiction report:
 
 ```
 ────────────────────────────────────────
-  价值函数矛盾报告
+  Value Function Contradiction Report
 ────────────────────────────────────────
-  冲突知识: K001 (BUG_FIX|WEB|LOW, q=0.90, CONFIRMED)
-  矛盾位置: 推演方案A的Step 2
-  矛盾内容: 
-    - K001的上下文: 技术栈v1，无需migration
-    - 当前发现: 技术栈v2需要额外migration步骤
-    - 影响: K001的价值不适用于当前上下文
-  矛盾等级: PARTIAL（部分矛盾，原因是上下文变更）
-  处理建议: 
-    - 当前推演不引用K001
-    - 如果已有技术栈v2的知识条目: 参考它
-    - 如果没有: 创建新HYPOTHESIS条目K004
+  Conflicting Knowledge: K001 (BUG_FIX|WEB|LOW, q=0.90, CONFIRMED)
+  Contradiction Location: Step 2 of simulating Solution A
+  Contradiction Content:
+    - K001's context: Tech stack v1, no migration needed
+    - Current discovery: Tech stack v2 needs extra migration step
+    - Impact: K001's value not applicable to current context
+  Contradiction Level: PARTIAL (partial contradiction, reason is
+                             context change)
+  Handling Suggestion:
+    - Don't reference K001 in current simulation
+    - If tech stack v2 knowledge entry exists: Reference it
+    - If not: Create new HYPOTHESIS entry K004
 ────────────────────────────────────────
 ```
 
-### 矛盾等级与状态转换
+### Contradiction Level and State Transition
 
-| 等级 | 触发条件 | 对知识条目的操作 |
-|------|---------|----------------|
-| FULL | 历史预测方向与实际完全相反 | 该条目状态降一级: CONFIRMED→DISPUTED, PROVISIONAL→REFUTED |
-| PARTIAL | 路径不同但方向一致（上下文变更） | 不改变状态，增加一条"上下文不匹配"记录 |
-| MINOR | 价值略高/低但方向一致 | 正常更新n和q |
+| Level | Trigger Condition | Operation on Knowledge Entry |
+|-------|-------------------|------------------------------|
+| FULL | Historical prediction direction completely opposite from actual | Entry status downgrades one level: CONFIRMED→DISPUTED, PROVISIONAL→REFUTED |
+| PARTIAL | Path different but direction same (context change) | Don't change status, add one "context mismatch" record |
+| MINOR | Value slightly high/low but direction same | Normal update of n and q |
 
-### 回滚机制
+### Rollback Mechanism
 
-当发现被推翻的知识实际上是正确的时候：
+When discovering overturned knowledge was actually correct:
 
 ```
-回滚触发条件:
-  某条 DISPUTED 或 REFUTED 知识，后续验证发现它才是正确的
+Rollback Trigger Condition:
+  Some DISPUTED or REFUTED knowledge, subsequent verification discovers
+  it was actually correct
 
-回滚流程:
-  1. 定位目标条目: 通过 id 或 feature_key + 时间戳
+Rollback Process:
+  1. Locate target entry: By id or feature_key + timestamp
   
-  2. 检查回滚可行性:
-     - 如果有该条目的"CONFIRMED快照" → 可以直接恢复
-     - 如果没有快照但有详细历史记录 → 重建CONFIRMED条目
-     - 如果都没有 → 创建新HYPOTHESIS，用记忆中的价值
+  2. Check rollback feasibility:
+     - If "CONFIRMED snapshot" exists for that entry → Can directly restore
+     - If no snapshot but detailed history records → Rebuild CONFIRMED entry
+     - If neither → Create new HYPOTHESIS, use remembered value
   
-  3. 执行回滚:
-     - 将目标条目的状态改回 CONFIRMED
-     - 将导致它被推翻的那个条目标记为 DISPUTED（或 REFUTED，如果有充分证据）
-     - 记录回滚原因到知识变更日志
+  3. Execute rollback:
+     - Change target entry's status back to CONFIRMED
+     - Mark the entry that caused it to be overturned as DISPUTED
+       (or REFUTED if sufficient evidence)
+     - Record rollback reason to knowledge change log
 
-  4. 回滚后:
-     - 恢复的条目继承原来的 n 和 q
-     - 方差 σ² 增加 0.05（标记它经历了一次波动）
-     - 在推演查询时，回滚过的条目输出 "已回滚" 标记
+  4. After rollback:
+     - Restored entry inherits original n and q
+     - Variance σ² increases by 0.05 (mark it experienced a fluctuation)
+     - When querying during simulation, rolled back entries output
+       "rolled back" marker
 
-回滚示例:
-  K001 (BUG_FIX|WEB|LOW, q=0.90, CONFIRMED, 技术栈v1)
-    → 技术栈升级到v2后，新知识K002 (q=0.30, PROVISIONAL) 出现
-    → K001被标记为DISPUTED
-    → 后来验证K002是偶发问题，技术栈v2下K001仍然适用
-    → 回滚: K001恢复CONFIRMED, K002标记为REFUTED
-    → 知识变更日志记录这次完整的来回
+Rollback Example:
+  K001 (BUG_FIX|WEB|LOW, q=0.90, CONFIRMED, tech stack v1)
+    → Tech stack upgrades to v2, new knowledge K002 (q=0.30, PROVISIONAL)
+      appears
+    → K001 marked as DISPUTED
+    → Later verified K002 was sporadic issue, K001 still applies under
+      tech stack v2
+    → Rollback: K001 restored to CONFIRMED, K002 marked as REFUTED
+    → Knowledge change log records this complete back-and-forth
 ```
 
-### 知识变更日志
+### Knowledge Change Log
 
-每次知识条目的状态变更都记录，形成完整的历史追溯：
+Each knowledge entry's status change is recorded, forming complete historical trace:
 
 ```
-知识变更日志:
-  # K001 生命周期
-  2026-05-01: K001 创建 (BUG_FIX|WEB|LOW, q=0.90, HYPOTHESIS)
-  2026-05-10: K001 → PROVISIONAL (第1次验证成功)
-  2026-05-20: K001 → CONFIRMED (第3次验证成功, n=3)
-  2026-06-01: K001 → DISPUTED (与K002矛盾, 技术栈v1 vs v2)
-  2026-06-05: K001 → CONFIRMED (回滚, K002被证伪)
+Knowledge Change Log:
+  # K001 Lifecycle
+  2026-05-01: K001 created (BUG_FIX|WEB|LOW, q=0.90, HYPOTHESIS)
+  2026-05-10: K001 → PROVISIONAL (1st verification successful)
+  2026-05-20: K001 → CONFIRMED (3rd verification successful, n=3)
+  2026-06-01: K001 → DISPUTED (contradicts K002, tech stack v1 vs v2)
+  2026-06-05: K001 → CONFIRMED (rollback, K002 refuted)
   
-  # K002 生命周期
-  2026-06-01: K002 创建 (BUG_FIX|WEB|LOW, q=0.30, HYPOTHESIS)
-  2026-06-02: K002 → PROVISIONAL (第1次验证)
-  2026-06-05: K002 → REFUTED (被验证为偶发问题, K001恢复)
+  # K002 Lifecycle
+  2026-06-01: K002 created (BUG_FIX|WEB|LOW, q=0.30, HYPOTHESIS)
+  2026-06-02: K002 → PROVISIONAL (1st verification)
+  2026-06-05: K002 → REFUTED (verified as sporadic issue, K001 restored)
 
-  # 当前活跃知识汇总
-  CONFIRMED: K001(q=0.90, 技术栈v1), K003(q=0.80, 通用)
-  PROVISIONAL: 无
-  DISPUTED: 无
-  REFUTED: K002(q=0.30, 技术栈v2, 已证伪)
-  HYPOTHESIS: 无
+  # Current Active Knowledge Summary
+  CONFIRMED: K001(q=0.90, tech stack v1), K003(q=0.80, general)
+  PROVISIONAL: None
+  DISPUTED: None
+  REFUTED: K002(q=0.30, tech stack v2, refuted)
+  HYPOTHESIS: None
 ```
 
-### 价值函数存储格式
+### Value Function Storage Format
 
-记忆文件中存储完整知识图谱。**知识分为"活跃"和"归档"两部分，模拟人脑的"当前意识"和"长期记忆"。**
+Memory file stores complete knowledge graph. **Knowledge divided into "active" and "archived" parts, simulating human brain's "current consciousness" and "long-term memory".**
 
-#### 存储与管理
+#### Storage and Management
 
-归档/回忆/清理操作: `python scripts/manage_memory.py archive|recall|cleanup|status`
-存储路径: `~/.claude/data/skills/mcts-td-planner/memory/`（与skill代码物理隔离）
+Archive/recall/cleanup operations:
+`python scripts/manage_memory.py archive|recall|cleanup|status`
+Storage path: `~/.claude/data/skills/mcts-td-planner/memory/`
+(physically isolated from skill code)

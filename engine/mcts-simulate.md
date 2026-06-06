@@ -1,523 +1,581 @@
 ---
 name: mcts-simulate
-description: MCTS-TD 决策引擎的"第2步"——推演引擎。真正的 MCTS 树搜索：多轮迭代、UCB选择节点展开、反向传播更新价值。每个方案的执行路径被建模为一棵树，通过多轮模拟逐步收敛到最优决策。
+description: MCTS-TD Decision Engine "Step 2" — Simulate Engine. True MCTS tree search: multi-round iteration, UCB node selection/expansion, backpropagation value update. Each solution's execution path is modeled as a tree, gradually converging to optimal decision through multiple simulations.
 ---
 
-# 第2步: MCTS 树搜索推演（核心机制）
+# Step 2: MCTS Tree Search Simulation (Core Mechanism)
 
-> **一句话**: 每个候选方案的执行路径建模为一棵树，通过多轮"选择→展开→模拟→反向传播→知识更新"迭代，逐步收敛。
+> **🔒 COMPRESSION-SAFE RULES (Always apply, even if context is compressed):**
+> 1. **OUTPUT LANGUAGE**: User language already detected. Continue using that language.
+> 2. **MCTS PHASES**: Selection → Expansion → Simulation → Backpropagation. Each round visible to user.
+> 3. **TREE OUTPUT**: Show tree state summary after each round.
+> 4. **CONVERGENCE**: Stop when best solution V stable for 3 rounds OR max iterations reached.
+
+> ⚠️ **OUTPUT LANGUAGE RULE (HIGHEST PRIORITY)**: All user-facing output MUST be in the user's detected language. Internal reasoning is English; user sees their language.
+
+> **One-liner**: Each candidate solution's execution path is modeled as a tree. Through multiple rounds of "Selection→Expansion→Simulation→Backpropagation→Knowledge Update" iteration, gradually converge.
 
 ---
 
-## 核心理念
+## Core Concept
 
 ```
 Root
- ├── 方案A-Step1-成功 (n=3, V=0.93) ← 参考了K005的经验
- │    ├── Step2-路径a (n=2, V=0.80)
- │    └── Step2-路径b (n=1, V=0.90) ← 后来发现的更好分支
- └── 方案A-Step1-失败 (n=1, V=0.00) ← 探索了失败路径
-      └── 备用方案 (n=1, V=0.60)
+ ├── SolutionA-Step1-Success (n=3, V=0.93) ← Referenced K005 experience
+ │    ├── Step2-PathA (n=2, V=0.80)
+ │    └── Step2-PathB (n=1, V=0.90) ← Later discovered better branch
+ └── SolutionA-Step1-Failure (n=1, V=0.00) ← Explored failure path
+      └── Fallback Solution (n=1, V=0.60)
 
-每轮迭代: Selection(UCB+KBonus) → Expansion → Simulation → Backprop → KnowledgeUpdate
+Each iteration: Selection(UCB+KBonus) → Expansion → Simulation → Backprop → KnowledgeUpdate
 ```
 
 ---
 
-## MCTS 四阶段详解
+## MCTS Four Phases Detailed
 
-### 阶段总览
+### Phase Overview
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                  MCTS 树搜索 —— 一轮迭代                         │
+│                  MCTS Tree Search — One Iteration               │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
-│  ① SELECTION（选择）                                            │
-│     从 Root 开始，每层用 UCB 选择最优子节点，一直走到叶节点         │
-│     UCB(node) = V_node + c × √(ln(N_parent) / n_node)           │
+│  ① SELECTION                                                   │
+│     From Root, use UCB to select optimal child node at each    │
+│     layer, until reaching a leaf node                          │
+│     UCB(node) = V_node + c × √(ln(N_parent) / n_node)          │
 │                                                                 │
-│  ② EXPANSION（展开）                                            │
-│     在到达的叶节点上，展开一个新的子节点                            │
-│     子节点 = 下一步可能的方向（成功路径、失败路径、备用方案等）       │
+│  ② EXPANSION                                                   │
+│     At the reached leaf node, expand a new child node          │
+│     Child node = next possible direction (success path,        │
+│                  failure path, fallback solution, etc.)        │
 │                                                                 │
-│  ③ SIMULATION（模拟）                                           │
-│     从新节点快速推演到终点                                        │
-│     得到该路径的最终价值 V_leaf                                    │
+│  ③ SIMULATION                                                  │
+│     Quick roll-out from new node to termination                │
+│     Get final value V_leaf for this path                       │
 │                                                                 │
-│  ④ BACKPROPAGATION（反向传播）                                  │
-│     将 V_leaf 沿路径反向传播，更新每个祖先节点的 w, n, V           │
-│     n_new = n_old + 1                                           │
-│     V_new = V_old + (V_leaf - V_old) / n_new                    │
+│  ④ BACKPROPAGATION                                             │
+│     Propagate V_leaf backward along path, update each ancestor │
+│     node's w, n, V                                              │
+│     n_new = n_old + 1                                          │
+│     V_new = V_old + (V_leaf - V_old) / n_new                   │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-### 树节点结构
+### Tree Node Structure
 
-每个节点存储以下信息（模拟围棋 MCTS 的节点状态）：
+Each node stores the following information (modeling Go MCTS node state):
 
 ```
-节点 = {
-    id: "方案A-Step1-成功",
-    description: "基于 gin-jwt 扩展 access token 中间件",
-    parent: "方案A-Root",           // 父节点
-    children: ["节点id1", ...],     // 子节点列表
+Node = {
+    id: "SolutionA-Step1-Success",
+    description: "Extend access token middleware based on gin-jwt",
+    parent: "SolutionA-Root",           // Parent node
+    children: ["node_id1", ...],        // Child node list
     
-    // MCTS 统计量
-    n: 0,                           // 访问次数
-    w: 0.0,                         // 累计价值（所有模拟的和）
-    V: 0.0,                         // 平均价值 = w / n
-    σ²: 0.0,                        // 价值方差
+    // MCTS Statistics
+    n: 0,                               // Visit count
+    w: 0.0,                             // Accumulated value (sum of all simulations)
+    V: 0.0,                             // Average value = w / n
+    σ²: 0.0,                            // Value variance
     
-    // 节点属性
-    node_type: "ACTION",            // ACTION | RISK | FALLBACK | TERMINAL
-    is_terminal: false,             // 是否是终止节点（执行完成）
-    expansion_potential: "HIGH",    // 还有多少可展开的方向 HIGH | MED | LOW | NONE
+    // Node Attributes
+    node_type: "ACTION",                // ACTION | RISK | FALLBACK | TERMINAL
+    is_terminal: false,                 // Is termination node (execution complete)
+    expansion_potential: "HIGH",        // How many more directions can be expanded
+                                        // HIGH | MED | LOW | NONE
 }
 ```
 
 ---
 
-## ① SELECTION — UCB 驱动的路径选择（含知识图谱偏置）
+## ① SELECTION — UCB-Driven Path Selection (with Knowledge Graph Bias)
 
-### 核心公式
+### Core Formula
 
 ```
 UCB = V + c×√(ln(N_parent)/n_child) + K_bonus, c=√2≈1.414, n_child=0→UCB=+∞
-数值计算: `python scripts/mcts_compute.py ucb --v <V> --n <n> --parent-n <N> --k-bonus <K>`
+Numerical calculation: `python scripts/mcts_compute.py ucb --v <V> --n <n> --parent-n <N> --k-bonus <K>`
 ```
 
-### 知识图谱偏置 K_bonus
+### Knowledge Graph Bias K_bonus
 
-K_bonus: `python scripts/mcts_compute.py k-bonus --status <状态> --n <n> --q <q> --n-child <n>`
+```
+K_bonus: `python scripts/mcts_compute.py k-bonus --status <status> --n <n> --q <q> --n-child <n>`
 CONFIRMED+n≥5+q≥0.8→+0.15 | PROVISIONAL+n<5+q≥0.7→+0.05 | DISPUTED/REFUTED/q<0.5→-0.10
-只在 n_child<3 时生效
+Only effective when n_child<3
+```
 
-### 首次迭代的特殊处理
+### Special Handling for First Iteration
 
 ```
-第1轮迭代（所有节点 n=0）:
-  所有子节点的初始 UCB = +∞（都被认为是未探索的）
+Round 1 iteration (all nodes n=0):
+  All child nodes have initial UCB = +∞ (all considered unexplored)
   
-  此时不依赖 UCB 排序，而是用知识图谱给一个"初始排序":
-  1. 查知识图谱，看每个方案的"推荐度"（历史相似场景下各方案的加权平均V）
-  2. 按推荐度排序，先探索推荐度最高的方案
-  3. 如果知识图谱无数据 → 随机选择一个方案作为第一轮
+  At this point, don't rely on UCB sorting. Use knowledge graph for
+  "initial sorting" instead:
+  1. Query knowledge graph, check each solution's "recommendation score"
+     (weighted average V from historically similar scenarios)
+  2. Sort by recommendation score, explore highest-scored solution first
+  3. If knowledge graph has no data → Randomly select one solution for
+     first round
   
-  第一轮完成后，从第二轮开始就由 UCB 驱动了:
-    "知识图谱帮我们选择了第一轮的方向，
-     之后让 MCTS 自己的探索-利用机制来驱动决策"
+  After first round, UCB drives from second round onward:
+    "Knowledge graph helped us choose the first round's direction,
+     then let MCTS's own explore-exploit mechanism drive decisions"
 ```
 
-### Selection 执行规则
+### Selection Execution Rules
 
 ```
-从 Root 开始向下选择，直到到达一个"可展开"的节点:
+Select downward from Root until reaching an "expandable" node:
 
-第1步: 从 Root 开始
+Step 1: Start from Root
   current = Root
 
-第2步: 当 current 不是叶节点且有子节点时:
-  ┌─ 如果 current 还有未展开的潜在方向:
-  │   → 停止 Selection，进入 Expansion
-  ├─ 如果 current 所有子节点都已被探索:
-  │   → 选择 UCB 最大的子节点
-  │   → current = 该子节点
-  └─ 如果 current 是终止节点:
-      → 停止 Selection（已达到终点）
+Step 2: While current is not a leaf node and has children:
+  ┌─ If current still has unexpanded potential directions:
+  │   → Stop Selection, enter Expansion
+  ├─ If all current child nodes have been explored:
+  │   → Select child node with highest UCB
+  │   → current = that child node
+  └─ If current is a termination node:
+      → Stop Selection (already reached endpoint)
 
-第3步: 到达可展开节点时:
-  → 输出 selection_path: [Root, Node_a, Node_b, ..., current]
-  → 进入 Expansion
+Step 3: When reaching an expandable node:
+  → Output selection_path: [Root, Node_a, Node_b, ..., current]
+  → Enter Expansion
 ```
 
-> UCB 数值计算可用 `python scripts/mcts_compute.py ucb --v 0.8 --n 3 --parent-n 10`
+> UCB numerical calculation: `python scripts/mcts_compute.py ucb --v 0.8 --n 3 --parent-n 10`
 
 ---
 
-## ② EXPANSION — 展开新分支
+## ② EXPANSION — Expand New Branch
 
-### 展开规则
+### Expansion Rules
 
-在 Selection 到达的节点处，展开一个新的子节点（下一步的可能方向）。
-
-```
-展开方向 = 当前节点的下一步可能走向:
-
-ACTION 节点的展开方向:
-  1. 成功路径: "第一步按预期成功，进入第二步"
-  2. 部分成功: "第一步大部分成功，但有一个小问题需要修复"
-  3. 遇到障碍: "第一步遇到技术障碍，需要调整方案"
-
-RISK 节点的展开方向:
-  1. 风险规避成功: "备用方案生效，绕过了风险"
-  2. 风险发生: "风险确实发生了，需要处理后果"
-  3. 风险误判: "这个风险实际上不存在/影响很小"
-
-FALLBACK 节点的展开方向:
-  1. 备用方案生效: "切换到备用方案，继续执行"
-  2. 备用方案失败: "备用方案也失败，需要回滚"
-  3. 放弃当前路径: "此路不通，回到上一级重新选择"
-
-TERMINAL 节点:
-  → 不再展开（已是终点）
-```
-
-### 展开时机的动态调整
+At the node reached by Selection, expand a new child node (next possible direction).
 
 ```
-根据节点的 expansion_potential 决定展开深度:
+Expansion Direction = Next possible direction from current node:
+
+ACTION node expansion directions:
+  1. Success path: "First step succeeded as expected, entering second step"
+  2. Partial success: "First step mostly succeeded, but has a small issue
+                        needing fix"
+  3. Obstacle encountered: "First step hit technical obstacle, need to
+                            adjust solution"
+
+RISK node expansion directions:
+  1. Risk avoided successfully: "Fallback solution took effect, bypassed risk"
+  2. Risk occurred: "Risk actually happened, need to handle consequences"
+  3. Risk misjudged: "This risk actually doesn't exist / has minimal impact"
+
+FALLBACK node expansion directions:
+  1. Fallback worked: "Switched to fallback solution, continuing execution"
+  2. Fallback failed: "Fallback solution also failed, need to rollback"
+  3. Abandon current path: "This path doesn't work, go back one level
+                            and re-choose"
+
+TERMINAL node:
+  → No further expansion (already at endpoint)
+```
+
+### Dynamic Adjustment of Expansion Timing
+
+```
+Decide expansion depth based on node's expansion_potential:
 
 expansion_potential = HIGH:
-  → 展开 2~3 个新的子节点（该节点还有很多未探索方向）
+  → Expand 2~3 new child nodes (this node has many unexplored directions)
 
 expansion_potential = MED:
-  → 展开 1 个新的子节点
+  → Expand 1 new child node
 
 expansion_potential = LOW:
-  → 展开 1 个"快速检查"子节点（简化的方向验证）
+  → Expand 1 "quick check" child node (simplified direction verification)
 
 expansion_potential = NONE:
-  → 该节点已穷尽所有方向，不再展开
+  → This node exhausted all directions, no further expansion
 ```
 
 ---
 
-## ③ SIMULATION — 快速推演到底
+## ③ SIMULATION — Quick Roll-out to End
 
-### 与旧版 Step1→Step2→Step3 的区别
-
-```
-旧版: 对整个方案做完整的3步因果链推演（重、慢、一次性）
-新版: 从新展开的节点快速模拟到底（轻、快、可重复多次）
-
-关键差异:
-  - 旧版一次推演 = 从根到底的完整因果链
-  - 新版一次模拟 = 从当前节点到底的快速 roll-out
-  - 新版多轮模拟互相补充 → 价值估计更准确
-```
-
-### 模拟规则
+### Difference from Old Step1→Step2→Step3
 
 ```
-从 Expansion 创建的新节点开始，快速推演到终点:
+Old: Complete 3-step causal chain simulation for entire solution
+     (heavy, slow, one-time)
+New: Quick roll-out from newly expanded node to end
+     (light, fast, repeatable multiple times)
 
-模拟步骤:
-  1. 识别当前节点的状态: 在什么位置？已知哪些信息？
-  2. 向前看一步: 从这个位置出发，下一步最可能发生什么？
-     → 如果这一步需要知识（技术细节、最佳实践、用户偏好等）
-     → 执行「知识获取优先级决策树」（见下方）
-  3. 继续向前: 再下一步？
-  4. 直到终点: 到达 TERMINAL（执行完成/失败确定/需要回滚）
+Key Differences:
+  - Old one simulation = complete causal chain from root to end
+  - New one simulation = quick roll-out from current node to end
+  - New multiple simulations complement each other → more accurate value estimate
+```
 
-模拟深度控制:
-  - 简单任务: 1~2 步到底
-  - 中等任务: 2~3 步到底
-  - 复杂任务: 3~4 步到底
-
-### ⚠️ 递归发散深度控制（代码硬控，不是提示词）
-
-Simulation 推演中遇到新决策点（"这里又有两个选择"）时，
-**必须通过代码守卫检查**，不能凭 LLM 自己判断。
+### Simulation Rules
 
 ```
-代码守卫流程（每次遇到子决策点时执行）:
+Quick roll-out from the new node created by Expansion to endpoint:
 
-  Step 1: 判断决策类型
+Simulation Steps:
+  1. Identify current node state: What position? What info is known?
+  2. Look one step ahead: From this position, what's most likely to happen next?
+     → If this step needs knowledge (technical details, best practices,
+                                      user preferences, etc.)
+     → Execute "Knowledge Acquisition Priority Decision Tree" (see below)
+  3. Continue forward: What about the next step?
+  4. Until endpoint: Reach TERMINAL (execution complete/failure determined/
+                                        need rollback)
+
+Simulation Depth Control:
+  - Simple tasks: 1~2 steps to end
+  - Medium tasks: 2~3 steps to end
+  - Complex tasks: 3~4 steps to end
+
+### ⚠️ Recursive Divergence Depth Control (Code-enforced, not prompt)
+
+When encountering new decision points during Simulation roll-out
+("There are two choices here again"), **must go through code guard check**,
+cannot rely on LLM's own judgment.
+
+```
+Code Guard Flow (execute each time a sub-decision point is encountered):
+
+  Step 1: Determine decision type
     `python mcts_compute.py needs-sub-diverge --type <tech_choice|risk|user_preference|uncertainty>`
-    → 只有 tech_choice 类型才会触发子发散，其他类型走知识决策树或询问用户
+    → Only tech_choice type triggers sub-divergence,
+      other types go through knowledge decision tree or ask user
 
-  Step 2: 检查递归深度
+  Step 2: Check recursion depth
     `python mcts_compute.py enter-simulation`
-    → 返回当前深度和允许的操作模式
+    → Returns current depth and allowed operation mode
 
-    depth=0: full模式（顶层，六维地图+多视角+完整推演）
-    depth=1: simplified模式（2个快速方案，1~2步推演）
-    depth=2: micro_diverge模式（单视角快速方案，1步推演，方差+0.1）
-    depth≥3: micro_diverge_risky模式（微发散但标记高风险，方差+0.15）
-    ⚠️ 每层都执行真正的发散推演，只是深度和视角递减，不做假设
+    depth=0: full mode (top-level, six-dimension map + multi-perspective +
+                        complete simulation)
+    depth=1: simplified mode (2 quick solutions, 1~2 step simulation)
+    depth=2: micro_diverge mode (single-perspective quick solution,
+                                 1-step simulation, variance +0.1)
+    depth≥3: micro_diverge_risky mode (micro-diverge but marked high risk,
+                                       variance +0.15)
+    ⚠️ Each layer executes real divergence simulation, just decreasing depth
+       and perspectives, no assumptions
 
-  Step 3: 如果允许子发散
-    `python mcts_compute.py begin-sub-diverge` → 深度+1
-    ... 执行简化发散（不画六维地图，2个视角，1步推演）...
-    `python mcts_compute.py end-sub-diverge` → 深度-1
+  Step 3: If sub-divergence allowed
+    `python mcts_compute.py begin-sub-diverge` → depth+1
+    ... Execute simplified divergence (no six-dimension map, 2 perspectives,
+        1-step simulation) ...
+    `python mcts_compute.py end-sub-diverge` → depth-1
 
-  Step 4: 合成结果
+  Step 4: Synthesize results
     `python mcts_compute.py synthesize-sim --base-v <V> --sub-results '<JSON>'`
-    → 子发散结果权重0.2（不可靠），基础推演权重0.8
+    → Sub-divergence results weight 0.2 (unreliable),
+      base simulation weight 0.8
 
-  安全阀:
-    `export MCTS_MAX_DIVERGE_DEPTH=3` (环境变量硬上限，默认3)
-    超过硬上限: 抛出 RecursionError，强制终止
+  Safety Valve:
+    `export MCTS_MAX_DIVERGE_DEPTH=3` (environment variable hard limit, default 3)
+    Exceeding hard limit: Throw RecursionError, force terminate
 ```
 
-### 递归深度状态查询
+### Recursive Depth State Query
 
-任何时候都可以查询当前状态:
-  `python mcts_compute.py diverge-depth` → 返回 {"depth":1,"max_depth":2,"status":"simplified","can_diverge":true}
+Anytime you can query current state:
+  `python mcts_compute.py diverge-depth`
+  → Returns {"depth":1,"max_depth":2,"status":"simplified","can_diverge":true}
 
-整个MCTS搜索结束后重置:
+Reset after entire MCTS search ends:
   `python mcts_compute.py reset-depth`
 
-模拟输出:
-  V_leaf = 模拟路径的最终价值 (0.0 ~ 1.0)
-  + 简短的理由说明
-  + 知识获取记录: [用了哪些知识, 从哪个来源获取的]
+Simulation Output:
+  V_leaf = Final value of simulation path (0.0 ~ 1.0)
+  + Brief reason
+  + Knowledge acquisition record: [what knowledge used, from which source]
 
-模拟后不修改树结构:
-  - 模拟路径上的中间节点不加入树（除非后续 Expansion 创建它们）
-  - 只有反向传播会更新已有节点的统计量
+Simulation doesn't modify tree structure:
+  - Intermediate nodes on simulation path are not added to tree
+    (unless subsequent Expansion creates them)
+  - Only backpropagation updates existing nodes' statistics
 ```
 
-### ⭐ 知识获取优先级决策树（Simulation 核心规则）
+### ⭐ Knowledge Acquisition Priority Decision Tree (Simulation Core Rule)
 
-推演过程中每向前一步，如果发现**需要某个知识才能继续推演**，按以下优先级获取：
+During roll-out, each step forward, if **discovering need for certain knowledge to continue**, acquire by following priority:
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│  知识获取优先级决策树（必须按顺序执行，不能跳过）                            │
+│  Knowledge Acquisition Priority Decision Tree (must execute in order,       │
+│                                                cannot skip)                  │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
-│  推演到某一步，发现需要知识 X                                                 │
+│  Roll-out reaches a step, discovers need for knowledge X                    │
 │       │                                                                     │
 │       ▼                                                                     │
 │  ┌─────────────────────────────────┐                                        │
-│  │ ① 记忆中是否已有？              │  ← 查知识图谱（td-learner.md）          │
-│  │   查询: 知识图谱 + 当前会话记忆  │                                        │
+│  │ ① Already in memory?            │  ← Query knowledge graph (td-learner)  │
+│  │   Query: Knowledge graph +      │                                        │
+│  │          current session memory │                                        │
 │  └──────────┬──────────────────────┘                                        │
 │             │                                                               │
 │     ┌───────┴───────┐                                                       │
-│     │ 有            │ 无                                                     │
+│     │ Yes           │ No                                                    │
 │     ▼               ▼                                                       │
 │  ┌──────────────┐ ┌──────────────────────────────────────┐                   │
-│  │ 评估可信度:   │ │ ② 能否通过自学获取？                  │                   │
-│  │ HIGH → 直接引用│ │   技术细节/API用法/最佳实践            │                   │
-│  │ MED  → 引用但 │ │   → 查项目代码/技术文档/WebSearch      │                   │
-│  │        标注"待 │ │   可以自学 → 获取后继续推演            │                   │
-│  │        验证"  │ │   标记: "自学获取: [来源]"             │                   │
-│  │ LOW  → 降权  │ └────────────────┬─────────────────────┘                   │
-│  │        引用   │                  │                                         │
-│  └──────────────┘          ┌───────┴───────┐                                 │
-│                            │ 能自学        │ 不能自学                         │
+│  │ Evaluate     │ │ ② Can it be self-learned?            │                   │
+│  │ credibility: │ │   Technical details/API usage/best   │                   │
+│  │ HIGH → use   │ │   practices                          │                   │
+│  │   directly   │ │   → Check project code/tech docs/    │                   │
+│  │ MED  → use   │ │     WebSearch                        │                   │
+│  │   but mark   │ │   Can self-learn → acquire and       │                   │
+│  │   "pending   │ │     continue roll-out                │                   │
+│  │   verification│ │   Mark: "self-learned: [source]"    │                   │
+│  │ LOW  → use   │ └────────────────┬─────────────────────┘                   │
+│  │   with lower │                  │                                         │
+│  │   weight     │          ┌───────┴───────┐                                 │
+│  └──────────────┘          │ Can           │ Cannot                          │
 │                            ▼               ▼                                 │
-│                        继续推演      ┌──────────────────────────────┐         │
-│                                     │ ③ 是否是需求/偏好类的不确定？  │         │
-│                                     │   "用户想要什么?"              │         │
-│                                     │   "有什么约束?"                │         │
-│                                     │   "能接受什么trade-off?"       │         │
-│                                     └──────────────┬───────────────┘         │
+│                        Continue      ┌──────────────────────────────┐         │
+│                        roll-out      │ ③ Is it requirement/         │         │
+│                                      │    preference uncertainty?   │         │
+│                                      │   "What does user want?"     │         │
+│                                      │   "What are constraints?"    │         │
+│                                      │   "What trade-offs accepted?"│         │
+│                                      └──────────────┬───────────────┘         │
 │                                                    │                         │
 │                                            ┌───────┴───────┐                 │
-│                                            │ 是            │ 否              │
+│                                            │ Yes           │ No              │
 │                                            ▼               ▼                 │
 │                                     ┌──────────────┐ ┌──────────────┐        │
-│                                     │ 暂停推演      │ │ ④ 标记为假设  │        │
-│                                     │ 记录问题      │ │ 继续推演      │        │
-│                                     │ 汇总后问用户  │ │ 推演完成后    │        │
-│                                     │ 不阻塞其他    │ │ 标注:         │        │
-│                                     │ 方案的推演    │ │ "假设:XXX"    │        │
-│                                     │              │ │ 方差 +0.1     │        │
-│                                     └──────────────┘ └──────────────┘        │
+│                                     │ Pause        │ │ ④ Mark as    │        │
+│                                     │ roll-out     │ │ assumption    │        │
+│                                     │ Record       │ │ Continue      │        │
+│                                     │ question     │ │ roll-out      │        │
+│                                     │ Collect and  │ │ After roll-out│        │
+│                                     │ ask user     │ │ annotate:     │        │
+│                                     │ Don't block  │ │ "Assume:XXX"  │        │
+│                                     │ other        │ │ Variance +0.1 │        │
+│                                     │ solutions'   │ └──────────────┘        │
+│                                     │ roll-out     │                         │
+│                                     └──────────────┘                         │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### 各优先级的具体规则
+### Specific Rules for Each Priority
 
 ```
-① 记忆优先（查知识图谱 + 当前会话）
+① Memory First (Query knowledge graph + current session)
 
-  查询范围:
-    - 知识图谱中的活跃条目（CONFIRMED/PROVISIONAL/HYPOTHESIS）
-    - 当前会话中已获得的信息（之前问过用户的、之前查过的）
-    - 全局补全箱中的已补全条目（G001, G002, ...）
+  Query Scope:
+    - Active entries in knowledge graph (CONFIRMED/PROVISIONAL/HYPOTHESIS)
+    - Info already obtained in current session (previously asked user,
+      previously queried)
+    - Already completed entries in global completion box (G001, G002, ...)
 
-  可信度评估:
-    CONFIRMED + n≥5 + σ²<0.05: HIGH → 直接引用，不质疑
-    PROVISIONAL + n<5: MED → 引用但标注"待验证"
-    HYPOTHESIS + n=1: LOW → 引用但声明"新知识，仅参考"
-    DISPUTED/REFUTED: 不引用
+  Credibility Evaluation:
+    CONFIRMED + n≥5 + σ²<0.05: HIGH → Use directly, don't question
+    PROVISIONAL + n<5: MED → Use but mark "pending verification"
+    HYPOTHESIS + n=1: LOW → Use but declare "new knowledge, reference only"
+    DISPUTED/REFUTED: Don't use
 
-  如果记忆中有，但可信度低:
-    → 仍然引用（降低方差），但同时在推演报告中标注
-    → 推演完成后，如果该知识被验证准确 → 巩固分+1
+  If in memory but low credibility:
+    → Still use (reduce variance), but also annotate in simulation report
+    → After simulation completes, if knowledge verified accurate →
+        consolidation score +1
 
-② 自学优先（查代码/文档/搜索）
+② Self-learn First (Check code/docs/search)
 
-  可自学的内容:
-    - 技术细节: "这个API的参数是什么？" → 查代码/文档
-    - 最佳实践: "这个场景的标准做法是什么？" → 搜索技术文档
-    - 框架特性: "这个框架支持XX吗？" → 查官方文档
-    - 错误信息: "这个错误是什么意思？" → 搜索
+  Self-learnable content:
+    - Technical details: "What are this API's parameters?" → Check code/docs
+    - Best practices: "What's the standard approach for this scenario?"
+                       → Search tech docs
+    - Framework features: "Does this framework support XX?" → Check official docs
+    - Error messages: "What does this error mean?" → Search
 
-  不可自学的内容:
-    - 用户偏好: "用户想要简单还是完整？" → 必须问用户
-    - 约束条件: "能不能引入新依赖？" → 必须问用户
-    - 业务规则: "这个字段的校验规则是什么？" → 必须问用户
+  Non-self-learnable content:
+    - User preferences: "Does user want simple or complete?" → Must ask user
+    - Constraints: "Can new dependencies be introduced?" → Must ask user
+    - Business rules: "What are this field's validation rules?" → Must ask user
 
-  自学要求:
-    - 至少 2 个独立来源交叉验证
-    - 如果 2 个来源矛盾 → 标记"有争议的技术点"，降低置信度
-    - 如果只有 1 个来源 → 标记"单一来源，谨慎使用"
-    - 如果查不到 → 降级到③或④
+  Self-learning Requirements:
+    - At least 2 independent sources cross-validated
+    - If 2 sources conflict → Mark "controversial technical point",
+                               lower confidence
+    - If only 1 source → Mark "single source, use cautiously"
+    - If cannot find → Downgrade to ③ or ④
 
-③ 反问用户（需求/偏好/约束不确定）
+③ Ask User (requirement/preference/constraint uncertain)
 
-  触发条件（满足任意一条就问用户）:
-    - 涉及用户偏好（"你更喜欢哪种？"）
-    - 涉及项目约束（"能不能用XX？"）
-    - 涉及业务规则（"这个字段的格式是什么？"）
-    - 自学路径走不通（查不到资料）
+  Trigger conditions (ask if any is satisfied):
+    - Involves user preference ("Which do you prefer?")
+    - Involves project constraint ("Can XX be used?")
+    - Involves business rule ("What is this field's format?")
+    - Self-learn path fails (cannot find resources)
 
-  提问规则:
-    - 一次最多问 2 个问题
-    - 记录问题，不阻塞其他方案的推演
-    - 汇总到推演引擎的"待解决问题"列表
-    - 推演结束时统一展示给用户
+  Question Rules:
+    - Maximum 2 questions at a time
+    - Record questions, don't block other solutions' roll-out
+    - Collect into Simulate Engine's "pending questions" list
+    - Display to user uniformly when simulation ends
 
-④ 做假设（最后手段）
+④ Make Assumption (last resort)
 
-  触发条件:
-    - 不是需求/偏好/约束类问题（不需要问用户）
-    - 自学也查不到（技术太新/文档不全/内部实现）
-    - 但推演必须继续（不能卡在这里）
+  Trigger conditions:
+    - Not a requirement/preference/constraint question (doesn't need user)
+    - Self-learn also fails (tech too new/docs incomplete/internal implementation)
+    - But roll-out must continue (can't get stuck here)
 
-  做假设的规则:
-    - 必须标注"假设: XXX"
-    - 方差 +0.1（因为这是不确定的）
-    - 推演报告中列出所有假设
-    - 执行前自检时重点检查这些假设
-```
-
----
-
-## ④ BACKPROPAGATION — 价值反向传播
-
-### 核心公式
-
-```
-```
-反向传播: `python scripts/mcts_compute.py` backpropagate_path
-每个祖先节点: n+=1, w+=V_leaf, V=w/n, Welford在线更新σ²
-```
-
-### 反向传播的影响
-
-```
-一轮推演后:
-
-推演了: 方案A → Step1-成功 → Step2-路径b（之前未探索）
-模拟结果: V_leaf = 0.85
-
-反向传播:
-  方案A-Step2-路径b: n=1, V=0.85 ← 新节点，初值
-  方案A-Step1-成功:   n: 3→4, V: 0.93→0.91 ← 被拉低了一点
-  方案A-Root:         n: 4→5, V: 0.82→0.83 ← 稍微提升
-
-下一轮 Selection 时:
-  方案A-Step2-路径b 的 UCB 很高（n=1, V=0.85）→ 可能被再次选中验证
-  方案A-Step1-成功 的 V 被拉低 → UCB 下降 → 其他子节点获得更多探索机会
+  Assumption Rules:
+    - Must annotate "Assumption: XXX"
+    - Variance +0.1 (because this is uncertain)
+    - List all assumptions in simulation report
+    - Focus on checking these assumptions during pre-execution self-check
 ```
 
 ---
 
-## ⑤ KNOWLEDGE UPDATE — 经验写回知识图谱
+## ④ BACKPROPAGATION — Value Backpropagation
 
-每次 Backpropagation 完成后，**可选地**将本轮经验写回知识图谱。这是 MCTS-TD 混合算法的关键：树搜索负责短期决策，知识图谱负责长期记忆。
+### Core Formula
 
-### 写入前门禁
+```
+Backpropagation: `python scripts/mcts_compute.py` backpropagate_path
+Each ancestor node: n+=1, w+=V_leaf, V=w/n, Welford online update σ²
+```
 
-写入前先过L-GCMS门禁: `python knowledge_lifecycle.py gate-check --experience '<JSON>' --kg '<JSON>'`
-四重过滤: 可复用性 + 信息密度 + 新颖性 + 可靠性 → store/observe/discard/merge
-门禁分<0.4→丢弃 | 0.4~0.59→暂存观察(15天验证窗口) | ≥0.6→正常存储
+### Backpropagation Effect
 
-### 写入时机
+```
+After one simulation:
 
-写入条件: `python scripts/mcts_compute.py should-write-kg --v-leaf <V> --round <N>`
-V≥0.8 | V≤0.3 | 轮次%5==0 | 最终收敛后 → 写入知识图谱
+Simulated: SolutionA → Step1-Success → Step2-PathB (previously unexplored)
+Simulation result: V_leaf = 0.85
 
-写入安全检查: `python scripts/mcts_compute.py check-write-safety`
+Backpropagation:
+  SolutionA-Step2-PathB: n=1, V=0.85 ← New node, initial value
+  SolutionA-Step1-Success: n: 3→4, V: 0.93→0.91 ← Pulled down slightly
+  SolutionA-Root: n: 4→5, V: 0.82→0.83 ← Slightly increased
 
-### 记忆生命周期维护
+Next round Selection:
+  SolutionA-Step2-PathB's UCB is high (n=1, V=0.85) → May be selected again
+                                              for verification
+  SolutionA-Step1-Success's V pulled down → UCB decreased → Other child nodes
+                                            get more exploration opportunities
+```
 
-每次任务结束后自动执行:
+---
+
+## ⑤ KNOWLEDGE UPDATE — Experience Write-back to Knowledge Graph
+
+After each Backpropagation completes, **optionally** write this round's experience to knowledge graph. This is the key to MCTS-TD hybrid algorithm: tree search handles short-term decisions, knowledge graph handles long-term memory.
+
+### Pre-write Gate
+
+Before writing, pass L-GCMS gate:
+`python knowledge_lifecycle.py gate-check --experience '<JSON>' --kg '<JSON>'`
+Four filters: Reusability + Information Density + Novelty + Reliability
+  → store/observe/discard/merge
+Gate score <0.4→discard | 0.4~0.59→temporary observe (15-day verification window)
+               | ≥0.6→normal storage
+
+### Write Timing
+
+Write condition: `python scripts/mcts_compute.py should-write-kg --v-leaf <V> --round <N>`
+V≥0.8 | V≤0.3 | Round%5==0 | After final convergence → Write to knowledge graph
+
+Write safety check: `python scripts/mcts_compute.py check-write-safety`
+
+### Memory Lifecycle Maintenance
+
+Auto-execute after each task:
 `python knowledge_lifecycle.py full-maintenance --kg '<JSON>' --recent-tasks '<JSON>' --context '<JSON>'`
-→ GC Roots追踪 → 分层重判 → Minor/Major GC → 归档回忆 → 错误检测 → 记忆压实
+→ GC Roots tracking → Tier re-judgment → Minor/Major GC → Archive recall →
+  Error detection → Memory compaction
 
-## 迭代控制
+## Iteration Control
 
-### 迭代次数
+### Iteration Count
 
 ```
-迭代不是无限进行的，由以下条件共同决定:
+Iteration is not infinite, jointly determined by:
 
-硬上限: `python scripts/mcts_compute.py` get_max_iterations → simple=5,medium=10,complex=20,debug=8
+Hard limit: `python scripts/mcts_compute.py` get_max_iterations
+  → simple=5,medium=10,complex=20,debug=8
 
-收敛: `python scripts/mcts_compute.py should_stop_iteration`
-①V最近3轮变化<0.05 ②高价值节点n≥3 ③最优n≥5且σ²<0.05 ④用户主动停止
+Convergence: `python scripts/mcts_compute.py should_stop_iteration`
+  ① V change <0.05 in last 3 rounds
+  ② High-value nodes n≥3
+  ③ Best n≥5 and σ²<0.05
+  ④ User actively stops
 
-时间预算:
-  每轮迭代约 10~30 秒（取决于节点深度）
-  简单任务总时间 < 2 分钟
-  复杂任务总时间 < 5 分钟
+Time Budget:
+  Each iteration ~10~30 seconds (depends on node depth)
+  Simple tasks total time <2 minutes
+  Complex tasks total time <5 minutes
 ```
 
-### 迭代进度显示
+### Iteration Progress Display
 
-每轮迭代后，输出当前树的状态摘要：
+After each iteration, output current tree state summary:
 
 ```
 ═══════════════════════════════════════
- MCTS 树搜索 — 第 3 轮迭代完成
+ MCTS Tree Search — Round 3 Iteration Complete
 ═══════════════════════════════════════
 
- 本轮:
-   Selection: 方案B → Step1-成功 → Step2-风险点
-   Expansion: 展开 "风险发生" 分支
-   Simulation: 风险发生后启动备用方案，最终 V=0.45
-   Backpropagation: 更新了 3 个节点
+ This Round:
+   Selection: SolutionB → Step1-Success → Step2-RiskPoint
+   Expansion: Expanded "Risk Occurred" branch
+   Simulation: After risk occurred, fallback activated, final V=0.45
+   Backpropagation: Updated 3 nodes
 
- 当前树状态:
+ Current Tree State:
   Root (N=12)
-  ├── 方案A (n=5, V=0.84, σ²=0.03) ← 当前最优
-  │    ├── Step1-成功 (n=3, V=0.91)
-  │    └── Step1-失败 (n=2, V=0.30)  
-  ├── 方案B (n=4, V=0.76, σ²=0.08)
-  │    ├── Step1-成功 (n=2, V=0.82)
-  │    └── Step1-失败 (n=2, V=0.52)
-  └── 方案C (n=3, V=0.62, σ²=0.15)
+  ├── SolutionA (n=5, V=0.84, σ²=0.03) ← Currently best
+  │    ├── Step1-Success (n=3, V=0.91)
+  │    └── Step1-Failure (n=2, V=0.30)  
+  ├── SolutionB (n=4, V=0.76, σ²=0.08)
+  │    ├── Step1-Success (n=2, V=0.82)
+  │    └── Step1-Failure (n=2, V=0.52)
+  └── SolutionC (n=3, V=0.62, σ²=0.15)
 
- 收敛检查:
-  方案A V 最近 3 轮: 0.85→0.83→0.84 (变化 < 0.05)
-  → ✅ 方案A V 估计已稳定
+ Convergence Check:
+  SolutionA V last 3 rounds: 0.85→0.83→0.84 (change <0.05)
+  → ✅ SolutionA V estimate stabilized
 ═══════════════════════════════════════
 ```
 
-### 收敛时的最终输出
+### Final Output at Convergence
 
 ```
-迭代停止后，输出完整的树搜索结果给仲裁引擎:
+After iteration stops, output complete tree search results to Converge Engine:
 
 ═══════════════════════════════════════
- MCTS 树搜索完成
+ MCTS Tree Search Complete
 ═══════════════════════════════════════
 
- 总迭代: 8 轮
- 停止原因: 最优方案价值估计已稳定（方案A）
+ Total Iterations: 8 rounds
+ Stop Reason: Best solution value estimate stabilized (SolutionA)
 
- 最终方案排名（按 n 加权 V）:
-  方案A: n=5, V=0.84, σ²=0.03, 信心=高
-  方案B: n=4, V=0.76, σ²=0.08, 信心=中
-  方案C: n=3, V=0.62, σ²=0.15, 信心=低
+ Final Solution Ranking (by n-weighted V):
+  SolutionA: n=5, V=0.84, σ²=0.03, Confidence=High
+  SolutionB: n=4, V=0.76, σ²=0.08, Confidence=Medium
+  SolutionC: n=3, V=0.62, σ²=0.15, Confidence=Low
 
- 方案间对比:
-  方案A 显著优于方案B (+0.08, σ²较低):
-    → 方案A 是最优方案
+ Inter-solution Comparison:
+  SolutionA significantly better than SolutionB (+0.08, lower σ²):
+    → SolutionA is optimal solution
 
- 搜索结果:
-  方案A 的最佳路径: Step1-成功 → Step2-路径a → Step3-完成
-  方案A 的主要风险: Step1-失败 (概率低但影响大, 已有备用方案)
+ Search Results:
+  SolutionA's best path: Step1-Success → Step2-PathA → Step3-Complete
+  SolutionA's main risk: Step1-Failure (low probability but high impact,
+                                      fallback available)
 ═══════════════════════════════════════
 ```
 

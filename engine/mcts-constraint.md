@@ -1,187 +1,210 @@
 ---
 name: mcts-constraint
-description: MCTS-TD 决策引擎的"第0步"——需求约束收集系统。在方案生成之前系统性收集所有约束条件，防止"做完了才发现不对"。
+description: MCTS-TD Decision Engine "Step 0" — Requirement Constraint Collection System. Systematically collect all constraints before solution generation to prevent "finished then realized wrong".
 ---
 
-# 第0步: 需求约束收集
+# Step 0: Requirement Constraint Collection
 
-> **一句话**: 在开始任何方案生成之前，先搞清楚所有"不能做什么"和"必须做什么"。
-> 约束是方案生成的边界条件——边界不清晰，方案就不靠谱。
+> ⚠️ **OUTPUT LANGUAGE RULE (HIGHEST PRIORITY)**: All user-facing output MUST be in the user's detected language. If user writes in Chinese → output Chinese. If Japanese → output Japanese. This is NON-NEGOTIABLE. Internal reasoning is English; user sees their language.
+
+> **One-liner**: Before starting any solution generation, first clarify all "what cannot be done" and "what must be done".
+> Constraints are boundary conditions for solution generation — boundaries unclear, solutions unreliable.
 
 ---
 
-## 为什么需要单独的约束收集
+## Why Separate Constraint Collection is Needed
 
 ```
-在现实项目中，很多"做错了"不是因为方案不好，而是因为约束没搞清楚就开干:
+In real projects, many "did it wrong" are not because solution was bad,
+but because constraints weren't clarified before starting:
 
-  例子1: "帮我把登录模块重构一下"
-    没收集约束 → 选了OAuth2方案 → 结果项目规定"不能引入外部依赖"
-    → 白做了
+  Example 1: "Help me refactor the login module"
+    Didn't collect constraints → Chose OAuth2 solution → Project rule
+      "Cannot introduce external dependencies"
+    → All wasted
   
-  例子2: "优化这个接口的性能"
-    没收集约束 → 做了缓存方案 → 结果用户说"数据必须实时"
-    → 缓存方案全白费
+  Example 2: "Optimize this API's performance"
+    Didn't collect constraints → Did caching solution → User says
+      "Data must be real-time"
+    → Caching solution all wasted
 
-约束收集 = 做对事情的第一步
+Constraint Collection = First step to doing right thing
 ```
 
 ---
 
-## 0.1 约束检测清单
+## 0.1 Constraint Detection Checklist
 
 ```
-收到任务后，立即执行以下约束检测，不能跳过:
+After receiving task, immediately execute following constraint detection,
+cannot skip:
 
 ┌──────────────────────────────────────────────────────────────────┐
-│  约束检测清单                                                    │
+│  Constraint Detection Checklist                                  │
 ├──────────────────────────────────────────────────────────────────┤
 │                                                                  │
-│  □ 技术栈约束:                                                    │
-│    任务涉及的技术栈在当前项目中是否已有？                            │
-│    项目正在用什么语言、框架、数据库、中间件？                        │
-│    有没有版本限制？（如只能用Java 8不能用17）                       │
+│  □ Tech Stack Constraints:                                       │
+│    Is the tech stack involved in task already in current project?│
+│    What language, framework, database, middleware is project     │
+│    using?                                                        │
+│    Any version restrictions? (e.g., only Java 8, not 17)         │
 │                                                                  │
-│  □ 依赖约束:                                                      │
-│    能否引入新的第三方依赖？（"不能引入外部依赖"）                     │
-│    如果能，有没有版本或license限制？                                │
+│  □ Dependency Constraints:                                       │
+│    Can new third-party dependencies be introduced?               │
+│    ("Cannot introduce external dependencies")                    │
+│    If yes, any version or license restrictions?                  │
 │                                                                  │
-│  □ 架构约束:                                                      │
-│    项目的架构设计有没有硬性规定？（如必须微服务、必须单体）            │
-│    有没有不能用/必须用的设计模式？                                  │
+│  □ Architecture Constraints:                                     │
+│    Any hard architecture design rules? (must be microservices,   │
+│    must be monolithic)                                           │
+│    Any design patterns that cannot be used or must be used?      │
 │                                                                  │
-│  □ 政策/合规约束:                                                  │
-│    有没有公司或行业的政策限制？（数据不能出域、必须审计日志等）        │
+│  □ Policy/Compliance Constraints:                                │
+│    Any company or industry policy restrictions?                  │
+│    (Data cannot leave region, must have audit logs, etc.)        │
 │                                                                  │
-│  □ 性能约束:                                                      │
-│    有没有性能要求？（响应时间、吞吐量、并发数）                       │
+│  □ Performance Constraints:                                      │
+│    Any performance requirements?                                 │
+│    (Response time, throughput, concurrency)                      │
 │                                                                  │
-│  □ 安全约束:                                                      │
-│    有没有安全要求？（加密标准、认证方式、OWASP合规等）               │
+│  □ Security Constraints:                                         │
+│    Any security requirements?                                    │
+│    (Encryption standards, auth methods, OWASP compliance, etc.)  │
 │                                                                  │
-│  □ 时间/成本约束:                                                  │
-│    有没有截止日期或预算限制？                                       │
+│  □ Time/Cost Constraints:                                        │
+│    Any deadline or budget limits?                                │
 │                                                                  │
-│  □ 隐式约束:                                                      │
-│    用户没有明说但可以从项目上下文中推断的约束？                       │
-│    （如项目用了MySQL → 不能用MongoDB）                              │
+│  □ Implicit Constraints:                                         │
+│    Constraints user didn't explicitly say but can infer from     │
+│    project context?                                              │
+│    (e.g., Project uses MySQL → Cannot use MongoDB)               │
 │                                                                  │
 └──────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 0.2 约束来源
+## 0.2 Constraint Sources
 
 ```
-约束信息从以下渠道获取（按优先级）:
+Constraint info obtained from following channels (by priority):
 
-1. 用户明确说的 → 直接记录
-   "用户说: 不能引入外部依赖"
-   → 标记为"硬约束"，不可突破
+1. User explicitly stated → Record directly
+   "User said: Cannot introduce external dependencies"
+   → Mark as "Hard Constraint", cannot break
 
-2. 项目代码推断的 → 通过读代码发现
-   "项目用了gin框架，没有其他认证中间件"
-   → 标记为"事实约束"，根据代码事实确定
+2. Project code inferred → Discovered by reading code
+   "Project uses gin framework, no other auth middleware"
+   → Mark as "Fact Constraint", determined by code facts
 
-3. 行业/技术常识 → 从技术知识中推理
-   "如果项目是金融系统，审计日志可能是隐性需求"
-   → 标记为"推测约束"，需要向用户确认
+3. Industry/Technical common knowledge → Reasoned from technical knowledge
+   "If project is financial system, audit logs may be implicit need"
+   → Mark as "Inferred Constraint", need to confirm with user
 
-4. 知识图谱中的类似任务 → 从历史经验中推断
-   "类似项目（K003）也有同样的政策限制"
-   → 标记为"经验约束"，可参考但需确认
-```
-
----
-
-## 0.3 约束缺失的处理
-
-```
-发现约束信息不全时:
-
-case 可以自己确认的（从项目代码/技术知识中）:
-  → 自己确认后记录为"事实约束"
-  case "项目用的是gin框架" → 读go.mod → 确认 → 记录
-  case "MySQL版本" → 读配置 → 确认 → 记录
-
-case 不能自己确认的（必须问用户）:
-  → 暂停 → 问用户 → 得到回答 → 继续
-  case "能否引入外部依赖" → 必须问用户，不能假设"应该是可以的"
-  case "有没有性能要求" → 问用户，不能假设"按常规处理"
-
-case 用户回答了但信息不完整:
-  → 追问，直到约束清晰
-  → "您说不能引入外部依赖，是指不能引入新的第三方库，
-     还是包括现有依赖的升级也不行？"
+4. Similar tasks in knowledge graph → Inferred from historical experience
+   "Similar project (K003) also had same policy restriction"
+   → Mark as "Experience Constraint", can reference but need confirmation
 ```
 
 ---
 
-## 0.4 约束对方案的影响
+## 0.3 Handling Missing Constraints
 
 ```
-收集到的约束直接影响方案生成:
+When discovering constraint info is incomplete:
 
-硬约束（不可突破）:
-  "不能引入外部依赖" → 排除所有需要新依赖的方案
-  "只能用Java 8" → 排除使用Java 17特性的方案
+case Can self-confirm (from project code/technical knowledge):
+  → Self-confirm, record as "Fact Constraint"
+  case "Project uses gin framework" → Read go.mod → Confirm → Record
+  case "MySQL version" → Read config → Confirm → Record
+
+case Cannot self-confirm (must ask user):
+  → Pause → Ask user → Get answer → Continue
+  case "Can external dependencies be introduced" → Must ask user,
+    cannot assume "probably ok"
+  case "Any performance requirements" → Ask user,
+    cannot assume "handle normally"
+
+case User answered but info incomplete:
+  → Follow-up question, until constraint is clear
+  → "You said cannot introduce external dependencies — does that mean
+     cannot introduce new third-party libs, or includes existing
+     dependency upgrades too?"
+```
+
+---
+
+## 0.4 Constraint Impact on Solutions
+
+```
+Collected constraints directly affect solution generation:
+
+Hard Constraints (cannot break):
+  "Cannot introduce external dependencies"
+    → Exclude all solutions requiring new dependencies
+  "Only Java 8 allowed"
+    → Exclude solutions using Java 17 features
   
-  作用: 剪枝，减少无效方案的生成
+  Effect: Pruning, reduce invalid solution generation
 
-软约束（可选，但影响匹配度）:
-  "最好用MySQL，但用PostgreSQL也可以"
-  "性能要求不高，但别太慢就行"
+Soft Constraints (optional, but affects match score):
+  "Prefer MySQL, but PostgreSQL also ok"
+  "Performance not critical, but don't be too slow"
   
-  作用: 影响项目匹配度M的计算
-  如果方案违反软约束 → 匹配度M降低
-  如果方案满足软约束 → 匹配度M升高
+  Effect: Affects Project Match Score M calculation
+  If solution violates soft constraint → Match score M decreases
+  If solution satisfies soft constraint → Match score M increases
 ```
 
 ---
 
-## 0.5 约束变化时的处理
+## 0.5 Handling Constraint Changes
 
 ```
-如果推演过程中发现新的约束（之前不知道的）:
+If discovering new constraint during simulation (didn't know before):
 
-1. 将新约束加入约束清单
-2. 评估已有方案是否违反新约束:
-   → 违反硬约束 → 该方案直接淘汰
-   → 违反软约束 → 重新计算项目匹配度M
-3. 如果所有方案都违反硬约束 → 回到发散引擎重新生成方案
-4. 更新全局补全箱: 记录新约束的发现
+1. Add new constraint to constraint list
+2. Evaluate existing solutions against new constraint:
+   → Violates hard constraint → Solution directly eliminated
+   → Violates soft constraint → Recalculate project match score M
+3. If all solutions violate hard constraints → Return to Diverge Engine
+   to regenerate solutions
+4. Update global completion box: Record new constraint discovery
 
-示例:
-  推演方案C时发现"公司有政策不能引入外部依赖"
-  → 方案C(OAuth2)违反硬约束 → 淘汰
-  → 方案A(gin-jwt)和方案B(自实现JWT)不受影响 → 继续
+Example:
+  During SolutionC simulation discovered "Company policy cannot introduce
+  external dependencies"
+  → SolutionC (OAuth2) violates hard constraint → Eliminated
+  → SolutionA (gin-jwt) and SolutionB (self-implement JWT) unaffected →
+    Continue
 ```
 
 ---
 
-## 约束输出格式
+## Constraint Output Format
 
-发散引擎在执行前，需要先输出约束清单:
+Before Diverge Engine executes, need to output constraint list:
 
 ```
 ────────────────────────────
- 【需求约束清单】
- 任务: [实现用户登录功能]
+ 【Requirement Constraint List】
+ Task: [Implement user login feature]
 
- 硬约束:
-   [✓] 不能引入外部依赖（用户明确说）
-   [✓] 只能用 Go 标准库 + gin 框架（项目代码推断）
-   [✓] 密码必须用 bcrypt 加密（安全要求）
+ Hard Constraints:
+   [✓] Cannot introduce external dependencies (User explicitly stated)
+   [✓] Only Go standard library + gin framework allowed (Project code
+       inferred)
+   [✓] Password must use bcrypt encryption (Security requirement)
 
- 软约束:
-   [ ] 最好支持 OAuth2 扩展（推测，未确认）
-   [ ] 性能要求不高（用户说"能跑就行"）
-   [✓] 需要兼容现有用户表结构（代码推断）
+ Soft Constraints:
+   [ ] Prefer OAuth2 extension support (Inferred, unconfirmed)
+   [ ] Performance not critical (User said "just needs to run")
+   [✓] Need to be compatible with existing user table structure (Code
+       inferred)
 
- 约束来源:
-   用户明确: 2条
-   代码推断: 2条
-   推测待确认: 1条
+ Constraint Sources:
+   User explicit: 2 items
+   Code inferred: 2 items
+   Inferred pending confirmation: 1 item
  ────────────────────────────
 ```

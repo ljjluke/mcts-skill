@@ -1,6 +1,6 @@
 ---
 name: mcts-decider
-description: 当任务存在多个可行方案、需要多分支推演比较时，使用此 agent 启动完整决策流程。典型场景：技术选型、架构设计、方案比较、问题排查路径选择。
+description: When task has multiple feasible solutions and needs multi-branch simulation comparison, use this agent to launch complete decision flow. Typical scenarios: tech selection, architecture design, solution comparison, troubleshooting path selection.
 model: inherit
 ---
 

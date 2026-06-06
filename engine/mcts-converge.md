@@ -1,328 +1,372 @@
 ---
 name: mcts-converge
-description: MCTS-TD 决策引擎的"第3步~第3.6步"——仲裁引擎。汇总比较(CLT-UCB排序) + 推演结果自检 + 领域盲区审计 + 再推演 + TD误差记录。
+description: MCTS-TD Decision Engine "Step 3~3.6" — Converge Engine. Aggregate comparison (CLT-UCB ranking) + simulation result self-check + domain blindspot audit + re-simulation + TD error recording.
 ---
 
-# 第3~3.6步: 仲裁引擎 — 汇总比较 × 自检 × 盲区审计
+# Step 3~3.6: Converge Engine — Aggregate × Self-Check × Blindspot Audit
 
-> **一句话**: 所有方案推演完成后，先排序选最优，再自我质疑推演结果，最后检查视角是否覆盖全面，然后才执行。
-> 仲裁引擎是决策质量的最后把关——防止"推演对了方向却错了"。
+> **🔒 COMPRESSION-SAFE RULES (Always apply, even if context is compressed):**
+> 1. **OUTPUT LANGUAGE**: User language already detected. Continue using that language.
+> 2. **CONVERGE PHASES**: Aggregate → Self-Check → Blindspot Audit → Decision Report.
+> 3. **FINAL OUTPUT**: Use `python scripts/language_adapter.py template --phase decision_report --lang <lang>`
+> 4. **RANKING**: Rank solutions by V (value), show top 3 with n, σ², confidence.
 
----
+> ⚠️ **OUTPUT LANGUAGE RULE (HIGHEST PRIORITY)**: All user-facing output MUST be in the user's detected language. Internal reasoning is English; user sees their language.
 
-## 仲裁引擎全流程
-
-```
-汇总比较（CLT-UCB排序）
-    ↓ 选出第1名
-推演结果自检（找漏洞 + 反向思考 + 风险评估）
-    ↓ 检查"推演得对不对"
-领域盲区审计（检查视角覆盖度）
-    ↓ 检查"有没有漏掉关键维度"
-决策结论（通过 → 执行 / 告警 → 补充方案 / 失败 → 重推演）
-```
+> **One-liner**: After all solutions are simulated, first rank to select best, then self-question simulation results, finally check perspective coverage completeness, then execute.
+> Converge Engine is the final quality gate — prevents "simulated right direction but got it wrong".
 
 ---
 
-## 第3步: 汇总比较（基于多轮 MCTS 迭代结果）
-
-> 推演引擎已完成多轮 MCTS 树搜索，每个方案经过了 n 次独立模拟，价值估计趋于稳定。
-> 仲裁引擎现在基于这些**多轮迭代的收敛结果**做最终排序。
-
-### 输入：来自推演引擎的树搜索结果
+## Converge Engine Full Flow
 
 ```
-推演引擎输出的每个方案:
-  方案A: n=5, V=0.84, σ²=0.03, 信心=高
-         最佳路径: Step1-成功 → Step2-路径a → Step3-完成
-         主要风险: Step1-失败 (n=2, V=0.30, 概率低但影响大)
+Aggregate Comparison (CLT-UCB Ranking)
+    ↓ Select 1st place
+Simulation Result Self-Check (find flaws + reverse thinking + risk assessment)
+    ↓ Check "Did we simulate correctly?"
+Domain Blindspot Audit (check perspective coverage)
+    ↓ Check "Did we miss key dimensions?"
+Decision Conclusion (Pass → Execute / Alert → Supplement solution /
+                    Fail → Re-simulate)
+```
+
+---
+
+## Step 3: Aggregate Comparison (Based on Multi-round MCTS Iteration Results)
+
+> Simulate Engine has completed multi-round MCTS tree search. Each solution
+> underwent n independent simulations. Value estimate has stabilized.
+> Converge Engine now ranks based on these **multi-round iteration convergence
+> results**.
+
+### Input: Tree Search Results from Simulate Engine
+
+```
+Each solution output from Simulate Engine:
+  SolutionA: n=5, V=0.84, σ²=0.03, Confidence=High
+             Best Path: Step1-Success → Step2-PathA → Step3-Complete
+             Main Risk: Step1-Failure (n=2, V=0.30, low probability but
+                                      high impact)
   
-  方案B: n=4, V=0.76, σ²=0.08, 信心=中
-         最佳路径: Step1-成功 → Step2-规避风险 → Step3-完成
-         主要风险: Step2 风险规避失败 (n=1, V=0.52)
+  SolutionB: n=4, V=0.76, σ²=0.08, Confidence=Medium
+             Best Path: Step1-Success → Step2-AvoidRisk → Step3-Complete
+             Main Risk: Step2 risk avoidance failed (n=1, V=0.52)
   
-  方案C: n=3, V=0.62, σ²=0.15, 信心=低
-         最佳路径: Step1-成功 → Step2-直接执行
-         主要风险: 高方差（不确定性大）
+  SolutionC: n=3, V=0.62, σ²=0.15, Confidence=Low
+             Best Path: Step1-Success → Step2-DirectExecute
+             Main Risk: High variance (high uncertainty)
 ```
 
-### 汇总表
+### Summary Table
 
 ```
-列: 方案 | n | V | σ² | 信心 | 最佳路径/主要风险
-n=模拟次数, V=平均价值, σ²=方差, 信心=高(n≥5,σ²<0.05)/中/低
+Columns: Solution | n | V | σ² | Confidence | Best Path / Main Risk
+n=simulation count, V=average value, σ²=variance,
+Confidence=High(n≥5,σ²<0.05)/Medium/Low
 ```
 
-### MCTS 排序法则
+### MCTS Ranking Rules
 
-排序规则: `python scripts/mcts_compute.py rank --solutions '<JSON>'`
-按V降序, V差<0.05时比较n和σ², needs_re_evaluation检查是否需追加迭代
-最终输出推荐方案 + 最佳路径 + 主要风险 + 信心水平
+```
+Ranking rule: `python scripts/mcts_compute.py rank --solutions '<JSON>'`
+Sort by V descending. When V diff <0.05, compare n and σ².
+needs_re_evaluation checks if additional iterations needed.
+Output recommended solution + best path + main risk + confidence level.
 ```
 
-### 收敛判定
+### Convergence Determination
 
-收敛检查: `python scripts/mcts_compute.py check-final-convergence`
-条件: Root总n≥方案数×4 | 第1名n≥5 | 第1名σ²<0.10 | V差距>0.05
-未收敛→追加3轮(最多2次) | 仍不收敛→标注"未完全收敛"
+```
+Convergence check: `python scripts/mcts_compute.py check-final-convergence`
+Conditions: Root total n≥solution_count×4 | 1st place n≥5 |
+            1st place σ²<0.10 | V gap >0.05
+Not converged → Add 3 rounds (max 2 times) |
+Still not converged → Mark "not fully converged"
+```
 
 ---
 
-## ASK_USER_CONFIRMATION — 展示搜索结果并询问
+## ASK_USER_CONFIRMATION — Display Search Results and Ask
 
-在进入自检和盲区审计之前，**先向用户展示 MCTS 树搜索结论**：
+Before entering self-check and blindspot audit, **first display MCTS tree search conclusion to user**:
 
 ```
 ═══════════════════════════════════════
- 【MCTS 树搜索结论】（8 轮迭代）
+ 【MCTS Tree Search Conclusion】 (8 iterations)
 
- 方案A — V=0.84, n=5, σ²=0.03 ⭐推荐
-   最佳路径: gin-jwt扩展 → access+refresh token → Redis黑名单
-   主要风险: 第一步遇到兼容性问题（概率低，已有fallback）
-   信心水平: 高
+ SolutionA — V=0.84, n=5, σ²=0.03 ⭐Recommended
+   Best Path: gin-jwt extension → access+refresh token → Redis blacklist
+   Main Risk: Step1 compatibility issue (low probability, fallback available)
+   Confidence: High
 
- 方案B — V=0.76, n=4, σ²=0.08
-   最佳路径: 自实现JWT → 内存黑名单 → 简单refresh
-   主要风险: 自实现JWT安全性需要验证
-   信心水平: 中
+ SolutionB — V=0.76, n=4, σ²=0.08
+   Best Path: Self-implement JWT → memory blacklist → simple refresh
+   Main Risk: Self-implemented JWT security needs verification
+   Confidence: Medium
 
- 方案C — V=0.62, n=3, σ²=0.15
-   最佳路径: 引入Keycloak → OAuth2配置 → 集成
-   主要风险: 引入外部依赖可能违反项目约束
-   信心水平: 低（高方差，不确定）
+ SolutionC — V=0.62, n=3, σ²=0.15
+   Best Path: Introduce Keycloak → OAuth2 config → integration
+   Main Risk: External dependency may violate project constraints
+   Confidence: Low (high variance, uncertain)
 
- **推荐方案A**，确认后进入自检和盲区审计。
+ **Recommend SolutionA**. After confirmation, enter self-check and blindspot
+ audit.
 ═══════════════════════════════════════
 ```
 
-**如果只有 1 个方案**: 仍然展示搜索结果，不跳过，等用户确认。
+**If only 1 solution**: Still display search results, don't skip, wait for user confirmation.
 
 ---
 
-## 第3.5步: 推演结果自检（关键防错）
+## Step 3.5: Simulation Result Self-Check (Critical Error Prevention)
 
-在选中方案执行之前，**必须对推演结果做一次自我质疑**。这是防止"推演错了还按错的执行"的最后一道防线。
+Before executing selected solution, **must self-question simulation results once**. This is the last defense against "simulated wrong but still executing wrong".
 
-### 为什么需要自检
-
-```
-推演过程本身也可能出错:
-  - Claude 推理时漏掉了某个关键因素
-  - 推演时依赖了一个错误的假设
-  - 某个方案的风险被低估了
-  - 价值函数中的历史数据可能已经过时
-
-不自检就去执行 → 错了也不知道 → 错误的价值被TD学习吸收
-  → 后续推演越来越不准 → 恶性循环
-```
-
-### 自检步骤
+### Why Self-Check is Needed
 
 ```
-在"选择第1名作为执行方案"之后，执行之前，做三件事:
+Simulation process itself can have errors:
+  - Claude missed some key factor during reasoning
+  - Simulation relied on an incorrect assumption
+  - Some solution's risk was underestimated
+  - Historical data in value function may be outdated
 
-① 找漏洞:
-  "这个推演有什么可能出错的地方？"
-  → 检查推演过程中是否有模糊的判断
-  → 检查是否依赖了未经验证的假设
-  → 检查是否有被忽略的风险
+Execute without self-check → Wrong without knowing → Wrong value absorbed
+                              by TD learning
+  → Future simulations increasingly inaccurate → Vicious cycle
+```
+
+### Self-Check Steps
+
+```
+After "select 1st place as execution solution", before executing, do three
+things:
+
+① Find flaws:
+  "Where might this simulation be wrong?"
+  → Check if simulation had vague judgments
+  → Check if relied on unverified assumptions
+  → Check if any ignored risks
   
-② 反向思考:
-  "如果第2名其实比第1名好，可能是什么原因？"
-  → 强迫自己从另一个角度看问题
-  → 找出第1名的盲区
+② Reverse thinking:
+  "If 2nd place is actually better than 1st place, what might be the reason?"
+  → Force self to look from another angle
+  → Find 1st place's blindspots
   
-③ 风险评估:
-  "如果选错了，最坏的结果是什么？能承受吗？"
-  → 如果能承受 → 执行
-  → 如果不能承受 → 进入"再推演"模式，或建议用户手动确认
+③ Risk assessment:
+  "If chose wrong, what's the worst outcome? Can we bear it?"
+  → If can bear → Execute
+  → If cannot bear → Enter "re-simulate" mode, or suggest user manual confirm
 ```
 
-### 自检报告格式
+### Self-Check Report Format
 
 ```
 ═══════════════════════════════════════
-  推演结果自检
+  Simulation Result Self-Check
 ═══════════════════════════════════════
 
-  ① 找漏洞:
-    □ 推演中是否有模糊的判断? → [有/无]
-      如果有: [具体说明]
-    □ 是否依赖了未验证的假设? → [有/无]
-      如果有: [具体说明]
-    □ 是否有被忽略的风险? → [有/无]
-      如果有: [具体说明]
+  ① Find flaws:
+    □ Did simulation have vague judgments? → [Yes/No]
+      If yes: [Specific explanation]
+    □ Did it rely on unverified assumptions? → [Yes/No]
+      If yes: [Specific explanation]
+    □ Were there ignored risks? → [Yes/No]
+      If yes: [Specific explanation]
 
-  ② 反向思考:
-    如果第2名[方案B]比第1名[方案A]好，可能的原因:
-    - [原因1]
-    - [原因2]
-    这些原因成立的可能性: [高/中/低]
-    如果成立，是否改变选择? → [是/否]
+  ② Reverse thinking:
+    If 2nd place [SolutionB] is actually better than 1st place [SolutionA],
+    possible reasons:
+    - [Reason1]
+    - [Reason2]
+    Likelihood these reasons are valid: [High/Medium/Low]
+    If valid, does it change selection? → [Yes/No]
 
-  ③ 风险评估:
-    选第1名[方案A]的最坏结果: [描述]
-    最坏结果的影响程度: [轻微/中等/严重]
-    是否能承受? → [能/不能]
+  ③ Risk assessment:
+    Worst outcome of choosing 1st place [SolutionA]: [Description]
+    Worst outcome impact level: [Minor/Moderate/Severe]
+    Can we bear it? → [Can/Cannot]
 
-  自检结论:
-    ✅ 通过 — 推演可靠，可以执行
-    ⚠️ 有风险 — 建议用户确认后再执行
-    ❌ 未通过 — 重新推演或换方案
+  Self-Check Conclusion:
+    ✅ Pass — Simulation reliable, can execute
+    ⚠️ Has risk — Recommend user confirm before executing
+    ❌ Not passed — Re-simulate or switch solution
 ```
 
-### 自检未通过时的处理
+### Handling When Self-Check Not Passed
 
-自检结论处理: `python scripts/mcts_compute.py handle-self-check --conclusion <通过/有风险/未通过>`
+```
+Self-check conclusion handling:
+  `python scripts/mcts_compute.py handle-self-check --conclusion <Pass/Risk/NotPassed>`
 ```
 
-### 熔断机制
+### Circuit Breaker Mechanism
 
-熔断: `python scripts/mcts_compute.py get-fuse-mode --accuracy <float> --consecutive-bad <int>`
-准确率=最近10次|误差|<0.3的比例, <70%→简化, <50%→问用户, 连续3次<50%→建议手动
+```
+Circuit breaker: `python scripts/mcts_compute.py get-fuse-mode --accuracy <float> --consecutive-bad <int>`
+Accuracy = proportion of last 10 times where |error|<0.3
+<70% → simplified | <50% → ask user | Consecutive 3 times <50% → suggest manual
+```
 
 ---
 
-## 第3.6步: 领域盲区审计（视角覆盖度检查）
+## Step 3.6: Domain Blindspot Audit (Perspective Coverage Check)
 
-> **核心设计**: 在推演结束、执行之前，最后检查一次——我们的头脑风暴是否真正覆盖了所有关键领域？
-> 这一步是防止"方案评分很高，但根本方向就错了"的最后防线。
+> **Core Design**: After simulation ends, before execution, final check — did our brainstorming truly cover all key domains?
+> This step is the last defense against "solution scored high but fundamental direction was wrong".
 
-### 为什么需要盲区审计
+### Why Blindspot Audit is Needed
 
 ```
-自检（第3.5步）检查的是"方案推演得对不对"，是垂直方向的深度检查。
-盲区审计（第3.6步）检查的是"我们漏掉了什么视角"，是水平方向的广度检查。
+Self-check (Step 3.5) examines "Did solution simulate correctly" — vertical
+depth check.
+Blindspot audit (Step 3.6) examines "What perspectives did we miss" —
+horizontal breadth check.
 
-两者正交:
-  自检: "方案A的推演有没有漏洞?"  ← 垂直深度
-  盲区审计: "我们是不是整个漏掉了安全视角?"  ← 水平广度
+The two are orthogonal:
+  Self-check: "Did SolutionA's simulation have flaws?" ← Vertical depth
+  Blindspot audit: "Did we completely miss security perspective?" ←
+                    Horizontal breadth
 
-如果只做自检不做盲区审计:
-  → 方案A推演得很完美，但方案A本身是纯技术视角的
-  → 用户真正需要的是安全视角的方案B
-  → 执行了方案A才发现"哦，应该考虑安全的"
-  → 浪费！
+If only self-check without blindspot audit:
+  → SolutionA simulated perfectly, but SolutionA itself is pure tech perspective
+  → What user truly needs is security perspective's SolutionB
+  → Executed SolutionA then realize "Oh, should have considered security"
+  → Waste!
 ```
 
-### 盲区审计框架
+### Blindspot Audit Framework
 
 ```
 ═════════════════════════════════════════════════════════════════════
-  领域盲区审计
+  Domain Blindspot Audit
 ═════════════════════════════════════════════════════════════════════
 
-第一步: 列出所有已生成方案的视角
+Step 1: List perspectives of all generated solutions
   ┌───────┬────────────────────┬─────────────────────────────┐
-  │ 方案   │ 主视角             │ 六维覆盖情况                │
+  │Solution│ Main Perspective    │ Six-Dimension Coverage      │
   ├───────┼────────────────────┼─────────────────────────────┤
-  │ 方案A  │ ①技术选型          │ 技术栈、架构                │
-  │ 方案B  │ ④安全优先          │ 安全合规、技术栈            │
-  │ 方案C  │ ⑤运维优先          │ 运维部署、架构              │
-  │ 方案D  │ ⑩反面视角          │ (反面教材，不直接覆盖)      │
+  │ A      │ ①Tech Selection     │ Tech stack, Architecture    │
+  │ B      │ ④Security First     │ Security compliance,        │
+  │        │                     │ Tech stack                  │
+  │ C      │ ⑤Ops First          │ Ops deployment, Architecture│
+  │ D      │ ⑩Reverse Perspective │ (Anti-pattern, not direct   │
+  │        │                     │  coverage)                  │
   └───────┴────────────────────┴─────────────────────────────┘
 
-第二步: 对比六维领域地图，识别遗漏维度
-  六维地图:
-    [√] 技术栈  — 已覆盖 (方案A, 方案B)
-    [√] 架构模式 — 已覆盖 (方案A, 方案C)
-    [×] 业务流程 — 未覆盖! ← 盲区
-    [√] 安全合规 — 已覆盖 (方案B)
-    [√] 运维部署 — 已覆盖 (方案C)
-    [×] 用户体验 — 未覆盖! ← 盲区
+Step 2: Compare with Six-Dimension Domain Map, identify missing dimensions
+  Six-Dimension Map:
+    [√] Tech stack     — Covered (SolutionA, SolutionB)
+    [√] Architecture   — Covered (SolutionA, SolutionC)
+    [×] Business flow  — Not covered! ← Blindspot
+    [√] Security       — Covered (SolutionB)
+    [√] Ops deployment — Covered (SolutionC)
+    [×] User experience — Not covered! ← Blindspot
 
-  盲区维度: 业务流程、用户体验
+  Blindspot dimensions: Business flow, User experience
 
-第三步: 对每个盲区，判断是否需要补充方案
+Step 3: For each blindspot, determine if solution supplementation needed
 
-  盲区1: 业务流程
-    → 是否需要业务流程视角的方案? → [是/否]
-    → 判断依据: 
-      如果该功能涉及复杂的实体流转、状态机、多步骤流程 → 是
-      如果只是一个简单的CRUD操作 → 否
-    → 结论: [需要补充 / 不需要，不影响决策质量]
+  Blindspot 1: Business flow
+    → Need business flow perspective solution? → [Yes/No]
+    → Judgment basis:
+      If feature involves complex entity transitions, state machines,
+      multi-step flows → Yes
+      If just simple CRUD operation → No
+    → Conclusion: [Need supplement / Not needed, doesn't affect decision quality]
 
-  盲区2: 用户体验
-    → 是否需要用户体验视角的方案? → [是/否]
-    → 判断依据:
-      如果是面向用户的功能 → 是
-      如果是纯后端/基础设施 → 否
-    → 结论: [需要补充 / 不需要，不影响决策质量]
+  Blindspot 2: User experience
+    → Need user experience perspective solution? → [Yes/No]
+    → Judgment basis:
+      If user-facing feature → Yes
+      If pure backend/infrastructure → No
+    → Conclusion: [Need supplement / Not needed, doesn't affect decision quality]
 
-第四步: 盲区补充决策
+Step 4: Blindspot Supplement Decision
 
-  情况1: 所有盲区都不需要补充
-    → ✅ 视角覆盖完整，进入执行阶段
-    → 格式: "所有关键维度已覆盖，盲区审计通过"
+  Case 1: All blindspots don't need supplement
+    → ✅ Perspective coverage complete, enter execution phase
+    → Format: "All key dimensions covered, blindspot audit passed"
 
-  情况2: 有需要补充的盲区，且当前排名第一的方案存在明显视角偏科
-    → ⚠️ 盲区审计告警，需要补充方案
-    → 回到视角轮盘，对盲区维度生成新方案
-    → 新方案生成后追加推演
+  Case 2: Some blindspots need supplement, and current 1st place has obvious
+          perspective bias
+    → ⚠️ Blindspot audit alert, need supplement solution
+    → Return to perspective wheel, generate new solution for blindspot
+    → New solution generated, append simulation
 
-  情况3: 有需要补充的盲区，但排名第一的方案已经覆盖较好
-    → 💡 盲区审计提示，但不强制补充
-    → 在最终输出中标注: "注意: 方案A没有覆盖XX视角，如果需要可以追加"
-    → 用户看到提示后决定是否补充
+  Case 3: Some blindspots need supplement, but 1st place already covers well
+    → 💡 Blindspot audit hint, but don't force supplement
+    → Annotate in final output: "Note: SolutionA doesn't cover XX perspective,
+                                 can append if needed"
+    → User sees hint, decides whether to supplement
 ```
 
-### 盲区审计输出格式
+### Blindspot Audit Output Format
 
-输出格式（核心字段）:
-  【领域盲区审计】方案视角汇总表 + 六维覆盖度矩阵 + 盲区评估 + 补充决策
+Output format (core fields):
+  【Domain Blindspot Audit】Solution perspective summary table +
+  Six-dimension coverage matrix + Blindspot assessment + Supplement decision
 
 ---
 
-## 执行遇到意外时的处理
+## Handling Unexpected Issues During Execution
 
 ```
-执行过程中如果遇到推演时未预见的问题:
-  1. 记录意外: 推演时的假设是什么? 实际情况是什么?
-  2. 评估影响: 这个意外是否导致当前方案不可行?
-     → 如果不可行: 触发"再推演"模式
-     → 如果仍可行: 继续执行，但调整推演评分
-  3. 再推演: 回到推演引擎，对排名第2的方案做推演（如果之前没做过）
-  4. 切换执行: 如果第2名更优，切换过去
+If encountering unforeseen issues during execution:
+  1. Record unexpected: What was assumption during simulation? What's actual?
+  2. Assess impact: Does this unexpected make current solution infeasible?
+     → If infeasible: Trigger "re-simulate" mode
+     → If still feasible: Continue execute, but adjust simulation score
+  3. Re-simulate: Return to Simulate Engine, simulate 2nd place solution
+                  (if not done before)
+  4. Switch execution: If 2nd place is better, switch to it
 ```
 
-## 再推演模式的完整规则
+## Complete Re-simulate Mode Rules
 
 ```
-再推演决策: `python scripts/mcts_compute.py re-simulation-decide`
-核心: 第2名有推演→直接比较 | 第2名无推演→快速推演(2步) | 全部受影响→回发散引擎
-知识更新: 失败原因→知识图谱, 新约束→约束清单, 成功→完整决策轨迹
-```
-
----
-
-## TD误差记录（执行中）
-
-```
-每次遇到意外时:
-  TD_error = 实际结果 - 推演预期
-  这个误差会被记录，在最终TD更新阶段使用
-```
-
-## TD更新与知识写回（执行后）
-
-> 这是 MCTS-TD 中 "TD" 的具体落地——执行完成后，将实际结果与推演对比，更新知识图谱。
-
-### 完整写回流程
-
-```
-TD更新由 `python scripts/mcts_compute.py` td_update_workflow 编排:
-1. 计算 V_actual, TD_error = V_actual - V_predicted
-2. 遍历最优路径节点 → 匹配知识图谱 → 更新或创建 HYPOTHESIS
-3. 检查状态转换、休眠、归档
-4. 记录决策序列模式（成功/失败路径）
-
-写入路径: ~/.claude/data/skills/mcts-td-planner/memory/mcts-td-value-archive.md
+Re-simulate decision: `python scripts/mcts_compute.py re-simulation-decide`
+Core: 2nd place has simulation → Direct comparison |
+       2nd place no simulation → Quick simulate (2 steps) |
+       All affected → Return to Diverge Engine
+Knowledge update: Failure reason → knowledge graph, New constraints →
+                  constraint list, Success → complete decision trace
 ```
 
 ---
 
-## 决策结论输出格式
+## TD Error Recording (During Execution)
 
-决策报告格式（核心字段）:
-  【MCTS-TD 决策报告】任务+日期+总迭代
-  方案排序(V/n/σ²) + 自检结论 + 盲区审计 + 执行计划 + 知识更新摘要
+```
+Each time encountering unexpected:
+  TD_error = Actual result - Simulated expectation
+  This error is recorded, used in final TD update phase
+```
+
+## TD Update and Knowledge Write-back (After Execution)
+
+> This is where "TD" in MCTS-TD materializes — after execution completes,
+> compare actual results with simulation, update knowledge graph.
+
+### Complete Write-back Flow
+
+```
+TD update orchestrated by `python scripts/mcts_compute.py` td_update_workflow:
+1. Calculate V_actual, TD_error = V_actual - V_predicted
+2. Traverse optimal path nodes → Match knowledge graph → Update or create
+   HYPOTHESIS
+3. Check status transitions, sleep, archive
+4. Record decision sequence patterns (success/failure paths)
+
+Write path: ~/.claude/data/skills/mcts-td-planner/memory/mcts-td-value-archive.md
+```
+
+---
+
+## Decision Conclusion Output Format
+
+Decision report format (core fields):
+  【MCTS-TD Decision Report】Task + Date + Total iterations
+  Solution ranking (V/n/σ²) + Self-check conclusion + Blindspot audit +
+  Execution plan + Knowledge update summary

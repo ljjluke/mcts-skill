@@ -1,355 +1,420 @@
 ---
 name: mcts-diverge
-description: MCTS-TD 决策引擎的"第1步"——发散引擎。发散(八面镜反复审视+自由联想)→收敛(提炼结构化方案列表)。核心能力是发散时不遗漏任何角度，收敛时从混乱中提炼出清晰可执行的决策选项。
+description: MCTS-TD Decision Engine "Step 1" — Diverge Engine. Diverge (Eight-Facet Mirror iterative review + free association) → Converge (extract structured solution list). Core capability: during divergence, no angle is missed; during convergence, clear executable decision options are extracted from chaos.
 ---
 
-# 第1步: 发散引擎 — 发散 × 收敛
+# Step 1: Diverge Engine — Diverge × Converge
 
-> **发散引擎 = 发散阶段 + 收敛阶段。两个阶段缺一不可。**
-> 发散: 以八面镜为框架，对用户需求进行多轮、多角度、交叉关联的思维发散，收集尽可能多的信息。
-> 收敛: 从发散产生的混乱中提炼出2~8个结构化、可执行、有实质差异的方案。
-> 
-> **发散求全，收敛求精。只发散不收敛 = 一堆想法无法执行。只收敛不发散 = 方案片面遗漏关键角度。**
+> **🔒 COMPRESSION-SAFE RULES (Always apply, even if context is compressed):**
+> 1. **OUTPUT LANGUAGE**: Use `python scripts/language_adapter.py detect` to get user's language. ALL output MUST be in that language.
+> 2. **PHASE ORDER**: Review Map → Recon Report → Solution List. Each MUST be output before proceeding.
+> 3. **CALL CODE**: `python scripts/language_adapter.py template --phase review_map --lang <lang>` for headers.
+> 4. **NO SKIP**: Do not skip any phase. Do not collapse phases into one summary.
+
+> ⚠️ **OUTPUT LANGUAGE RULE (HIGHEST PRIORITY)**: All user-facing output MUST be in the user's detected language. If user writes in Chinese → output Chinese. If Japanese → output Japanese. This is NON-NEGOTIABLE. Internal reasoning is English; user sees their language.
+
+> **Diverge Engine = Diverge Phase + Converge Phase. Both are indispensable.**
+> Diverge: Using the Eight-Facet Mirror as framework, perform multi-round, multi-angle, cross-associative thinking divergence on user needs, collecting as much information as possible.
+> Converge: Extract 2~8 structured, executable, substantially different solutions from the chaos produced by divergence.
+>
+> **Diverge for completeness, Converge for quality. Only diverge without converge = a pile of ideas that cannot be executed. Only converge without diverge = solutions that are partial and miss key angles.**
 
 ---
 
-## 发散引擎全流程
+## Diverge Engine Full Flow
 
 ```
-用户需求
+User Need
     │
     ▼
 ┌─────────────────────────────────────────────────────────┐
-│                发散阶段（头脑风暴）                       │
+│                Diverge Phase (Brainstorming)            │
 │                                                         │
-│  八面镜反复审视: 不是"过一遍"，是"反复照"                 │
-│    面1→面8逐面审视                                       │
-│    面的交叉关联（面5发现触发面2重新审视）                  │
-│    盲区补全（缺信息就去查/问）                            │
-│    直到每个面都想清楚了                                   │
+│  Eight-Facet Mirror iterative review: not "go once",    │
+│  but "reflect repeatedly"                               │
+│    Facet1→Facet8: review each facet                     │
+│    Cross-facet association (Facet5 discovery triggers   │
+│      Facet2 re-review)                                  │
+│    Blindspot completion (if missing info, go query/ask) │
+│    Until each facet is thought through clearly          │
 │                                                         │
-│  产出: 8个面的具体维度 + 自评 + 侦查发现 + 想法碎片        │
+│  Output: 8 facets' concrete dimensions + self-ratings   │
+│          + recon findings + idea fragments              │
 └──────────────────────────┬──────────────────────────────┘
                            │
                            ▼
 ┌─────────────────────────────────────────────────────────┐
-│                收敛阶段（提炼方案）                       │
+│                Converge Phase (Extract Solutions)       │
 │                                                         │
-│  从发散产生的想法碎片中提炼出结构化的方案:                 │
-│    ① 归类: 哪些想法属于同一个方向？                       │
-│    ② 补全: 每个方向是否还缺关键信息？                     │
-│    ③ 取舍: 去掉不可行/明显劣的方案方向                    │
-│    ④ 成形: 每个保留的方向写出完整的方案描述               │
+│  Extract structured solutions from idea fragments       │
+│  produced by divergence:                                │
+│    ① Cluster: Which ideas belong to the same direction? │
+│    ② Complete: Is key info missing for each direction?  │
+│    ③ Cull: Remove infeasible/obviously inferior         │
+│            solution directions                          │
+│    ④ Crystallize: Write complete solution description   │
+│            for each retained direction                  │
 │                                                         │
-│  产出: 2~8个结构化方案（每个有完整描述和依据）             │
-│  确认: 展示给用户，等待确认后进入推演引擎                  │
+│  Output: 2~8 structured solutions                       │
+│          (each with complete description and basis)     │
+│  Confirm: Show to user, wait for confirmation before    │
+│           entering Simulate Engine                      │
 └──────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 阶段一：发散（八面镜反复审视）
+## Phase One: Diverge (Eight-Facet Mirror Iterative Review)
 
-### 1.1 八面镜 — 抽象的决策审视框架
+### 1.1 Eight-Facet Mirror — Abstract Decision Review Framework
 
-> 八面镜是**抽象类**——定义任何决策都应审视的8个面。
-> 不指定每个面"叫什么名字"，只定义"问什么问题"。
+> The Eight-Facet Mirror is an **abstract class** — it defines 8 facets that any decision should review.
+> It does not specify "what each facet is called", only defines "what questions to ask".
 
 ```
 ═══════════════════════════════════════════════════════════════
-         八面决策框架 / Eight-Facet Decision Mirror
+         Eight-Facet Decision Mirror
          
-         抽象问题（永远不变）              具体化（由用户需求决定）
+         Abstract Questions (never change)              Concrete (determined by user need)
 ═══════════════════════════════════════════════════════════════
 
-面1: 力量之源 / Source of Force
-  问: "这件事的驱动力从哪来？"
-  具体化为: [由需求决定——技术栈/团队/经验/创作风格/...]
+Facet1: Source of Force
+  Ask: "Where does the driving force for this come from?"
+  Concretizes to: [determined by need — tech stack/team/experience/creative style/...]
 
-面2: 根基承载 / Foundation & Capacity
-  问: "做这件事的底盘是什么？"
-  具体化为: [由需求决定——预算/架构/基础设施/知识储备/...]
+Facet2: Foundation & Capacity
+  Ask: "What is the foundation this rests on?"
+  Concretizes to: [determined by need — budget/architecture/infrastructure/knowledge reserve/...]
 
-面3: 变动突破 / Change & Disruption
-  问: "哪里可能发生意想不到的变化？"
-  具体化为: [由需求决定——需求变更/市场变化/突发风险/趋势转折/...]
+Facet3: Change & Disruption
+  Ask: "Where might unexpected changes occur?"
+  Concretizes to: [determined by need — requirement changes/market shifts/sudden risks/trend turns/...]
 
-面4: 渗透传播 / Penetration & Diffusion
-  问: "怎么让效果真正渗透进去、扩散开来？"
-  具体化为: [由需求决定——用户体验/传播渠道/教学方法/影响力/...]
+Facet4: Penetration & Diffusion
+  Ask: "How to make the effect truly penetrate and spread?"
+  Concretizes to: [determined by need — user experience/distribution channels/teaching methods/influence/...]
 
-面5: 风险深渊 / Risk & Abyss
-  问: "最深的坑在哪？最坏怎样？怎么绕过去？"
-  具体化为: [由需求决定——安全漏洞/合规风险/创作瓶颈/认知陷阱/...]
+Facet5: Risk & Abyss
+  Ask: "Where is the deepest pit? What's the worst case? How to avoid it?"
+  Concretizes to: [determined by need — security vulnerabilities/compliance risks/creative blocks/cognitive traps/...]
 
-面6: 显眼依附 / Visible & Dependent
-  问: "最引人注目的表面是什么？底下依附于什么？"
-  具体化为: [由需求决定——核心功能/亮点设计/关键证据/主推产品/...]
+Facet6: Visible & Dependent
+  Ask: "What is the most eye-catching surface? What does it depend on underneath?"
+  Concretizes to: [determined by need — core features/highlight designs/key evidence/main products/...]
 
-面7: 边界止步 / Boundary & Limit
-  问: "有什么绝对不能碰的线？应该在哪停下？"
-  具体化为: [由需求决定——法律/道德/资源上限/身体极限/...]
+Facet7: Boundary & Limit
+  Ask: "What lines must never be crossed? Where should we stop?"
+  Concretizes to: [determined by need — laws/ethics/resource limits/physical limits/...]
 
-面8: 汇聚共赢 / Convergence & Mutual Benefit
-  问: "各方利益怎么平衡？有没有都接受的方案？"
-  具体化为: [由需求决定——利益方/用户与团队/创作者与听众/...]
+Facet8: Convergence & Mutual Benefit
+  Ask: "How to balance all interests? Is there a solution everyone can accept?"
+  Concretizes to: [determined by need — stakeholders/users & team/creators & audience/...]
 ═══════════════════════════════════════════════════════════════
 ```
 
-### 1.2 发散方式：反复审视 + 交叉关联
+### 1.2 Divergence Method: Iterative Review + Cross-Association
 
 ```
-发散不是"面1→面2→面3...→面8，过完就结束"。
-发散是"反复照"，每照一次都可能发现新的东西。
+Divergence is not "Facet1→Facet2→Facet3...→Facet8, done after one pass".
+Divergence is "reflect repeatedly" — each reflection may discover something new.
 
-发散过程（多轮迭代，直到每个面都想清楚）:
+Divergence Process (multi-round iteration, until each facet is thought through):
 
-  第1轮: 逐面初探
-    面1→面2→面3→...→面8，每面:
-      - 根据用户需求，确定这一面具体对应什么维度
-      - 自评(0-10): 我对这个维度了解多少？
-      - 盲区识别: 缺什么信息？
-      - 记录初始想法: 从这一面看，有什么可行的方向？
+  Round 1: Initial exploration of each facet
+    Facet1→Facet2→Facet3→...→Facet8, for each facet:
+      - Based on user need, determine what concrete dimension this facet corresponds to
+      - Self-rate (0-10): How much do I know about this dimension?
+      - Blindspot identification: What info is missing?
+      - Record initial ideas: From this facet's perspective, what feasible directions exist?
   
-  第2轮: 交叉关联
-    重新审视各面之间的关联:
-      - 面5的发现是否影响面2的判断？如果面5发现了高风险的坑，
-        面2是不是应该调整"用什么底盘"？
-      - 面8的各利益方诉求是否在面1~7中都覆盖了？
-      - 面3的变化因素是否已在面5的风险中考虑？
-      - 面4的渗透传播策略是否受到面7边界的限制？
+  Round 2: Cross-association
+    Re-examine associations between facets:
+      - Does Facet5's finding affect Facet2's judgment? If Facet5 discovered high-risk pits,
+        should Facet2 adjust "what foundation to use"?
+      - Are all stakeholder demands from Facet8 covered in Facet1~7?
+      - Are Facet3's change factors already considered in Facet5's risks?
+      - Is Facet4's penetration strategy limited by Facet7's boundaries?
     
-    交叉关联触发重新审视:
-      面A的发现 → 触发面B重新思考 → 面B修正 → 触发面C重新思考
-      → 直到所有交叉关联都处理完毕，不再产生新的修正
+    Cross-association triggers re-review:
+      FacetA's discovery → triggers FacetB re-thinking → FacetB correction → triggers FacetC re-thinking
+      → until all cross-associations are processed, no more new corrections
 
-  第3轮: 盲区补全
-    对评分<7的面，执行知识获取（按优先级）:
-      ① 查知识图谱中是否有相关经验
-      ② 查外部资料/搜索
-      ③ 问用户（确实无法自己获取的信息）
-    补全后重新自评，直到所有盲区都标注了"已补"或"用户确认跳过"
+  Round 3: Blindspot completion
+    For facets with rating <7, execute knowledge acquisition (by priority):
+      ① Check if knowledge graph has relevant experience
+      ② Check external resources/search
+      ③ Ask user (info that truly cannot be self-acquired)
+    After completion, re-self-rate until all blindspots are marked "completed" or "user confirmed skip"
 
-  第4轮: 发散收敛自查
-    问自己:
-      - 有没有哪个面完全没想法？→ 回到那个面重新发散发散
-      - 有没有哪个想法被过早否定了？→ 重新评估
-      - 有没有"所有人都知道但没说出来"的假设？→ 明确列出
-      - 8个面的想法加起来是否构成了一幅完整的画面？
+  Round 4: Divergence-convergence self-check
+    Ask yourself:
+      - Is any facet completely without ideas? → Go back to that facet for more divergence
+      - Was any idea rejected too early? → Re-evaluate
+      - Are there "assumptions everyone knows but nobody stated"? → List explicitly
+      - Do ideas from all 8 facets form a complete picture?
 ```
 
-### 1.3 发散阶段的产出
+### 1.3 Diverge Phase Output
 
 ```
-发散阶段不产生"方案"，产生"想法碎片":
+Diverge phase does not produce "solutions", it produces "idea fragments":
 
   ┌─────────────────────────────────────────────────────┐
-  │  发散阶段产出: 八面审视地图                           │
+  │  Diverge Phase Output: Eight-Facet Review Map       │
   ├─────────────────────────────────────────────────────┤
   │                                                     │
-  │  面1 [具体维度名] 评分 X/10                          │
-  │    了解: [...已知信息]                               │
-  │    盲区: [...缺失信息]                               │
-  │    想法: [...可行的方向、灵感、担忧]                   │
-  │    侦查: [...已查的资料、已确认的事实]                 │
+  │  Facet1 [Concrete Dimension Name] Score X/10        │
+  │    Known: [...known info]                           │
+  │    Blindspot: [...missing info]                     │
+  │    Ideas: [...feasible directions, inspirations,    │
+  │            concerns]                                │
+  │    Recon: [...queried resources, confirmed facts]   │
   │                                                     │
-  │  面2 [具体维度名] ...                                │
+  │  Facet2 [Concrete Dimension Name] ...               │
   │  ...                                                │
-  │  面8 [具体维度名] ...                                │
+  │  Facet8 [Concrete Dimension Name] ...               │
   │                                                     │
-  │  交叉关联记录:                                       │
-  │    面5→面2: [面5发现有依赖风险，面2需考虑冗余]         │
-  │    面8→面4: [利益方A偏好渠道B，影响面4的传播策略]      │
-  │    面3+面5→: [变化因素X同时影响风险Y，需要联合考虑]    │
+  │  Cross-Association Records:                         │
+  │    Facet5→Facet2: [Facet5 found dependency risk,    │
+  │                    Facet2 needs to consider         │
+  │                    redundancy]                      │
+  │    Facet8→Facet4: [Stakeholder A prefers channel B, │
+  │                    affects Facet4's spread          │
+  │                    strategy]                        │
+  │    Facet3+Facet5→: [Change factor X also affects    │
+  │                     risk Y, need joint consideration]│
   │                                                     │
-  │  显式假设列表:                                       │
-  │    "假设用户使用Chrome浏览器" ← 已确认?               │
-  │    "假设预算充足" ← 未确认，需标注                     │
+  │  Explicit Assumption List:                          │
+  │    "Assume user uses Chrome browser" ← Confirmed?   │
+  │    "Assume budget is sufficient" ← Unconfirmed,     │
+  │                                    need to mark     │
   └─────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 阶段二：收敛（提炼方案）
+## Phase Two: Converge (Extract Solutions)
 
-### 2.1 收敛的核心任务
-
-```
-发散产生了大量想法碎片——每个面都有多个方向、灵感、担忧、假设。
-收敛的任务是把这些碎片提炼成2~8个"可执行的方案"。
-
-收敛 ≠ 砍掉想法。收敛 = 归类 → 补全 → 取舍 → 成形。
-```
-
-### 2.2 收敛四步
+### 2.1 Core Task of Converge
 
 ```
-① 归类: 哪些想法属于同一个方向？
+Divergence produced many idea fragments — each facet has multiple directions,
+inspirations, concerns, assumptions.
+Converge's task is to extract 2~8 "executable solutions" from these fragments.
 
-  扫描发散阶段产生的所有想法碎片，找出"方向":
-    方向A: 面1的想法X + 面2的想法Y + 面4的想法Z → 它们都在说同一件事
-    方向B: 面1的想法W + 面5的想法V → 另一个独立的方向
-    方向N: ...
+Converge ≠ Cut ideas. Converge = Cluster → Complete → Cull → Crystallize.
+```
 
-  归类原则:
-    - 同一个方向的想法有内在一致性（都在解决同一个核心问题）
-    - 不同方向之间有实质差异（选了A就不能同时选B，或者A和B的成本/效果显著不同）
-    - 如果两个方向只是"参数不同"而非"策略不同" → 合并
+### 2.2 Converge Four Steps
 
-② 补全: 每个方向是否还缺关键信息？
+```
+① Cluster: Which ideas belong to the same direction?
 
-  对每个方向，检查:
-    - 8个面的信息是否都考虑到了？有没有面在这个方向上是空白的？
-    - 缺的部分能从发散产出中补全吗？还是需要额外侦查？
-    - 如果补不齐 → 这个方向暂时搁置，不进入最终方案列表
+  Scan all idea fragments from diverge phase, find "directions":
+    Direction A: Facet1's idea X + Facet2's idea Y + Facet4's idea Z
+                   → They're all talking about the same thing
+    Direction B: Facet1's idea W + Facet5's idea V
+                   → Another independent direction
+    Direction N: ...
 
-③ 取舍: 基于明确准则淘汰不可行或明显劣的方向
+  Clustering Principles:
+    - Ideas in the same direction have internal consistency
+      (all solving the same core problem)
+    - Different directions have substantial difference
+      (choosing A means not choosing B, or A and B have significantly
+       different cost/effect)
+    - If two directions only differ in "parameters" not "strategy"
+      → Merge
 
-  取舍不是主观"感觉不好"，而是每个淘汰条件都对应八面镜的某一面。
-  八个淘汰准则按优先级顺序执行——高优先级一旦触发直接淘汰，不往下看。
+② Complete: Is key info missing for each direction?
+
+  For each direction, check:
+    - Is info from all 8 facets considered? Is any facet blank for this direction?
+    - Can missing parts be completed from diverge output? Or need extra recon?
+    - If cannot complete → This direction is temporarily shelved,
+                            not entering final solution list
+
+③ Cull: Remove infeasible or obviously inferior directions based on clear criteria
+
+  Culling is not subjective "feels bad", but each elimination condition
+  corresponds to one facet of the Eight-Facet Mirror.
+  Eight elimination criteria executed in priority order — once high priority
+  triggers, eliminate immediately, don't look further.
 
 ┌─────────────────────────────────────────────────────────────────────┐
-│  取舍准则（对应八面，按优先级排序）                                  │
+│  Culling Criteria (corresponding to eight facets, sorted by         │
+│                    priority)                                        │
 ├─────────────────────────────────────────────────────────────────────┤
 │                                                                     │
-│  P0-边界淘汰（对应面7: 边界止步）:                                   │
-│    问: 这个方向违反了任何硬约束吗？                                  │
-│    触发即淘汰: 违反法律/合规/不可逾越的资源上限/用户明确禁止         │
-│    来源: 面7的发散结果（不可逾越的线）                               │
+│  P0-Boundary Cull (corresponds to Facet7: Boundary & Limit):       │
+│    Ask: Does this direction violate any hard constraints?          │
+│    Trigger to eliminate: Violates law/compliance/insurmountable    │
+│                          resource limit/user explicitly forbids    │
+│    Source: Facet7's diverge result (lines that cannot be crossed)  │
 │                                                                     │
-│  P1-根基淘汰（对应面2: 根基承载）:                                   │
-│    问: 当前资源/能力能支撑这个方向吗？                                │
-│    触发即淘汰: 需要的资源远超可用资源（>200%）且无法补足             │
-│    触发即标记: 需要的资源略超可用资源（100%~200%）→ 可抢救但降优先级  │
-│    来源: 面2的发散结果（可用资源和约束）                             │
+│  P1-Foundation Cull (corresponds to Facet2: Foundation & Capacity):│
+│    Ask: Can current resources/capabilities support this direction? │
+│    Trigger to eliminate: Required resources far exceed available   │
+│                          (>200%) and cannot be supplemented        │
+│    Trigger to mark: Required resources slightly exceed available   │
+│                     (100%~200%) → salvageable but lower priority   │
+│    Source: Facet2's diverge result (available resources and        │
+│            constraints)                                             │
 │                                                                     │
-│  P2-力量淘汰（对应面1: 力量之源）:                                   │
-│    问: 这个方向的主导方有能力执行吗？                                │
-│    触发即淘汰: 需要的核心能力完全不匹配（如让非程序员手写编译器）     │
-│    触发即降级: 需要的能力部分缺口但可学习/外包 → 标记"需补能力"      │
-│    来源: 面1的发散结果（谁主导、有什么能力）                         │
+│  P2-Force Cull (corresponds to Facet1: Source of Force):          │
+│    Ask: Does the leading party have capability to execute this     │
+│         direction?                                                  │
+│    Trigger to eliminate: Core capability completely mismatched     │
+│                          (e.g., asking non-programmer to handwrite │
+│                           a compiler)                               │
+│    Trigger to downgrade: Capability partially missing but can be   │
+│                          learned/outsourced → mark "need to        │
+│                          supplement capability"                     │
+│    Source: Facet1's diverge result (who leads, what capabilities)  │
 │                                                                     │
-│  P3-风险淘汰（对应面5: 风险深渊）:                                   │
-│    问: 这个方向有不可承受的风险吗？                                  │
-│    触发即淘汰: 最坏情况会导致不可逆损失（数据丢失/法律后果/人身伤害） │
-│    触发即降级: 最坏情况严重但可承受 → 标记"高风险"，方差增大          │
-│    来源: 面5的发散结果（最深的坑和最坏情况）                         │
+│  P3-Risk Cull (corresponds to Facet5: Risk & Abyss):              │
+│    Ask: Does this direction have unbearable risk?                  │
+│    Trigger to eliminate: Worst case causes irreversible loss       │
+│                          (data loss/legal consequences/            │
+│                           physical harm)                            │
+│    Trigger to downgrade: Worst case severe but tolerable → mark    │
+│                          "high risk", increase variance            │
+│    Source: Facet5's diverge result (deepest pits and worst cases)  │
 │                                                                     │
-│  P4-比较淘汰（对应面8: 汇聚共赢，多方向横向比较）:                   │
-│    问: 这个方向是否明显劣于另一个方向？                              │
-│    判断方法:                                                         │
-│      ① 列出所有保留方向在8个面上的表现（好/中/差）                   │
-│      ② 如果方向A在≥6个面上都≥方向B，且至少2个面显著优于              │
-│         → A 主导 B，淘汰 B                                           │
-│      ③ 如果方向A在≥5个面上都=方向B，仅1~2个面不同                   │
-│         → A 和 B 高度重叠 → 合并为一个方向（保留A的优点+补充B的优点） │
-│      ④ 如果方向都不满足上述 → 保留所有方向，不做取舍                  │
+│  P4-Compare Cull (corresponds to Facet8: Convergence & Mutual      │
+│                  Benefit, multi-direction horizontal comparison):  │
+│    Ask: Is this direction clearly inferior to another direction?   │
+│    Method:                                                          │
+│      ① List all retained directions' performance on 8 facets       │
+│         (good/medium/poor)                                          │
+│      ② If Direction A ≥ Direction B on ≥6 facets, and              │
+│         significantly better on at least 2 facets                  │
+│         → A dominates B, eliminate B                                │
+│      ③ If Direction A = Direction B on ≥5 facets, only 1~2 differ  │
+│         → A and B highly overlap → merge into one direction        │
+│            (keep A's advantages + supplement B's advantages)        │
+│      ④ If neither condition met → keep all directions, no culling  │
 │                                                                     │
-│  P5-最少保留:                                                        │
-│    P0~P4 执行完后，如果剩余方向 < 2:                                 │
-│      → 回到发散阶段，针对被淘汰的原因重新发散                         │
-│      → "所有方向都被淘汰了，说明发散不够充分，需要更多方向"            │
-│    如果剩余方向 > 8:                                                 │
-│      → 按 P4 比较淘汰收紧到 8 个                                      │
+│  P5-Minimum Retention:                                              │
+│    After P0~P4 execution, if remaining directions < 2:             │
+│      → Return to diverge phase, re-diverge based on reasons        │
+│         for elimination                                             │
+│      → "All directions eliminated means divergence was             │
+│         insufficient, need more directions"                         │
+│    If remaining directions > 8:                                     │
+│      → Tighten to 8 using P4 compare culling                       │
 │                                                                     │
 └─────────────────────────────────────────────────────────────────────┘
 
-取舍执行后的输出:
+Culling execution output:
 
 ```
-取舍结果:
-  原始方向数: X
-  P0边界淘汰: -A个 (方向1违反硬约束)
-  P1根基淘汰: -B个 (方向2超出资源范围)
-  P2力量淘汰: -C个 (方向3核心能力不匹配)
-  P3风险淘汰: -D个 (方向4存在不可承受风险)
-  P4比较淘汰: -E个 (方向5被方向6主导, 方向7+8合并)
-  保留方向数: N (2~8)
+Culling Result:
+  Original direction count: X
+  P0 Boundary cull: -A (Direction 1 violates hard constraint)
+  P1 Foundation cull: -B (Direction 2 exceeds resource range)
+  P2 Force cull: -C (Direction 3 core capability mismatch)
+  P3 Risk cull: -D (Direction 4 has unbearable risk)
+  P4 Compare cull: -E (Direction 5 dominated by Direction 6,
+                       Direction 7+8 merged)
+  Retained direction count: N (2~8)
 ```
 
-④ 成形: 每个保留的方向写出完整的方案描述
+④ Crystallize: Write complete solution description for each retained direction
 
-  不是"面1说X，面2说Y"的碎片，而是一个完整的方案:
-    方案名称: [简短标识]
-    核心思路: [一句话描述这个方案怎么做]
-    主要依据: [这个方案基于发散阶段的哪些发现? 来自哪些面?]
-    约束检查: [满足哪些约束? 违反哪些? 不确定哪些?]
-    关键风险: [从风险深渊面提取的主要风险]
-    预期复杂度: [小/中/大]
-    与其他方案的差异: [和方案B/C有什么本质不同?]
+  Not "Facet1 says X, Facet2 says Y" fragments, but a complete solution:
+    Solution Name: [Short identifier]
+    Core Approach: [One-sentence description of how this solution works]
+    Main Basis: [Which findings from diverge phase is this solution based on?
+                 From which facets?]
+    Constraint Check: [Which constraints satisfied? Which violated?
+                       Which uncertain?]
+    Key Risks: [Main risks extracted from Risk & Abyss facet]
+    Expected Complexity: [Small/Medium/Large]
+    Difference from Other Solutions: [What's essentially different from
+                                       Solution B/C?]
 ```
 
-### 2.3 收敛的产出
+### 2.3 Converge Output
 
 ```
-收敛阶段产出: 结构化的方案列表
+Converge Phase Output: Structured Solution List
 
   ┌─────────────────────────────────────────────────────┐
-  │  方案列表（收敛后）                                   │
+  │  Solution List (After Convergence)                  │
   ├─────────────────────────────────────────────────────┤
   │                                                     │
-  │  方案A: [名称]                                       │
-  │    思路: [...]  依据: [面X+Y+Z]  复杂度: 小           │
+  │  Solution A: [Name]                                 │
+  │    Approach: [...]  Basis: [FacetX+Y+Z]             │
+  │    Complexity: Small                                │
   │                                                     │
-  │  方案B: [名称]                                       │
-  │    思路: [...]  依据: [面W+V]  复杂度: 中             │
+  │  Solution B: [Name]                                 │
+  │    Approach: [...]  Basis: [FacetW+V]               │
+  │    Complexity: Medium                               │
   │                                                     │
-  │  方案C: [名称]                                       │
-  │    思路: [...]  依据: [面U+T]  复杂度: 大             │
+  │  Solution C: [Name]                                 │
+  │    Approach: [...]  Basis: [FacetU+T]               │
+  │    Complexity: Large                                │
   │                                                     │
-  │  ... (2~8个方案)                                     │
+  │  ... (2~8 solutions)                                │
   │                                                     │
-  │  被淘汰的方向（供参考）:                               │
-  │    方向X: 因违反硬约束被淘汰                           │
-  │    方向Y: 因与方案A高度重叠被合并                      │
+  │  Eliminated Directions (for reference):             │
+  │    Direction X: Eliminated for violating hard       │
+  │                  constraint                         │
+  │    Direction Y: Merged with Solution A due to       │
+  │                  high overlap                       │
   │                                                     │
-  │  八面覆盖矩阵:                                       │
-  │         面1 面2 面3 面4 面5 面6 面7 面8              │
-  │    方案A  ✓   ✓   -   ✓   -   ✓   -   -              │
-  │    方案B  -   ✓   ✓   -   ✓   -   ✓   ✓              │
-  │    方案C  ✓   -   -   ✓   -   ✓   ✓   -              │
-  │    → 面4 和 面5 被所有方案覆盖 ← 核心面               │
-  │    → 面3 只有方案B覆盖 ← 该面可能需要更多方案           │
+  │  Eight-Facet Coverage Matrix:                       │
+  │         F1  F2  F3  F4  F5  F6  F7  F8              │
+  │    A    ✓   ✓   -   ✓   -   ✓   -   -              │
+  │    B    -   ✓   ✓   -   ✓   -   ✓   ✓              │
+  │    C    ✓   -   -   ✓   -   ✓   ✓   -              │
+  │    → F4 and F5 covered by all solutions ← core      │
+  │       facets                                        │
+  │    → F3 only covered by B ← may need more solutions │
   └─────────────────────────────────────────────────────┘
 ```
 
-### 2.4 收敛完成 → 用户确认
+### 2.4 Convergence Complete → User Confirmation
 
 ```
 ────────────────────────
- 【方案列表确认】
+ 【Solution List Confirmation】
 
- 发散阶段: 八面审视 + 交叉关联，X个想法碎片
- 收敛阶段: 归类为 Y 个方向 → 淘汰 Z 个 → 保留 N 个方案
- 八面覆盖: N 个方案覆盖 M/8 个决策面
+ Diverge Phase: Eight-Facet review + cross-association,
+                X idea fragments
+ Converge Phase: Clustered into Y directions →
+                 Eliminated Z → Retained N solutions
+ Eight-Facet Coverage: N solutions cover M/8 decision facets
 
- 接下来将对每个方案进行 MCTS 树搜索推演。
+ Next: MCTS tree search simulation for each solution.
 
- 请确认:
-   ✅ "继续" → 进入推演引擎
-   ➕ "加一个XX的方案" → 补充方案
-   ➖ "方案X不用了" → 移除
-   ⚡ "直接做方案X" → 跳过推演，直接执行
+ Confirm:
+   ✅ "continue" → Enter Simulate Engine
+   ➕ "add a XX solution" → Supplement solution
+   ➖ "remove solution X" → Remove
+   ⚡ "just do solution X" → Skip simulation, execute directly
  ────────────────────────────
 ```
 
 ---
 
-## 辅助工具
+## Helper Tools
 
 ```
-领域提示（可选）:
+Domain Hint (optional):
   `python scripts/mcts_compute.py identify-domain`
-  → 仅作参考信号，LLM 最终判断
+  → Only as reference signal, LLM makes final judgment
 
-八面镜加载:
+Eight-Facet Mirror Loading:
   `python scripts/mcts_compute.py get-dimensions`
-  → 永远返回8个抽象面 + 可选领域模板参考
+  → Always returns 8 abstract facets + optional domain template reference
 
-盲区分类:
+Blindspot Classification:
   `python scripts/mcts_compute.py classify-blindspot --score <0-10>`
 
-学习深度门禁:
+Learning Depth Gate:
   `python scripts/mcts_compute.py check-learning-depth`
-  → 发散阶段完成后检查，不通过则回到侦查补全
+  → Check after diverge phase completes, if not passed,
+     return to recon completion
 ```

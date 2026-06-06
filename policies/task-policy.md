@@ -1,310 +1,320 @@
 ---
 name: task-policy
-description: 通用决策任务的状态特征定义、推演输出格式、评分标准和汇总比较规则。适用于任何领域，不限于代码开发。
+description: General decision task state feature definitions, simulation output formats, scoring standards, and aggregate comparison rules. Applicable to any domain, not limited to code development.
 ---
 
-# 通用决策策略
+# General Decision Policy
 
-## 概述
+## Overview
 
-本策略文件定义了通用的决策推演规则，适用于任何领域。**这是参考文件，引擎执行时的完整规则以 `engine/` 目录下的引擎文件为准**：
+This policy file defines general decision simulation rules, applicable to any domain. **This is a reference file; for complete rules during engine execution, refer to engine files in `engine/` directory**:
 
-| 主题 | 参考文件（更详细） |
-|------|-------------------|
-| 发散/方案生成 | [`engine/mcts-diverge.md`](../engine/mcts-diverge.md) |
-| 逐轮推演 | [`engine/mcts-simulate.md`](../engine/mcts-simulate.md) |
-| 汇总/自检/盲区审计 | [`engine/mcts-converge.md`](../engine/mcts-converge.md) |
+| Topic | Reference File (More Detailed) |
+|-------|-------------------------------|
+| Diverge/Solution Generation | [`engine/mcts-diverge.md`](../engine/mcts-diverge.md) |
+| Round-by-round Simulation | [`engine/mcts-simulate.md`](../engine/mcts-simulate.md) |
+| Aggregate/Self-check/Blindspot Audit | [`engine/mcts-converge.md`](../engine/mcts-converge.md) |
 
-本文件包含：
-1. 方案生成规则（不凭空列方案，基于资料提炼）
-2. 推演输出的标准化格式
-3. 评分标准（什么算0.8，什么算0.3）
-4. 汇总比较规则
-5. 策略函数选择指南
-6. 价值函数持久化格式
-
----
-
-## 方案生成规则
-
-方案不是凭空想出来的，必须基于以下来源之一：
-
-### 方案来源与依据
-
-| 来源 | 依据类型 | 可信度 | 示例 |
-|------|---------|-------|------|
-| 项目现有代码 | 直接看到项目中已有的实现 | HIGH | "项目已经用了gin-jwt中间件，在此基础上扩展" |
-| 技术文档 | 官方文档或公认的最佳实践 | HIGH | "JWT官方推荐使用Redis黑名单管理token" |
-| 知识图谱(K00X) | 历史成功经验，且上下文匹配 | MED-HIGH | "K003在类似场景下用同一模式成功" |
-| 行业标准 | 广泛使用但没有直接文档可查 | MED | "大多数API使用RESTful规范" |
-| 类比推理 | 从其他领域/技术栈推导 | LOW | "在Go中这样处理，类比到Python应该类似" |
-
-### 方案描述格式
-
-```
-方案A: [名称]
-  依据: [来源类型] [具体引用]
-  思路: [一句话核心思路]
-  成本: [低/中/高]
-
-方案B: [名称]
-  依据: [来源类型] [具体引用]
-  思路: [一句话核心思路]
-  成本: [低/中/高]
-```
-
-### 方案多样性规则
-
-```
-至少4个方案，最多8个（视角轮盘机制，每个视角生成1个方案）。
-方案之间必须有实质差异（必须是不同视角，不能只是参数不同）。
-
-好的例子:
-  方案A: "基于项目现有的gin-jwt中间件扩展" (依据: 项目代码)
-  方案B: "改用OAuth2，用独立的认证服务" (依据: 技术文档)
-  → 两个方案有本质差异
-
-坏的例子:
-  方案A: "用gin-jwt中间件"
-  方案B: "也用gin-jwt但加个Redis" 
-  → 本质上是同一个方案，只是细节不同
-  → 合并为一个方案
-```
+This file contains:
+1. Solution generation rules (don't list solutions from thin air, extract from resources)
+2. Simulation output standardized format
+3. Scoring standards (what counts as 0.8, what counts as 0.3)
+4. Aggregate comparison rules
+5. Policy function selection guide
+6. Value function persistence format
 
 ---
 
-## 推演输出格式
+## Solution Generation Rules
 
-每个方案推演完成后，必须输出以下标准格式的报告：
+Solutions are not thought up from thin air, must be based on one of the following sources:
 
-### 完整推演报告模板
+### Solution Sources and Basis
+
+| Source | Basis Type | Credibility | Example |
+|--------|-----------|-------------|---------|
+| Existing project code | Directly see existing implementation in project | HIGH | "Project already uses gin-jwt middleware, extend on that basis" |
+| Technical documentation | Official docs or accepted best practices | HIGH | "JWT official recommends using Redis blacklist for token management" |
+| Knowledge graph (K00X) | Historical successful experience, context matches | MED-HIGH | "K003 succeeded with same pattern in similar scenario" |
+| Industry standards | Widely used but no direct docs available | MED | "Most APIs use RESTful conventions" |
+| Analogical reasoning | Derived from other domains/tech stacks | LOW | "In Go this is handled this way, analogous to Python should be similar" |
+
+### Solution Description Format
+
+```
+Solution A: [Name]
+  Basis: [Source Type] [Specific Reference]
+  Approach: [One-sentence core approach]
+  Cost: [Low/Medium/High]
+
+Solution B: [Name]
+  Basis: [Source Type] [Specific Reference]
+  Approach: [One-sentence core approach]
+  Cost: [Low/Medium/High]
+```
+
+### Solution Diversity Rules
+
+```
+Minimum 4 solutions, maximum 8 (Perspective Wheel mechanism, 1 solution per perspective).
+Solutions must have substantial difference (must be different perspectives,
+not just different parameters).
+
+Good Example:
+  Solution A: "Extend based on project's existing gin-jwt middleware"
+    (Basis: Project code)
+  Solution B: "Switch to OAuth2, use separate auth service"
+    (Basis: Technical docs)
+  → Two solutions have essential difference
+
+Bad Example:
+  Solution A: "Use gin-jwt middleware"
+  Solution B: "Also use gin-jwt but add Redis"
+  → Essentially the same solution, just different details
+  → Merge into one solution
+```
+
+---
+
+## Simulation Output Format
+
+After each solution simulation completes, must output report in following standard format:
+
+### Complete Simulation Report Template
 
 ```
 ═══════════════════════════════════════════════════════
-推演方案: [方案名称]
-知识注入: 
-  - 价值函数: [引用的历史条目]
-  - 决策模式: [引用的成功/失败模式]
-  - 上下文: [相关的当前会话知识]
+Simulated Solution: [Solution Name]
+Knowledge Injection:
+  - Value Function: [Referenced historical entries]
+  - Decision Pattern: [Referenced success/failure patterns]
+  - Context: [Relevant current session knowledge]
 ═══════════════════════════════════════════════════════
 
-Step 1: [起点动作]
-  → 操作描述: [具体做什么]
-  → 目标文件: [涉及的文件路径]
-  → 预期结果: [成功/部分成功]
-  → 难度: [低/中/高]
-  → 用时估计: [多少步或多少操作]
+Step 1: [Starting Action]
+  → Operation Description: [Specifically what to do]
+  → Target Files: [Involved file paths]
+  → Expected Result: [Success/Partial success]
+  → Difficulty: [Low/Medium/High]
+  → Time Estimate: [How many steps or operations]
 
-Step 2: [关键路径]
-  → 路径描述: [后续步骤的因果链]
-  → 关键风险: [可能出问题的节点]
-    • 风险1: [描述] → 概率:[高/中/低] → 应对:[备用方案]
-    • 风险2: [描述] → 概率:[高/中/低] → 应对:[备用方案]
-  → 分支点: [如果有选择，在此处预判]
+Step 2: [Critical Path]
+  → Path Description: [Causal chain of subsequent steps]
+  → Key Risks: [Nodes that might have problems]
+    • Risk 1: [Description] → Probability:[High/Medium/Low] →
+              Response:[Fallback solution]
+    • Risk 2: [Description] → Probability:[High/Medium/Low] →
+              Response:[Fallback solution]
+  → Branch Points: [If choices exist, anticipate here]
 
-Step 3: [终点评估]
-  → 最终结果: [预期完成状态]
-  → 副作用: [可能影响的其他模块]
-  → 遗留问题: [方案无法覆盖的问题]
-  → 回滚成本: [如果失败，恢复原状的难度]
+Step 3: [Endpoint Assessment]
+  → Final Result: [Expected completion state]
+  → Side Effects: [Other modules possibly affected]
+  → Leftover Issues: [Problems solution cannot cover]
+  → Rollback Cost: [If failed, difficulty to restore original state]
 
-─── 推演评分 ───
-  预期价值 V (0.0~1.0): 
-  方差 σ² (0.0~1.0): 
-  信心水平: [高(σ²<0.1) / 中(σ²<0.3) / 低(σ²≥0.3)]
-  关键风险TOP3:
-    1. [风险 + 影响等级]
-    2. [风险 + 影响等级]
-    3. [风险 + 影响等级]
-  推荐指数: [强烈推荐 / 推荐 / 可选 / 不推荐]
+─── Simulation Score ───
+  Expected Value V (0.0~1.0):
+  Variance σ² (0.0~1.0):
+  Confidence Level: [High(σ²<0.1) / Medium(σ²<0.3) / Low(σ²≥0.3)]
+  Top 3 Key Risks:
+    1. [Risk + Impact Level]
+    2. [Risk + Impact Level]
+    3. [Risk + Impact Level]
+  Recommendation: [Strongly Recommended / Recommended / Optional / Not Recommended]
 ```
 
-### 快速推演报告模板（用于粗筛阶段）
+### Quick Simulation Report Template (for rough filter stage)
 
 ```
-方案: [名称]
-可行性: [0-1]
-成本效益: [0-1]
-风险: [0-1]
-粗筛得分: = 可行性×0.5 + 成本效益×0.3 + (1-风险)×0.2
-保留/淘汰: [保留 / 淘汰]
+Solution: [Name]
+Feasibility: [0-1]
+Cost-Benefit: [0-1]
+Risk: [0-1]
+Rough Filter Score: = Feasibility×0.5 + Cost-Benefit×0.3 + (1-Risk)×0.2
+Keep/Eliminate: [Keep / Eliminate]
 ```
 
 ---
 
-## 评分标准
+## Scoring Standards
 
-### 预期价值 V（0.0~1.0）
-
-```
-V = 1.0: 方案完美，无副作用，一次成功
-V = 0.9: 方案优秀，可能有小调整，但总体顺利
-V = 0.8: 方案良好，预期有1-2处小波折
-V = 0.7: 方案可行，有一定风险但可控
-V = 0.6: 方案勉强可行，需要谨慎执行
-V = 0.5: 中性，可行可不行，需进一步信息
-V = 0.4: 方案有较大不确定性，可能有隐藏问题
-V = 0.3: 方案风险高，不推荐
-V = 0.2: 方案很可能失败
-V = 0.1: 方案基本不可行
-V = 0.0: 方案完全不可行
-```
-
-### 方差 σ²（0.0~1.0）
+### Expected Value V (0.0~1.0)
 
 ```
-σ² = 0.0~0.05: 高度确定（同类任务做过很多次）
-σ² = 0.05~0.15: 比较确定
-σ² = 0.15~0.30: 有一定不确定性
-σ² = 0.30~0.50: 不确定
-σ² = 0.50~1.00: 高度不确定（首次尝试）
-
-方差来源:
-  - 低方差: 匹配历史成功模式 + 当前上下文清晰
-  - 中方差: 部分匹配历史 + 上下文有模糊点
-  - 高方差: 无历史匹配 + 上下文复杂 + 新技术栈
+V = 1.0: Solution perfect, no side effects, success in one attempt
+V = 0.9: Solution excellent, may have minor adjustments, overall smooth
+V = 0.8: Solution good, expect 1-2 minor bumps
+V = 0.7: Solution feasible, some risk but controllable
+V = 0.6: Solution barely feasible, need cautious execution
+V = 0.5: Neutral, may or may not work, need more info
+V = 0.4: Solution has significant uncertainty, may have hidden issues
+V = 0.3: Solution high risk, not recommended
+V = 0.2: Solution likely to fail
+V = 0.1: Solution basically infeasible
+V = 0.0: Solution completely infeasible
 ```
 
-### 信心水平
+### Variance σ² (0.0~1.0)
 
-| σ² 范围 | 信心水平 | 含义 |
-|---------|---------|------|
-| < 0.1 | 高 | 推演结果可信，可以放心执行 |
-| 0.1 ~ 0.3 | 中 | 推演结果可参考，但需留意意外 |
-| ≥ 0.3 | 低 | 推演结果仅供参考，建议收集更多信息 |
+```
+σ² = 0.0~0.05: Highly certain (similar tasks done many times)
+σ² = 0.05~0.15: Fairly certain
+σ² = 0.15~0.30: Some uncertainty
+σ² = 0.30~0.50: Uncertain
+σ² = 0.50~1.00: Highly uncertain (first attempt)
+
+Variance Sources:
+  - Low variance: Matches historical success pattern + Current context clear
+  - Medium variance: Partial history match + Context has fuzzy points
+  - High variance: No history match + Complex context + New tech stack
+```
+
+### Confidence Level
+
+| σ² Range | Confidence Level | Meaning |
+|----------|-----------------|---------|
+| < 0.1 | High | Simulation result credible, can execute confidently |
+| 0.1 ~ 0.3 | Medium | Simulation result reference-worthy, but watch for surprises |
+| ≥ 0.3 | Low | Simulation result for reference only, suggest collecting more info |
 
 ---
 
-## 汇总比较规则
+## Aggregate Comparison Rules
 
-### 汇总表格式
+### Summary Table Format
 
-所有方案的推演完成后，输出汇总比较表：
+After all solutions simulated, output aggregate comparison table:
 
 ```
-┌───────┬──────┬──────┬────────┬──────────────────────────┐
-│ 方案   │ 价值 │ 方差 │ 信心   │ 关键风险                   │
-├───────┼──────┼──────┼────────┼──────────────────────────┤
-│ 方案A │ 0.85 │ 0.05 │ 高     │ 依赖外部API                │
-│ 方案B │ 0.72 │ 0.18 │ 中     │ 改动范围大,影响3个模块      │
-│ 方案C │ 0.91 │ 0.08 │ 高     │ 需要引入新依赖              │
-└───────┴──────┴──────┴────────┴──────────────────────────┘
+┌───────────┬───────┬────────┬────────────┬──────────────────────────┐
+│ Solution  │ Value │ Variance│ Confidence │ Key Risks                │
+├───────────┼───────┼────────┼────────────┼──────────────────────────┤
+│ SolutionA │ 0.85  │ 0.05   │ High       │ Depends on external API  │
+│ SolutionB │ 0.72  │ 0.18   │ Medium     │ Large change scope,      │
+│           │       │        │            │ affects 3 modules        │
+│ SolutionC │ 0.91  │ 0.08   │ High       │ Need to introduce new    │
+│           │       │        │            │ dependency               │
+└───────────┴───────┴────────┴────────────┴──────────────────────────┘
 
 CLT-UCB: `python scripts/mcts_compute.py` compute_clt_ucb
-φ⁻¹(N): N=2→1.5,3→1.0,4→0.8,5→0.7, n_i为方案推演次数
+φ⁻¹(N): N=2→1.5, 3→1.0, 4→0.8, 5→0.7, n_i is solution simulation count
+```
 
-### 排名接近时的处理
+### Handling Close Rankings
 
 ```
-排名接近: `python scripts/mcts_compute.py handle_close_ranking`
-UCB差<0.05→细分比较(V/σ²), 差距<0.02→建议用户决策
+Close ranking: `python scripts/mcts_compute.py handle_close_ranking`
+UCB diff <0.05 → Detailed comparison (V/σ²), diff <0.02 → Suggest user decision
 ```
 
 ---
 
-## 策略函数选择指南
+## Policy Function Selection Guide
 
-从 tetris_mcts 的 policy.py 移植，按阶段选择不同策略：
+Ported from tetris_mcts's policy.py, select different policies by stage:
 
-### 粗筛阶段策略
+### Rough Filter Stage Policy
 
-| 策略 | 适用场景 | 规则 |
-|------|---------|------|
-| policy_greedy | 方案 > 8时 | 取粗筛得分最高的 top-3~5 |
-| policy_random | 需要多角度探索 | 随机选取5个方案（保证多样性） |
+| Policy | Applicable Scenario | Rule |
+|--------|---------------------|------|
+| policy_greedy | When solutions > 8 | Take top-3~5 with highest rough filter scores |
+| policy_random | Need multi-angle exploration | Randomly select 5 solutions (ensure diversity) |
 
-### 汇总比较阶段策略
+### Aggregate Comparison Stage Policy
 
-| 策略 | 适用场景 | 公式 |
-|------|---------|------|
-| policy_clt（推荐） | 有方差信息 | UCB = V + Φ⁻¹(N) × √(σ²/1) |
-| policy_max | 无方差信息 | UCB = V + max_σ² × √(ln(N)/1) |
-| policy_greedy | 高置信度 | UCB = V（直接选价值最高的） |
+| Policy | Applicable Scenario | Formula |
+|--------|---------------------|---------|
+| policy_clt (recommended) | Has variance info | UCB = V + Φ⁻¹(N) × √(σ²/n_i) |
+| policy_max | No variance info | UCB = V + max_σ² × √(ln(N)/n_i) |
+| policy_greedy | High confidence | UCB = V (directly select highest value) |
 
-### 再推演阶段策略
+### Re-simulation Stage Policy
 
-| 策略 | 适用场景 | 规则 |
-|------|---------|------|
-| policy_greedy | 执行受阻时 | 直接选排名第2的方案 |
-| policy_clt | 需要重新评估 | 重新计算所有方案的UCB（可能由于新信息改变了方差） |
+| Policy | Applicable Scenario | Rule |
+|--------|---------------------|------|
+| policy_greedy | Execution blocked | Directly select 2nd ranked solution |
+| policy_clt | Need re-evaluation | Recalculate all solutions' UCB
+                            (new info may have changed variance) |
 
 ---
 
-## 价值函数持久化
+## Value Function Persistence
 
-### 记忆文件路径
+### Memory File Path
 
 ```
 memory/mcts-td-value-archive.md
 ```
 
-### 存储格式
+### Storage Format
 
 ```markdown
 ---
 name: mcts-td-value-archive
-description: MCTS-TD 引擎的跨会话价值函数存档
+description: MCTS-TD Engine cross-session value function archive
 metadata:
   type: reference
 ---
 
-## 价值函数表
+## Value Function Table
 
-| task_type | domain | risk_level | 访问数(n) | 成功(w) | 均值(q) | 方差(σ²) | 信心 | 最后更新 |
+| task_type | domain | risk_level | Visits(n) | Success(w) | Mean(q) | Variance(σ²) | Confidence | Last Updated |
 |-----------|--------|-----------|----------|---------|---------|---------|------|---------|
 | BUG_FIX | WEB | LOW | 47 | 44 | 0.936 | 0.05 | HIGH | 2026-06-03 |
 | FEATURE | API | MED | 12 | 9 | 0.750 | 0.18 | MED | 2026-06-02 |
 | REFACTOR | DB | HIGH | 3 | 1 | 0.333 | 0.42 | LOW | 2026-06-01 |
 
-## 决策序列模式
+## Decision Sequence Patterns
 
-### 成功模式
+### Success Patterns
   - BUG_FIX|WEB: recon → read_target → edit → test → verify
   - FEATURE|API: recon → plan → search_deps → edit_with_deps → test_all
 
-### 失败模式
-  - DEBUG|GENERAL: 跳过recon直接修改 → 高概率失败
-  - FEATURE|DB: 一次性修改所有文件 → 高概率产生冲突
+### Failure Patterns
+  - DEBUG|GENERAL: Skip recon, modify directly → High probability failure
+  - FEATURE|DB: Modify all files at once → High probability conflicts
 
-## 跨会话知识
-  - [2026-06-01] 用户偏好: 偏向防御性编程风格
-  - [2026-06-02] 项目约束: DB层不允许直接使用第三方库
+## Cross-session Knowledge
+  - [2026-06-01] User preference: Prefers defensive programming style
+  - [2026-06-02] Project constraint: DB layer not allowed to use third-party libs directly
 ```
 
-### 更新规则
+### Update Rules
 
 ```
-执行完成后，执行TD更新:
-  1. 收集实际结果:
-     - 编译/测试是否通过
-     - 是否达到预期效果
-     - 有无副作用
-     - 涉及的关键技术栈和框架
+After execution completes, execute TD update:
+  1. Collect actual results:
+     - Did compile/test pass
+     - Did it achieve expected effect
+     - Any side effects
+     - Key tech stacks and frameworks involved
   
-  2. 计算TD误差:
-     V_实际 = 实际结果评分 (0.0~1.0)
-     V_推演 = 推演时的预期价值
-     TD_error = V_实际 - V_推演
+  2. Calculate TD error:
+     V_actual = Actual result score (0.0~1.0)
+     V_simulated = Expected value during simulation
+     TD_error = V_actual - V_simulated
   
-  3. 更新知识图谱:
-     执行多路召回，查找匹配的知识条目:
+  3. Update knowledge graph:
+     Execute multi-path recall, find matching knowledge entries:
      
-     如果找到匹配条目:
-       - 更新 n, q, σ² (用Welford)
-       - 巩固分 += 5
-       - 更新 last_verified
-       - 检查状态是否需要转换（基于TD_error的大小和方向）
+     If matching entry found:
+       - Update n, q, σ² (using Welford)
+       - Consolidation score += 5
+       - Update last_verified
+       - Check if status needs transition (based on TD_error magnitude
+         and direction)
      
-     如果没找到匹配:
-       - 创建新 HYPOTHESIS 条目
-       - 从任务描述中提取 tags 关键词
-       - 记录当前上下文（技术栈、框架等）
-       - 初始值: q=V_实际, σ²=0.25, n=1
-       - 分配新ID（递增）
+     If no match found:
+       - Create new HYPOTHESIS entry
+       - Extract tags keywords from task description
+       - Record current context (tech stack, frameworks, etc.)
+       - Initial values: q=V_actual, σ²=0.25, n=1
+       - Assign new ID (incrementing)
   
-  4. 更新决策序列模式:
-     如果成功: 记录执行路径到"成功模式"
-     如果失败: 记录执行路径到"失败模式"
+  4. Update decision sequence patterns:
+     If successful: Record execution path to "Success Patterns"
+     If failed: Record execution path to "Failure Patterns"
   
-  5. 写入记忆文件
+  5. Write to memory file
 ```

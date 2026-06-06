@@ -1,67 +1,67 @@
 ---
 name: mcts-td-value-archive
-description: MCTS-TD 引擎的知识图谱价值函数存档（知识条目 + 状态机 + 多路召回）。支持多版本共存、冲突检测、状态转换、回滚和记忆衰减。
+description: MCTS-TD Engine knowledge graph value function archive (knowledge entries + state machine + multi-path recall). Supports multi-version coexistence, conflict detection, state transition, rollback and memory decay.
 metadata:
   type: reference
 ---
 
-# MCTS-TD 价值函数存档
+# MCTS-TD Value Function Archive
 
-> 知识图谱模式，每条知识独立管理。
-> 召回方式：多路召回（精确匹配/主维度匹配/领域匹配/标签匹配/关联扩散）。
-> 评分方式：路径权重 × 状态权重 × 时效衰减 × 上下文匹配 × 使用频率。
+> Knowledge graph mode, each knowledge piece independently managed.
+> Recall method: Multi-path recall (exact match / main dimension match / domain match / tag match / association spread).
+> Scoring method: Path weight × Status weight × Time decay × Context match × Usage frequency.
 
-## 知识条目表
+## Knowledge Entry Table
 
-| ID | 特征 | q | σ² | n | 状态 | tags | 上下文 | 巩固分 | 创建时间 | 最后验证 |
-|----|------|---|----|----|-----|------|--------|-------|---------|---------|
+| ID | Feature | q | σ² | n | Status | tags | Context | Consolidation | Created | Last Verified |
+|----|---------|---|----|----|--------|------|---------|---------------|---------|---------------|
 | — | — | — | — | — | — | — | — | — | — | — |
 
-## 知识变更日志
+## Knowledge Change Log
 
-| 日期 | 条目 | 操作 | 原因 |
-|------|------|------|------|
+| Date | Entry | Operation | Reason |
+|------|------|-----------|--------|
 | — | — | — | — |
 
-## 当前活跃知识汇总
+## Current Active Knowledge Summary
 
 ```
-CONFIRMED:   (无)
-PROVISIONAL: (无)
-DISPUTED:    (无)
-REFUTED:     (无)
-HYPOTHESIS:  (无)
-SLEEPING:    (无)
-ARCHIVED:    (无)
+CONFIRMED:   (none)
+PROVISIONAL: (none)
+DISPUTED:    (none)
+REFUTED:     (none)
+HYPOTHESIS:  (none)
+SLEEPING:    (none)
+ARCHIVED:    (none)
 ```
 
 ---
 
-## 使用说明
+## Usage Instructions
 
-### 状态说明
+### Status Description
 
-| 状态 | 权重 | 含义 |
-|------|------|------|
-| CONFIRMED | 1.0 | 可信知识，≥3次验证通过 |
-| PROVISIONAL | 0.3 | 待验证，仅1-2次验证 |
-| DISPUTED | 0.2 | 有矛盾证据，保留但低权重 |
-| REFUTED | 0.0 | 已证伪，不参与召回 |
-| HYPOTHESIS | — | 新知识，不参与查询（尚未经过验证） |
-| SLEEPING | 0.3× | 超过30天未使用，权重减半 |
-| ARCHIVED | — | 超过90天未使用，不参与常规召回 |
+| Status | Weight | Meaning |
+|--------|--------|---------|
+| CONFIRMED | 1.0 | Trusted knowledge, ≥3 verifications passed |
+| PROVISIONAL | 0.3 | Pending verification, only 1-2 verifications |
+| DISPUTED | 0.2 | Has contradictory evidence, retained but low weight |
+| REFUTED | 0.0 | Refuted, does not participate in recall |
+| HYPOTHESIS | — | New knowledge, does not participate in queries (not yet verified) |
+| SLEEPING | 0.3× | Unused >30 days, weight halved |
+| ARCHIVED | — | Unused >90 days, does not participate in routine recall |
 
-### 召回方式
+### Recall Method
 
-联想回忆 + 碎片补全：
-1. **联想回忆**：最相关的知识自然浮现（直接联想/模式联想/上下文联想）
-2. **碎片补全**：回忆起来的知识如果不完整，顺着碎片联想或关联知识补全
-3. **外部求证**：如果补全后仍残缺，去查资料或问用户
+Associative recall + Fragment completion:
+1. **Associative Recall**: Most relevant knowledge naturally surfaces (direct association / pattern association / context association)
+2. **Fragment Completion**: If recalled knowledge is incomplete, follow fragments to associate or use related knowledge to complete
+3. **External Verification**: If still incomplete after completion, look up resources or ask user
 
-### 更新方式
+### Update Method
 
-执行完成后，根据实际结果更新知识图谱：
-1. 执行多路召回，找到匹配的知识条目
-2. 如果找到 → 更新匹配条目的 n, q, σ², 状态, 巩固分
-3. 如果没找到 → 创建新 HYPOTHESIS 条目（含 tags）
-4. 记录变更到知识变更日志
+After execution completes, update knowledge graph based on actual results:
+1. Execute multi-path recall, find matching knowledge entries
+2. If found → Update matching entry's n, q, σ², status, consolidation score
+3. If not found → Create new HYPOTHESIS entry (with tags)
+4. Record changes to knowledge change log
