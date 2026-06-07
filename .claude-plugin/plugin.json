@@ -1,7 +1,7 @@
 {
   "name": "mcts-td-planner",
-  "version": "1.3.0",
-  "description": "通用决策引擎 — 基于MCTS(蒙特卡洛树搜索)+TDL(时序差分学习)混合算法，模拟人脑'先想清楚再做'的决策机制。三引擎流程：发散引擎→推演引擎→仲裁引擎。",
+  "version": "1.4.0",
+  "description": "Universal decision engine — MCTS tree search × TD temporal learning × Eight-Facet Mirror (Taoist Bagua). Think first, execute once. Multi-language (zh/ja/ko/en).",
   "author": {
     "name": "ljjluke",
     "url": "https://github.com/ljjluke/mcts-skill"
@@ -15,8 +15,11 @@
     "td-learning",
     "planning",
     "reasoning",
-    "通用决策",
-    "三引擎"
+    "monte-carlo-tree-search",
+    "bagua",
+    "eight-facet",
+    "multi-language",
+    "simulation"
   ],
   "skills": ["./"],
   "commands": ["./"]
