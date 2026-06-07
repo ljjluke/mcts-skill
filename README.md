@@ -8,12 +8,13 @@
 
 <p align="center">
   <b>A Claude Code decision engine.<br>
-  Uses the Eight-Facet Mirror (inspired by Taoist Bagua) to brainstorm all possible approaches,<br>
-  then MCTS simulates each one — picks the best, executes once.</b>
+  Uses the Eight-Facet Mirror — an ancient Chinese Taoist (八卦 Bagua) framework<br>
+  for examining every problem from 8 universal perspectives — to generate all possible approaches.<br>
+  Then MCTS simulates each one, picks the best, executes once.</b>
 </p>
 
 <p align="center">
-  <sub>Eight-Facet Mirror → MCTS tree search · TD temporal learning · Human-like memory · Cross-language</sub>
+  <sub>Eight-Facet Mirror (Bagua) → MCTS tree search · TD temporal learning · Human-like memory · Cross-language</sub>
 </p>
 
 <br>
