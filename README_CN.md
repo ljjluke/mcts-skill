@@ -7,8 +7,12 @@
 <h1 align="center">🧠 MCTS-TD Planner</h1>
 
 <p align="center">
-  <b>MCTS 树搜索 × TD 时序学习 × 道家八卦八面镜<br>
-  像围棋高手一样，先在脑海里推演所有可能，再走那步最好的。</b>
+  <b>一个让 Claude Code 先想再做的决策引擎。<br>
+  凡事不急着动手 — 在"脑海"里推演所有方案，选出最优，再一步到位。</b>
+</p>
+
+<p align="center">
+  <sub>MCTS 树搜索 · TD 时序学习 · 八卦八面镜 · 模拟人脑记忆 · 多语言自适应</sub>
 </p>
 
 <br>

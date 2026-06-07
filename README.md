@@ -7,9 +7,13 @@
 <h1 align="center">🧠 MCTS-TD Planner</h1>
 
 <p align="center">
-  <b>Powered by MCTS × TD Learning × Taoist Eight-Facet Philosophy<br>
-  Don't just execute — simulate every move, then play the best one.</b><br>
-  <sub>A Claude Code Skill that brings AlphaGo-style decision intelligence to your workflow.</sub>
+  <b>A Claude Code decision engine.<br>
+  Before writing a single line — it simulates every approach in your head,<br>
+  picks the best, and only then executes.</b>
+</p>
+
+<p align="center">
+  <sub>MCTS tree search · TD temporal learning · Taoist Eight-Facet Mirror · Human-like memory · Cross-language</sub>
 </p>
 
 <br>
