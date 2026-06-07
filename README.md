@@ -47,6 +47,8 @@ After:  You ask → AI simulates all options internally → picks the best → e
 
 ## 🎯 What It Solves
 
+### You've been here before
+
 ```
 You: "Add user authentication to my app"
 AI: OK → writes code immediately
@@ -58,8 +60,9 @@ AI: OK → deletes and rewrites again
 
 > **3 rewrites. Problem? Didn't think before acting.**
 
+### With MCTS-TD Planner
+
 ```
-With MCTS-TD Planner:
 You: "Add user authentication to my app"
 AI: ⚡ Multiple approaches. Let me simulate first.
     → Collects constraints → Generates 3-5 solutions
@@ -171,6 +174,8 @@ Knowledge graph: `~/.claude/data/skills/mcts-td-planner/` — physically separat
 ---
 
 ## 📊 Architecture
+
+**Algorithm**: MCTS (Upper Confidence Bound + Welford variance) + TD(λ) (Temporal Difference with eligibility traces). Knowledge graph with state machine (HYPOTHESIS→PROVISIONAL→CONFIRMED→DISPUTED→REFUTED→Rollback).
 
 ```
 User Message
