@@ -27,11 +27,11 @@ This Skill's core engine is fully English. The language adaptation layer handles
 ┌─────────────────────────────────────────────────────────────┐
 │  STEP 0 (MANDATORY — before any engine logic):              │
 │                                                             │
-│  ① DETECT user's language (CODE-ENFORCED):                  │
-│     LLM detects user language from message                  │
-│       "<user message>"                                      │
-│     → Returns {"lang": "zh"|"ja"|"ko"|"en"|...}            │
-│     → Also sets language state for session                  │
+│  ① DETECT user's language:                                  │
+│     python scripts/language_guard.py detect --message "<msg>"│
+│     → Returns {"lang": "zh", "name": "Chinese"}             │
+│     → Works for ALL languages (Unicode script detection)    │
+│     → Store user_lang = result["lang"] for the session      │
 │                                                             │
 │  ② INTERNALLY translate the user's request to English.     │
 │     This ensures the English engine rules match correctly.  │
@@ -40,26 +40,24 @@ This Skill's core engine is fully English. The language adaptation layer handles
 │  ③ Execute all engine logic IN ENGLISH internally.         │
 │     (diverge → simulate → converge — all rules are English) │
 │                                                             │
-│  ④ OUTPUT to user (CODE-ENFORCED LABELS):                   │
-│     For FIXED LABELS, use code:                             │
-│       LLM translates all labels to user's language          │
-│       (no external tool needed — LLM is the translator)     │
-│         --phase review_map --lang zh --task "登录功能"      │
+│  ④ OUTPUT to user in user_lang. LLM translates content.     │
+│     For DYNAMIC content, LLM translates naturally.          │
 │                                                             │
-│     For DYNAMIC CONTENT, LLM translates:                    │
-│       - Solution descriptions                               │
-│       - Risk descriptions                                   │
-│       - Dimension-specific analysis                         │
+│  ⑤ GUARD: After each major output block, verify language:   │
+│     python scripts/language_guard.py check                  │
+│       --user-lang zh --output "<last few lines of output>"   │
+│     If check returns warning → LLM forgot to translate → fix │
+│     This is a SAFETY NET, not a translator.                 │
 │                                                             │
-│  ⚠️ Step ④ is NOT optional. If the user writes in Chinese,  │
-│     every single line they see MUST be in Chinese.          │
-│     Internal English thinking is invisible to the user.     │
+│  ⚠️ Step ④ is NOT optional. Every line the user sees        │
+│     MUST be in their language.                              │
 └─────────────────────────────────────────────────────────────┘
 ```
 
 **Enforcement**: 
-- **LLM-native**: Language detection and translation — LLM does this naturally, no external tool needed.
-- **Prompt-enforced**: After every output block, self-check: "Is this in the user's language?" If not, retranslate.
+- **LLM-native translation**: LLM is the primary translator — works for ALL languages.
+- **Guard safety net**: `language_guard.py` catches if LLM forgets to translate (context compression).
+- **Self-check**: After every output block, ask: "Is this in the user's language?" If not, retranslate.
 
 ---
 
