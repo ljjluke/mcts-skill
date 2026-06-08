@@ -23,10 +23,27 @@ description: MCTS-TD Decision Engine "Step 1" — Diverge Engine. Diverge (Eight
 
 ## Diverge Engine Full Flow
 
+The diverge engine is fundamentally **conversational**. It's not a monologue — it's a back-and-forth with the user. The engine brings the framework (Eight-Facet Mirror, structured thinking); the user brings domain knowledge, preferences, and constraints. **Best results come from active user engagement, not passive acceptance.**
+
 ```
 User Need
     │
     ▼
+┌─────────────────────────────────────────────────────────┐
+│  🗣️ GRILL THE USER — Before any analysis, engage:        │
+│                                                         │
+│  ① PARAPHRASE: "I understand you want to [X]. Is that    │
+│     correct? Are there other aspects I should consider?"  │
+│  ② PROBE: "What have you already tried or considered?"   │
+│  ③ CONSTRAIN: Ask the 2-3 most critical constraints      │
+│     using structured AskUserQuestion (not free text).     │
+│     Example: "Any dependency limits?" → [Yes, none /      │
+│     Must use Go+gin / No external deps at all]            │
+│                                                         │
+│  ⚠️ Do NOT skip this. The user knows things you don't.   │
+└──────────────────────────┬──────────────────────────────┘
+                           │
+                           ▼
 ┌─────────────────────────────────────────────────────────┐
 │                Diverge Phase (Brainstorming)            │
 │                                                         │
@@ -36,10 +53,28 @@ User Need
 │    Cross-facet association (Facet5 discovery triggers   │
 │      Facet2 re-review)                                  │
 │    Blindspot completion (if missing info, go query/ask) │
-│    Until each facet is thought through clearly          │
+│    Until each facet is thought through clearly           │
+│                                                         │
+│  🗣️ ENGAGEMENT CHECKPOINT (after blindspot round):       │
+│    "Here are the blindspots I found in facets [X,Y,Z].  │
+│     Can you tell me more about [specific question]?"    │
+│    Don't guess — if you're unsure, ASK.                │
 │                                                         │
 │  Output: 8 facets' concrete dimensions + self-ratings   │
 │          + recon findings + idea fragments              │
+└──────────────────────────┬──────────────────────────────┘
+                           │
+                           ▼
+┌─────────────────────────────────────────────────────────┐
+│  🗣️ DIRECTION CHECK (before converging to solutions):     │
+│                                                         │
+│  "From the 8 facets, the key tensions I see are:        │
+│     [Tension A] vs [Tension B]                          │
+│   Which direction feels more important to you?"         │
+│                                                         │
+│  This is NOT asking the user to pick a solution —       │
+│  it's confirming priorities before shaping solutions.   │
+│  User may say "both are important" → that's useful too. │
 └──────────────────────────┬──────────────────────────────┘
                            │
                            ▼
