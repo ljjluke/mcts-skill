@@ -37,7 +37,7 @@ After:  You ask → AI simulates all options internally → picks the best → e
 | 🎯 **MCTS Tree Search** | Like AlphaGo — Selection → Expansion → Simulation → Backprop. Multi-round convergence on optimal path. |
 | ⚖️ **Temporal Difference (TD)** | Learns from every execution. Gets smarter across sessions. |
 | ☯️ **Eight-Facet Mirror** | Inspired by Taoist Bagua (八卦) — 8 universal perspectives ensure no blind spot. |
-| 🗣️ **Language Adaptive** | Auto-detects zh/ja/ko/en. English engine internally, user's language on display. |
+| 🗣️ **Language Adaptive** | Auto-detects the user's language — any language. English engine internally, user's language on display. Works for writing systems worldwide. |
 | 🖥 **Node.js Native** | Zero extra deps. Cross-platform (Win/Mac/Linux). Runs wherever Claude Code runs. |
 | 🧠 **Human-like Memory** | Associative recall → fragment completion → external verification. Knowledge graph with state machine. |
 | 🔒 **Compression-Safe** | Triple-layer rules (YAML + COMPRESSION-SAFE blocks + code enforcement). Survives long contexts. |
