@@ -147,6 +147,12 @@ User intent → Understand what the user is asking
 │  Selection: UCB + knowledge bias picks the best node path   │
 │  Expansion: Open new execution branches at the node         │
 │  Simulation: Roll out from new branch to termination        │
+│    ⚡ When info gap hit:                                    │
+│       ① Diverge handoff (use info already gathered)        │
+│       ② Memory engine (query knowledge graph)              │
+│       ③ Web search (industry standard? known pitfalls?)    │
+│       ④ Ask user (only if constraint/preference unclear)   │
+│       ⑤ Assume (last resort, +0.1 variance)                │
 │  Backprop: Propagate results back up, update all ancestors  │
 │                                                             │
 │  Iteration control: auto-stop on convergence                │
