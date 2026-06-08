@@ -1,80 +1,76 @@
 # Changelog
 
-## 1.4.0 (2026-06-04)
+## 1.4.0 (2026-06-08)
 
-### 重大重构
-- **引擎文件拆分**：将 1703 行的单体 `engine/mcts-core.md` 拆分为 4 个独立引擎文件：
-  - `engine/mcts-constraint.md` — 需求约束收集（第0步）
-  - `engine/mcts-diverge.md` — 发散引擎（第1步：六维地图+六路侦查+视角轮盘+粗筛）
-  - `engine/mcts-simulate.md` — 推演引擎（第2步：逐轮独立推演+知识注入+补全箱）
-  - `engine/mcts-converge.md` — 仲裁引擎（第3~3.6步：汇总+自检+盲区审计+再推演）
-- **删除** `engine/mcts-core.md`（已被4个新文件替代）
+### Major
+- **Eight-Facet Mirror (Bagua)**: Universal decision framework replacing hardcoded 6-dimension tech-only map. All domains supported via `\p{Script=...}` Unicode detection.
+- **Language Adaptation Layer**: LLM-native language detection + `language_guard.js` safety net. Any language, no hardcoded lists.
+- **Diverge × Converge**: Diverge phase (brainstorming with 4 engagement checkpoints) → Converge phase (cluster→complete→cull→crystallize → exactly 3 solutions).
+- **Full Node.js**: All scripts rewritten from Python to pure JavaScript. Zero environment dependencies.
 
-### 新增
-- **六维领域地图**（原领域熟悉度检测全面升级）：技术栈/架构/业务/安全/运维/体验六维评分
-- **六路侦查**（原资料收集全面升级）：6条独立情报路径，交叉验证
-- **视角轮盘**（原方案生成全面升级）：10种基本视角，4~8个强制覆盖
-- **领域盲区审计**（第3.6步）：执行前检查是否有遗漏的关键维度
-- **全局补全箱V2**：新增视角覆盖追踪器，实时监控跨方案视角覆盖度
-
-### 变更
-- `SKILL.md` 引擎文件索引更新为拆分后的5个引擎文件
-- `README.md` 项目结构图更新
-- `rules/RULES.md` 引用路径更新
-- `references/algorithm-reference.md` 引用路径更新
+### Changes
+- `engine/mcts-diverge.md`: Eight-Facet Mirror replaces 6-dimension tech map. Conversational grill-the-user flow.
+- `engine/mcts-simulate.md`: 5-level knowledge acquisition protocol (Diverge Handoff → Memory → Web → Ask → Assume).
+- `engine/mcts-converge.md`: Ranking by converged V + self-check + blindspot audit + TD update.
+- `engine/td-learner.md`: COMPRESSION-SAFE RULES added.
+- `scripts/mcts_compute.js`: 16 CLI commands, pure JS.
+- `scripts/knowledge_lifecycle.js`: L-GCMS gate filtering + tiered storage + forgetting curve.
+- `scripts/language_guard.js`: Unicode Script property detection, no hardcoded ranges.
+- `agents/mcts-decider.md`: Rewritten with phased output + constraint collection + 5-level triage.
+- Deleted: `rules/RULES.md`, `engine/mcts-core.md`, all `.py` files.
 
 ---
 
 ## 1.3.0 (2026-06-04)
 
-### 修复
-- **memory/.gitignore 路径错误**：去掉多余路径前缀 `memory/`，使 gitignore 规则真正生效
-- **manage_memory.py 数据丢失路径**：移除危险的回退到项目目录逻辑，记忆数据目录不存在时直接报错
-- **知识状态机不一致**：补全 SLEEPING/ARCHIVED 状态转换规则，统一 HYPOTHESIS 权重为"不参与查询"
-- **UCB 公式分母硬编码**：将 `√(σ²/1)` 修复为 `√(σ²/n_i)`，n_i 为方案的推演次数
-- **重复策略文件**：合并 `code-task-policy.md` 到 `task-policy.md`，删除重复文件
-- **CHANGELOG 版本号同步**：从 1.1.1 更新到 1.3.0
+### Fixes
+- memory/.gitignore path error
+- manage_memory.py data loss path
+- Knowledge state machine inconsistency (SLEEPING/ARCHIVED transitions)
+- UCB formula hardcoded denominator (√(σ²/1) → √(σ²/n_i))
+- Merged duplicate code-task-policy.md into task-policy.md
+- CHANGELOG version sync
 
-### 变更
-- `policies/task-policy.md` 新增 UCB 公式中 n_i 的说明
+### Changes
+- policies/task-policy.md: Added n_i explanation in UCB formula
 
 ---
 
 ## 1.1.1 (2026-06-03)
 
-### 新增
-- **推演结果自检**（第3.5步）：执行前自我质疑，找漏洞、反向思考、风险评估，防止推演错了还按错的执行
-- **跳过机制**：用户在任何阶段说"直接做""别推了"，立即中止推演进入执行
-- **熔断机制**：记录推演准确率，低于70%自动降级，低于50%暂停推演
+### Added
+- Simulation result self-check (Step 3.5): pre-execution vulnerability finding + reverse thinking + risk assessment
+- Skip mechanism: user can stop simulation at any stage
+- Fuse mechanism: accuracy tracking, auto-degrade below 70%
 
-### 优化
-- 触发检测逻辑：从"指定类型才触发"改为"任何任务都检测是否有多种做法"，触发率大幅提高
-- 删除重复的触发规则章节，精简 SKILL.md
+### Optimized
+- Trigger detection: from "specific types only" to "detect multiple approaches in any task"
+- Removed duplicate trigger rules chapter
 
-### 变更
-- 知识召回算法重写：从"多路并行召回+算分排序"改为"联想回忆+碎片补全+外部求证"
-- 记忆存储分层：active（当前意识）+ archive（长期记忆），模拟人脑遗忘与回忆
+### Changed
+- Knowledge recall algorithm rewrite: "multi-path parallel recall" → "associative recall + fragment completion + external verification"
+- Memory tiered storage: active (current consciousness) + archive (long-term memory)
 
 ---
 
 ## 1.1.0 (2026-06-03)
 
-### 新增
-- agents/openai.yaml 接口定义
-- agents/mcts-decider.md agent 定义
-- 插件市场支持（.claude-plugin/plugin.json + marketplace.json）
-- 项目结构调整为插件格式（plugins/mcts-td-planner/）
+### Added
+- agents/openai.yaml
+- agents/mcts-decider.md
+- Plugin marketplace support (.claude-plugin/plugin.json + marketplace.json)
+- Project restructured to plugin format
 
-### 优化
-- README 重写为通用语言，去技术化
-- 移除第三方项目引用
+### Optimized
+- README rewritten for general audience
+- Removed third-party project references
 
 ---
 
 ## 1.0.0 (2026-06-03)
 
-### 初始版本
-- MCTS-TD Planner Skill 核心框架
-- 多方案独立推演决策引擎
-- 知识图谱价值函数管理
-- 跨会话持续学习
+### Initial Release
+- MCTS-TD Planner Skill core framework
+- Multi-solution independent simulation decision engine
+- Knowledge graph value function management
+- Cross-session continuous learning
