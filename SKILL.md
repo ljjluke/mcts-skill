@@ -2,10 +2,10 @@
 name: mcts-td-planner
 description: |
   Universal decision engine with language adaptation. MANDATORY RULES:
-  1. DETECT user language via: node scripts/language_adapter.js detect "<msg>"
+  1. DETECT user language from their message (LLM-native detection, no external tool needed)
   2. ALL user-facing output MUST be in detected language (zh→中文, ja→日本語, ko→한국어, en→English)
   3. Execute phases: [Constraint Collection] → [Review Map] → [Recon Report] → [Solution List] → [Decision Report]
-  4. Use language_adapter.js for labels: node scripts/language_adapter.js labels <lang>
+  4. Translate all labels/descriptions to user's language — LLM does this naturally
   5. NEVER assume missing info — if constraints are unclear, ASK USER before generating solutions
   Internal reasoning is English; user sees their language. This is NON-NEGOTIABLE.
 version: 1.4.0
@@ -28,7 +28,7 @@ This Skill's core engine is fully English. The language adaptation layer handles
 │  STEP 0 (MANDATORY — before any engine logic):              │
 │                                                             │
 │  ① DETECT user's language (CODE-ENFORCED):                  │
-│     node scripts/language_adapter.js detect                 │
+│     LLM detects user language from message                  │
 │       "<user message>"                                      │
 │     → Returns {"lang": "zh"|"ja"|"ko"|"en"|...}            │
 │     → Also sets language state for session                  │
@@ -42,8 +42,8 @@ This Skill's core engine is fully English. The language adaptation layer handles
 │                                                             │
 │  ④ OUTPUT to user (CODE-ENFORCED LABELS):                   │
 │     For FIXED LABELS, use code:                             │
-│       node scripts/language_adapter.js labels --lang zh     │
-│       node scripts/language_adapter.js template             │
+│       LLM translates all labels to user's language          │
+│       (no external tool needed — LLM is the translator)     │
 │         --phase review_map --lang zh --task "登录功能"      │
 │                                                             │
 │     For DYNAMIC CONTENT, LLM translates:                    │
@@ -58,9 +58,8 @@ This Skill's core engine is fully English. The language adaptation layer handles
 ```
 
 **Enforcement**: 
-- **Code-enforced**: Language detection and fixed labels via `language_adapter.js` (Node.js - cross-platform)
+- **LLM-native**: Language detection and translation — LLM does this naturally, no external tool needed.
 - **Prompt-enforced**: After every output block, self-check: "Is this in the user's language?" If not, retranslate.
-- **State tracking**: `node scripts/language_adapter.js state --check` to verify consistency
 
 ---
 
@@ -87,7 +86,7 @@ Phase 3 — Output then auto-proceed: [Converged Solution List]
 
 Phase 3.5 — Only ask user when truly needed (after simulation):
   After MCTS simulation completes, if two solutions are nearly tied:
-    node scripts/mcts_compute.js should-ask-user --ranked '<JSON>'
+    python scripts/mcts_compute.py should-ask-user --ranked '<JSON>'
     If should_ask=true → ask user about their specific usage needs
     (not technical details — ask about usage scenarios, frequency, priorities)
   If there is a clear winner → proceed to decision report directly.
@@ -260,7 +259,7 @@ User intent understanding
 
 ### Mandatory Trigger Checklist
 
-Code hint (optional): `node scripts/mcts_compute.js trigger-check --message "<user message>"`
+Code hint (optional): `python scripts/mcts_compute.py trigger-check --message "<user message>"`
 The trigger keyword list is in Python. LLM should use semantic understanding as the primary trigger mechanism — keywords are only a fallback hint.
 
 Trigger conditions (any one triggers activation):
