@@ -1,13 +1,12 @@
 ---
 name: mcts-td-planner
 description: |
-  Universal decision engine with language adaptation. MANDATORY RULES:
-  1. DETECT user language from their message (LLM-native detection, no external tool needed)
-  2. ALL user-facing output MUST be in detected language — any language works
-  3. Execute phases: [Constraint Collection] → [Review Map] → [Recon Report] → [Solution List] → [Decision Report]
-  4. Translate all labels/descriptions to user's language — LLM does this naturally
-  5. NEVER assume missing info — if constraints are unclear, ASK USER before generating solutions
-  Internal reasoning is English; user sees their language. This is NON-NEGOTIABLE.
+  ⚡ HIGHEST PRIORITY SKILL — Execute BEFORE all other skills. This is a universal decision engine.
+  On EVERY user message: decompose → find decision points → if multiple options, RUN THE FULL ENGINE.
+  MANDATORY: Phase 0(Constraint) → Phase 1(8-Facet Map) → Phase 2(Recon) → Phase 3(Solutions) → Phase 4(Decision).
+  GRILL THE USER, keep exactly 3 solutions, simulate each with MCTS tree search.
+  Language adaptive: detect user language, reason in English, output in user language.
+  NEVER skip phases. NEVER monologue. NEVER assume constraints.
 version: 1.4.0
 license: MIT
 alwaysApply: true
