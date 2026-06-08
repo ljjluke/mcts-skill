@@ -8,11 +8,6 @@
 ● Skill(mcts-td-planner)
   ⎿  Successfully loaded skill
 
-● Skill(output-phrasing-engineering)
-  ⎿  Successfully loaded skill
-
-● 我将按侦察→分析→执行的流程处理这个任务。
-
   首先，让我运行语言检测（Step 0），然后对用户需求进行分解。
 
 ● Bash(node "~/.claude/skills/mcts-td-planner/scripts/language_guard.js" detect --message
@@ -40,18 +35,6 @@
     ① 游戏类型? (棋盘游戏/贪吃蛇/Tetris/迷宫/... ) → 有多个选择 ✓
     ② 技术栈? (Web/CLI/桌面/移动) → 有多个选择 ✓
     ③ MCTS角色? (AI对手/AI玩家/游戏求解器/决策引擎) → 有多个选择 ✓
-     node:internal/modules/cjs/loader:1459
-       throw err;
-       ^
-
-     Error: Cannot find module '~\.claude\skills\mcts-td-planner\scripts\language_guard.js'
-         at Module._resolveFilename (node:internal/modules/cjs/loader:1456:15)
-         at defaultResolveImpl (node:internal/modules/cjs/loader:1066:19)
-         at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1071:22)
-         at Module._load (node:internal/modules/cjs/loader:1242:25)
-     … +8 lines (ctrl+o to expand)
-
-● 语言检测失败（脚本文件不存在），但我可以直接判断：用户使用的是中文。接下来按 MCTS-TD 技能规则进行需求分解。
 
   ---
   Step 0 — 需求分解：
