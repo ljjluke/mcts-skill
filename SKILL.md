@@ -251,11 +251,67 @@ User intent understanding
 
 ---
 
-## 🚀 Activation Rules (Mandatory Trigger)
+## 🚀 Activation Rules (Mandatory — Every Message)
 
-**`alwaysApply: true` means this Skill MUST execute on every user message.**
+**`alwaysApply: true` means this Skill executes on EVERY user message. No exceptions.**
 
-### Mandatory Trigger Checklist
+### Step 0: Decompose First (Always)
+
+Before anything else — before deciding "is this simple" or "do I need the engine" — decompose. The decomposition result decides the depth:
+
+```
+EVERY user message → immediately decompose:
+
+  "帮我实现登录"
+    → 方案选择点分析:
+       认证方式? (JWT/Session/OAuth/...) → 有多个选择 ✓
+       前端实现? (React/Vue/原生/...) → 可能多个选择 ✓
+       密码存储? (bcrypt/argon2) → 只有一个合理做法 ✗
+    → 至少有1个子需求有多方案 → 启动发散引擎 ✓
+
+  "1+1等于几"
+    → 方案选择点分析: 没有选择点，只有一个答案
+    → 直接回答，不启动引擎
+
+  "这段代码什么意思" (附代码)
+    → 方案选择点分析: 纯解释/审查，没有需要决策的地方
+    → 直接解释，不启动引擎
+
+  "你好"
+    → 方案选择点分析: 打招呼，没有任务
+    → 直接回复，不启动引擎
+```
+
+### Step 1: Activate Based on Decomposition
+
+```
+Decomposition result → Action:
+
+  ≥1 子需求有多方案 → ⚡ 启动激活信号 + 进入发散引擎
+  0 子需求有多方案 → 直接回答，跳过引擎
+  信息不足无法拆解 → 追问用户后重新拆解
+```
+
+### Activation Signal
+
+When decomposition finds multi-option needs, output immediately:
+
+```
+═══════════════════════════════════════
+ ⚡ [MCTS-TD] Decision demand detected. Starting decision engine.
+ Trigger: [which sub-need has multiple options]
+ Mode: [full / quick]
+═══════════════════════════════════════
+```
+
+### No Self-Doubt After Decomposition
+
+```
+★ If decomposition FOUND multiple options → ACTIVATE. No second-guessing. ★
+★ If decomposition found ONLY ONE option → still output Phases 1~3, then state it at Phase 3. ★
+```
+
+### Mandatory Trigger Checklist (Fallback)
 
 Code hint (optional): `node scripts/mcts_compute.js trigger-check --message "<user message>"`
 The trigger keyword list is in Python. LLM should use semantic understanding as the primary trigger mechanism — keywords are only a fallback hint.
