@@ -28,7 +28,7 @@ This Skill's core engine is fully English. The language adaptation layer handles
 │  STEP 0 (MANDATORY — before any engine logic):              │
 │                                                             │
 │  ① DETECT user's language:                                  │
-│     python scripts/language_guard.py detect --message "<msg>"│
+│     node scripts/language_guard.js detect --message "<msg>"│
 │     → Returns {"lang": "zh", "name": "Chinese"}             │
 │     → Works for ALL languages (Unicode script detection)    │
 │     → Store user_lang = result["lang"] for the session      │
@@ -44,7 +44,7 @@ This Skill's core engine is fully English. The language adaptation layer handles
 │     For DYNAMIC content, LLM translates naturally.          │
 │                                                             │
 │  ⑤ GUARD: After each major output block, verify language:   │
-│     python scripts/language_guard.py check                  │
+│     node scripts/language_guard.js check                  │
 │       --user-lang zh --output "<last few lines of output>"   │
 │     If check returns warning → LLM forgot to translate → fix │
 │     This is a SAFETY NET, not a translator.                 │
@@ -84,7 +84,7 @@ Phase 3 — Output then auto-proceed: [Converged Solution List]
 
 Phase 3.5 — Only ask user when truly needed (after simulation):
   After MCTS simulation completes, if two solutions are nearly tied:
-    python scripts/mcts_compute.py should-ask-user --ranked '<JSON>'
+    node scripts/mcts_compute.js should-ask-user --ranked '<JSON>'
     If should_ask=true → ask user about their specific usage needs
     (not technical details — ask about usage scenarios, frequency, priorities)
   If there is a clear winner → proceed to decision report directly.
@@ -257,7 +257,7 @@ User intent understanding
 
 ### Mandatory Trigger Checklist
 
-Code hint (optional): `python scripts/mcts_compute.py trigger-check --message "<user message>"`
+Code hint (optional): `node scripts/mcts_compute.js trigger-check --message "<user message>"`
 The trigger keyword list is in Python. LLM should use semantic understanding as the primary trigger mechanism — keywords are only a fallback hint.
 
 Trigger conditions (any one triggers activation):
