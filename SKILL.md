@@ -66,6 +66,13 @@ This Skill's core engine is fully English. The language adaptation layer handles
 **Whether you are the main session or a sub-agent executing this Skill, you MUST follow this output cadence. Skipping intermediate phases is FORBIDDEN.**
 
 ```
+Phase 0 — Constraint Collection (before Phase 1):
+  Before drawing the eight-facet map, collect missing constraints.
+  If critical info is missing (tech stack, dependency limits, performance reqs, etc.),
+  use AskUserQuestion to present structured options — NOT free-text questions.
+  Example: "Which tech stack?" → [Go+gin / Python+FastAPI / Node.js+Express / Not sure]
+  Keep it to 2-3 questions max. After answers, proceed to Phase 1.
+
 Phase 1 — Output immediately: [Eight-Facet Review Map]
   Format: header line with the task name + domain
   Content: 8 facets → 8 concrete dimensions with scores + blindspot identification
