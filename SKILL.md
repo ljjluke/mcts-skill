@@ -339,8 +339,8 @@ After convergence:
 | Simulate Engine | `engine/mcts-simulate.md` | MCTS tree search: Selection→Expansion→Simulation→Backpropagation |
 | Converge Engine | `engine/mcts-converge.md` | Aggregation + self-check + blindspot audit + TD update write-back |
 | TD Learning Engine | `engine/td-learner.md` | TD error, value update, knowledge graph, cross-session persistence |
-| 🌐 Language Adapter | `scripts/language_adapter.js` | **CODE-ENFORCED** language detection + labels + templates (Node.js, cross-platform) |
-| 🖥 Compute Engine | `scripts/mcts_compute.js` | Numerical computation (UCB/backprop/convergence/state machine) (Node.js, cross-platform) |
+| 🧠 Memory Engine | `scripts/knowledge_lifecycle.py` | L-GCMS: gate filtering + tiered storage + forgetting curve + context recall |
+| 🖥 Compute Engine | `scripts/mcts_compute.py` | UCB/backprop/convergence/state machine + cull/coverage/user-ask logic (Python, 50+ functions) |
 | Simulation Format | `policies/task-policy.md` | General solution generation rules, simulation format, scoring rubric |
 | 📖 Algorithm Ref | `references/algorithm-reference.md` | On-demand reference, not loaded in reasoning context |
 
