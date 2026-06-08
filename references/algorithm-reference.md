@@ -1,6 +1,6 @@
 ---
 name: algorithm-reference
-description: MCTS-TD混合算法的原理参考文档，记录算法公式、tetris_mcts项目的借鉴来源和设计决策
+description: MCTS-TD hybrid algorithm reference — formulas, tetris_mcts design decisions, and correspondence mapping
 metadata:
   type: reference
 ---

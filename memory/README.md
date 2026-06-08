@@ -1,7 +1,7 @@
 ⚠️ memory/
-⚠️ memory 目录存储用户积累的知识图谱数据，更新 skill 时不应覆盖。
-⚠️ 请使用 ~/.claude/data/skills/mcts-td-planner/ 存放实际记忆文件。
-⚠️ 此目录仅作为模板参考，实际运行时指向 data 目录。
+⚠️ The memory directory stores user-accumulated knowledge graph data. Do NOT overwrite during skill updates.
+⚠️ Use ~/.claude/data/skills/mcts-td-planner/ for actual runtime memory files.
+⚠️ This directory is only a template reference; runtime points to the data directory.
 
-本目录在 skill 安装后会被复制到 data 目录作为初始模板。
-后续 skill 更新时，data 目录中的记忆文件不会被覆盖。
+This directory is copied to the data directory as an initial template during skill installation.
+Subsequent skill updates will NOT overwrite memory files in the data directory.
