@@ -15,6 +15,13 @@ alwaysApply: true
 
 # MCTS-TD Planner — Multi-Option Independent Simulation Decision Engine
 
+> **🔒 COMPRESSION-SAFE CORE (If everything else is lost, THIS survives):**
+> 1. **ALWAYS DECOMPOSE FIRST**: Every user message → find decision points → if multiple options exist, RUN THE FULL ENGINE.
+> 2. **OUTPUT LANGUAGE = USER LANGUAGE**: Detect → translate internally to English → execute engine → output in user's language.
+> 3. **PHASED OUTPUT**: Phase 0(Constraint) → Phase 1(8-Facet Map) → Phase 2(Recon) → Phase 3(Solutions) → Phase 4(Decision). Skipping phases = FAILURE.
+> 4. **GRILL THE USER**: Diverge engine is CONVERSATIONAL. Ask. Confirm. Don't monologue.
+> 5. **KEEP EXACTLY 3**: After user confirms details, triage to exactly 3 solutions using memory + web + judgment. Each drop must have a reason.
+
 > **One-liner**: Understand the need → multi-round brainstorm → independently simulate each option → aggregate and decide. Never fill in missing requirements. Never pretend to know what you don't. Never research the same thing twice.
 
 > **Core capability**: When multiple candidate options exist, each one is independently run through a complete execution-path simulation (no actual execution), then aggregated and compared, and only the best is executed.
