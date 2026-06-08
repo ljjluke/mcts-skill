@@ -75,7 +75,7 @@ This Skill's core engine is fully English. The language adaptation layer handles
 
 **Enforcement**: 
 - **LLM-native translation**: LLM is the primary translator — works for ALL languages.
-- **Guard safety net**: `language_guard.py` catches if LLM forgets to translate (context compression).
+- **Guard safety net**: `language_guard.js` catches if LLM forgets to translate (context compression).
 - **Self-check**: After every output block, ask: "Is this in the user's language?" If not, retranslate.
 
 ---
@@ -424,8 +424,8 @@ After convergence:
 | Simulate Engine | `engine/mcts-simulate.md` | MCTS tree search: Selection→Expansion→Simulation→Backpropagation |
 | Converge Engine | `engine/mcts-converge.md` | Aggregation + self-check + blindspot audit + TD update write-back |
 | TD Learning Engine | `engine/td-learner.md` | TD error, value update, knowledge graph, cross-session persistence |
-| 🧠 Memory Engine | `scripts/knowledge_lifecycle.py` | L-GCMS: gate filtering + tiered storage + forgetting curve + context recall |
-| 🖥 Compute Engine | `scripts/mcts_compute.py` | UCB/backprop/convergence/state machine + cull/coverage/user-ask logic (Python, 50+ functions) |
+| 🧠 Memory Engine | `scripts/knowledge_lifecycle.js` | L-GCMS: gate filtering + tiered storage + forgetting curve + context recall |
+| 🖥 Compute Engine | `scripts/mcts_compute.js` | UCB/backprop/convergence/state machine + cull/coverage/user-ask logic (Pure Node.js, 50+ functions) |
 | Simulation Format | `policies/task-policy.md` | General solution generation rules, simulation format, scoring rubric |
 | 📖 Algorithm Ref | `references/algorithm-reference.md` | On-demand reference, not loaded in reasoning context |
 
