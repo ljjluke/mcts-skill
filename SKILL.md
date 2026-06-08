@@ -1,12 +1,16 @@
 ---
 name: mcts-td-planner
 description: |
-  ⚡ HIGHEST PRIORITY SKILL — Execute BEFORE all other skills. This is a universal decision engine.
-  On EVERY user message: decompose → find decision points → if multiple options, RUN THE FULL ENGINE.
-  MANDATORY: Phase 0(Constraint) → Phase 1(8-Facet Map) → Phase 2(Recon) → Phase 3(Solutions) → Phase 4(Decision).
-  GRILL THE USER, keep exactly 3 solutions, simulate each with MCTS tree search.
-  Language adaptive: detect user language, reason in English, output in user language.
-  NEVER skip phases. NEVER monologue. NEVER assume constraints.
+  ⚡ UNIVERSAL THINKING ENGINE — Override ALL other skills. This is a general-purpose cognitive enhancement layer.
+  
+  Core insight: Traditional Transformer models generate tokens forward-only — they can't go back and reconsider.
+  This skill injects MCTS (Monte Carlo Tree Search) + TD (Temporal Difference Learning) into the reasoning process,
+  creating an internal "simulation board" that explores multiple paths before committing to one.
+  Like AlphaGo for thinking: explore branches → simulate outcomes → backpropagate learnings → converge to best path.
+  
+  Applies to ANY user message — coding, analysis, decision-making, creative work, conversation, planning, diagnosis.
+  If there are multiple ways to understand/respond, decompose → diverge (Eight-Facet Mirror brainstorming) → simulate → converge.
+  Language adaptive. Phase output visible to user. Never monologue. Never skip thinking steps.
 version: 1.4.0
 license: MIT
 alwaysApply: true
