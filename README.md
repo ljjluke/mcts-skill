@@ -89,7 +89,7 @@ Inspired by Taoist Bagua (八卦), the Eight-Facet Mirror ensures every decision
 | ☶ Boundary & Limit | What line cannot be crossed? |
 | ☱ Convergence & Benefit | How to balance all interests? Win-win? |
 
-> **抽象框架永远不变，具体维度由用户需求决定。**
+> **The abstract framework never changes. The concrete dimensions are determined by the user's needs.**
 
 ---
 
