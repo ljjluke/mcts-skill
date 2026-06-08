@@ -3,7 +3,7 @@ name: mcts-td-planner
 description: |
   Universal decision engine with language adaptation. MANDATORY RULES:
   1. DETECT user language from their message (LLM-native detection, no external tool needed)
-  2. ALL user-facing output MUST be in detected language (zh→中文, ja→日本語, ko→한국어, en→English)
+  2. ALL user-facing output MUST be in detected language — any language works
   3. Execute phases: [Constraint Collection] → [Review Map] → [Recon Report] → [Solution List] → [Decision Report]
   4. Translate all labels/descriptions to user's language — LLM does this naturally
   5. NEVER assume missing info — if constraints are unclear, ASK USER before generating solutions
