@@ -90,7 +90,41 @@ User Need
 │    ④ Crystallize: Write complete solution description   │
 │            for each retained direction                  │
 │                                                         │
-│  Output: 2~8 structured solutions                       │
+│
+│  🗣️ GRILL THE DETAILS (after direction, before culling):  │
+│                                                         │
+│  Present candidate directions to the user:              │
+│  For each direction, ask about SPECIFICS only the user  │
+│  can answer: constraints, preferences, resources, risks.│
+│  Don't ask technical trivia they wouldn't know.        │
+│                                                         │
+│  After confirming details → move to Final Triaging.     │
+└──────────────────────────┬──────────────────────────────┘
+                           │
+                           ▼
+┌─────────────────────────────────────────────────────────┐
+│         FINAL TRIAGING → Keep Exactly 3 (for MCTS)       │
+│                                                         │
+│  All details confirmed. Now narrow to 3 using 3 sources:│
+│                                                         │
+│  SOURCE 1 — MEMORY (knowledge_lifecycle.js):             │
+│    Query: past similar tasks? user preference patterns?  │
+│    Which approaches succeeded/failed before?             │
+│                                                         │
+│  SOURCE 2 — WEB INTELLIGENCE:                            │
+│    Quick search: industry standard? known pitfalls?      │
+│    Deprecated or bleeding edge?                          │
+│                                                         │
+│  SOURCE 3 — AI JUDGMENT:                                │
+│    Diversity: 3 most DIFFERENT approaches (no variants)  │
+│    Coverage: which cover the MOST facets?                │
+│    Actionability: which are truly doable right now?       │
+│                                                         │
+│  ⚠️ Every dropped direction needs a specific reason.     │
+│  ⚠️ All 3 kept MUST pass the user's detail check first.  │
+│  ⚠️ If <3 viable → go back to user: ''Need more?.''     │
+│                                                         │
+│  Output: 3 structured solutions                       │
 │          (each with complete description and basis)     │
 │  Confirm: Show to user, wait for confirmation before    │
 │           entering Simulate Engine                      │
