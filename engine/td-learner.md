@@ -5,6 +5,11 @@ description: TDL (Temporal Difference Learning) Engine's core inference rules. B
 
 # TD Learning Engine
 
+> **🔒 COMPRESSION-SAFE RULES (Always apply, even if context is compressed):**
+> 1. **KNOWLEDGE LIFECYCLE**: HYPOTHESIS(0.1) → PROVISIONAL(0.3) → CONFIRMED(1.0) → DISPUTED(0.2) → REFUTED(0.0). SLEEPING(0.15) after 30d unused, ARCHIVED after 90d.
+> 2. **GATE BEFORE STORE**: New knowledge MUST pass gate-check (reusability + density + novelty + reliability). Discard if score < 0.4.
+> 3. **RECALL HIERARCHY**: ①Associative recall (most relevant first) → ②Fragment completion (fill gaps from memory) → ③External verification (web/user). Don't trust recalled knowledge blindly — verify when uncertain.
+
 ## Overview
 
 This engine transforms TD(λ) algorithm's core mechanisms into inference rules. Core capabilities include:
