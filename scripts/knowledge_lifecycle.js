@@ -188,6 +188,128 @@ function fullMaintenance(kg, recentTaskIds, currentCtx = null) {
     return report;
 }
 
+// ===== Emotional Tagging — Mark surprising/contradictory knowledge =====
+
+function tagEmotionalKnowledge(experience, vPredicted = null, vActual = null) {
+    /**
+     * Tag knowledge with "emotional weight" based on surprise/contradiction.
+     * These mimic human memory: surprising events stick, mundane ones fade.
+     *
+     * Three emotional tags:
+     *   SURPRISE_SUCCESS — did much better than expected
+     *   HARSH_LESSON — did much worse than expected
+     *   AWAKENING — contradicted a CONFIRMED belief
+     */
+    const tags = [];
+    let forceKeep = false;
+
+    if (vPredicted !== null && vActual !== null) {
+        const delta = vActual - vPredicted;
+
+        if (delta >= 0.3) {
+            tags.push("SURPRISE_SUCCESS");
+            forceKeep = true;  // "第一次做大获成功的事，终身不忘"
+        } else if (delta <= -0.3) {
+            tags.push("HARSH_LESSON");
+            forceKeep = true;  // "踩过的坑必须记住"
+        }
+    }
+
+    if (experience.contradicted_knowledge_id) {
+        tags.push("AWAKENING");
+        forceKeep = true;  // "用了很久的知识被推翻，这个发现不能丢"
+    }
+
+    return {
+        emotional_tags: tags,
+        force_keep: forceKeep,
+        consolidation_bonus: tags.length > 0 ? 15 : 0,  // +15 bonus for emotional knowledge
+        reason: tags.length > 0 ? `Emotionally marked: ${tags.join(", ")}` : "No emotional significance",
+    };
+}
+
+function gateCheckWithEmotion(exp, kg, vPredicted = null, vActual = null) {
+    /**
+     * Gate check enhanced with emotional tagging.
+     * Even if a piece of knowledge scores low on the standard gate,
+     * if it has emotional significance (surprise/failure/contradiction),
+     * it gets forced through with an "emotion_override" flag.
+     */
+    const gate = gateCheck(exp, kg);
+    const emotion = tagEmotionalKnowledge(exp, vPredicted, vActual);
+
+    // Force keep emotionally significant knowledge even if gate score is low
+    if (emotion.force_keep && gate.action === "discard") {
+        return {
+            ...gate,
+            passed: true,
+            action: "observe",
+            emotional_tags: emotion.emotional_tags,
+            consolidation_bonus: emotion.consolidation_bonus,
+            note: "EMOTION OVERRIDE: Despite low gate score, emotionally significant (surprise/failure/contradiction). Stored for observation.",
+        };
+    }
+
+    return {
+        ...gate,
+        emotional_tags: emotion.emotional_tags,
+        consolidation_bonus: emotion.consolidation_bonus,
+    };
+}
+
+// ===== Natural Selection (Wu-Wei) — Let time, verification, and usage decide =====
+
+function naturalSelection(entries, recentTaskIds) {
+    /**
+     * "为道日损" — The Dao of memory is subtraction.
+     *
+     * Don't actively decide what to delete. Let three forces do the work:
+     *   ① TIME FORCE (forgetting curve): memory strength decays naturally
+     *   ② VERIFICATION FORCE (refutation): wrong knowledge gets disproven
+     *   ③ USAGE FORCE (GC Roots): frequently used knowledge resists decay
+     *
+     * This function only computes the current state — it doesn't delete anything.
+     * The actual deletion happens via minorGc() and majorGc() based on these states.
+     */
+    const report = {
+        total: entries.length,
+        thriving: 0,      // memory_strength >= 40, frequently used
+        active: 0,        // 20 <= strength < 40
+        fading: 0,        // 5 <= strength < 20
+        near_forgotten: 0, // strength < 5
+        emotion_protected: 0,  // force_keep = true
+        natural_death: 0, // strength < 5 and not emotion_protected and not gc_root
+    };
+
+    const now = new Date();
+    const gcRoots = new Set();
+
+    for (const e of entries) {
+        // Check if referenced by recent tasks
+        if ((e.recalled_in_tasks || []).some(t => recentTaskIds.includes(t))) {
+            gcRoots.add(e.id);
+            e.is_gc_root_referenced = true;
+        } else {
+            e.is_gc_root_referenced = false;
+        }
+
+        const strength = computeMemoryStrength(e, now);
+
+        if (strength >= 40) report.thriving++;
+        else if (strength >= 20) report.active++;
+        else if (strength >= 5) report.fading++;
+        else report.near_forgotten++;
+
+        if (e.emotional_tags && e.emotional_tags.length > 0) report.emotion_protected++;
+
+        if (strength < 5 && !e.emotional_tags?.length && !e.is_gc_root_referenced) {
+            report.natural_death++;
+        }
+    }
+
+    return { report, gc_roots: [...gcRoots] };
+}
+
 // ===== CLI =====
 function parseArgs(args) {
     const r = {};
@@ -227,6 +349,20 @@ function main() {
             case "full-maintenance": output(fullMaintenance(JSON.parse(o.kg || "[]"), JSON.parse(o.recent_tasks || "[]"), o.context ? JSON.parse(o.context) : null)); break;
             case "context-match": output({ match_score: computeContextMatch(JSON.parse(o.current || "{}"), JSON.parse(o.anchor || "{}")) }); break;
             case "recall-archive": output({ recalled_count: tryRecallFromArchive(JSON.parse(o.context || "{}"), JSON.parse(o.archive || "[]")).length }); break;
+            case "gate-check-emotion": {
+                output(gateCheckWithEmotion(
+                    JSON.parse(o.experience || "{}"),
+                    JSON.parse(o.kg || "[]"),
+                    o.v_predicted !== undefined ? parseFloat(o.v_predicted) : null,
+                    o.v_actual !== undefined ? parseFloat(o.v_actual) : null
+                ));
+                break;
+            }
+            case "natural-selection": {
+                const result = naturalSelection(JSON.parse(o.entries || "[]"), JSON.parse(o.recent_tasks || "[]"));
+                output(result);
+                break;
+            }
             default: log(`Unknown: ${cmd}`); process.exit(1);
         }
     } catch (e) { log(`Error: ${e.message}`); process.exit(1); }
