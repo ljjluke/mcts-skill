@@ -23,11 +23,11 @@ alwaysApply: true
 > **Every user message goes through: Decompose → Diverge (8-Facet Mirror) → Converge (3 solutions) → MCTS Simulate → Decision.**
 > **Diverge engine is CONVERSATIONAL — grill the user, don't monologue. Output every phase visibly.**
 
-> **🧠 MEMORY PROTOCOL (After every task completion):**
-> 1. **WRITE BACK**: Execute `node scripts/knowledge_lifecycle.js gate-check` on all new knowledge. Store passing entries to `~/.claude/data/skills/mcts-td-planner/memory/`.
+> **🧠 MEMORY PROTOCOL (MANDATORY — After every task):**
+> 1. **WRITE BACK (REQUIRED)**: Execute `node scripts/knowledge_lifecycle.js gate-check` on ALL new knowledge generated during this task. Store passing entries to `~/.claude/data/skills/mcts-td-planner/memory/mcts-td-value-archive.md`.
 > 2. **MAINTENANCE**: Run `node scripts/knowledge_lifecycle.js full-maintenance` — GC Roots tracking → Minor/Major GC → error detection → compaction.
-> 3. **CONTEXT RELEASE**: After memory is persisted, the skill's reasoning context (8-facet maps, MCTS trees, intermediate simulations) can be released. ONLY the knowledge graph persists across sessions.
-> 4. **RECALL**: Next session, query memory first before re-deriving anything. Use `node scripts/knowledge_lifecycle.js context-match` to find relevant past knowledge, `node scripts/knowledge_lifecycle.js recall-archive` for deeply archived memories.
+> 3. **CONTEXT RELEASE**: After memory is persisted, the skill's reasoning context (8-facet maps, MCTS trees, intermediate simulations) can be released from the conversation. ONLY the knowledge graph persists across sessions in `~/.claude/data/skills/mcts-td-planner/memory/`.
+> 4. **RECALL ON START**: At the beginning of every new session, BEFORE any engine logic, read `~/.claude/data/skills/mcts-td-planner/memory/mcts-td-value-archive.md`. Query memory before re-deriving anything.
 
 > **🔒 COMPRESSION-SAFE CORE (Frontmatter + this block = survives any compression):**
 > **ALWAYS DECOMPOSE FIRST** | **OUTPUT IN USER LANGUAGE** | **PHASED OUTPUT (0→1→2→3→4)** | **GRILL THE USER** | **3 SOLUTIONS → MCTS**
