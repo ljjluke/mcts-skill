@@ -20,6 +20,8 @@
 <br>
 
 > 🌐 中文用户请查看 [README_CN.md](./README_CN.md)
+>
+> 📺 **Demo & Examples**: [github.com/ljjluke/mcts-skill-demo](https://github.com/ljjluke/mcts-skill-demo) — real-world usage logs showing MCTS-TD in action
 
 ---
 
