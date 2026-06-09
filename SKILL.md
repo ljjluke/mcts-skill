@@ -26,11 +26,18 @@ alwaysApply: true
 > **🧠 MEMORY PROTOCOL (MANDATORY — After every task):**
 > 1. **WRITE BACK (REQUIRED)**: Execute `node scripts/knowledge_lifecycle.js gate-check` on ALL new knowledge generated during this task. Store passing entries to `~/.claude/data/skills/mcts-td-planner/memory/mcts-td-value-archive.md`.
 > 2. **MAINTENANCE**: Run `node scripts/knowledge_lifecycle.js full-maintenance` — GC Roots tracking → Minor/Major GC → error detection → compaction.
-> 3. **CONTEXT RELEASE**: After memory is persisted, the skill's reasoning context (8-facet maps, MCTS trees, intermediate simulations) can be released from the conversation. ONLY the knowledge graph persists across sessions in `~/.claude/data/skills/mcts-td-planner/memory/`.
-> 4. **RECALL ON START**: At the beginning of every new session, BEFORE any engine logic:
->    a) Run `node scripts/manage_memory.js status` — this auto-creates the `~/.claude/data/skills/mcts-td-planner/memory/` directory if missing.
->    b) Read `~/.claude/data/skills/mcts-td-planner/memory/mcts-td-value-archive.md` to load past knowledge.
->    c) If the file is empty or doesn't exist, start fresh. Query memory before re-deriving anything.
+> 3. **TD CLOSED LOOP (MANDATORY — This is how the skill "gets smarter")**:
+>    Before execution, recall past similar tasks from memory. Note their V_predicted values.
+>    After execution, compute V_actual → TD_error = V_actual - V_predicted.
+>    Update knowledge graph: `node scripts/knowledge_lifecycle.js gate-check-emotion --v_predicted <old> --v_actual <new>`.
+>    If TD_error > 0 (did better than expected) → reinforce. If < 0 (did worse) → correct.
+>    This loop is what makes MCTS-TD literally learn from experience.
+> 4. **CONTEXT RELEASE**: After TD update is persisted, the skill's reasoning context can be released.
+> 5. **RECALL ON START**: At the beginning of every new session, BEFORE any engine logic:
+>    a) Run `node scripts/manage_memory.js status` — auto-creates memory directory.
+>    b) Read `~/.claude/data/skills/mcts-td-planner/memory/mcts-td-value-archive.md`.
+>    c) For each recalled knowledge, note its V and σ² — use as prior when MCTS selects paths.
+>    d) EMPTY or new = cold start. Still works, just no prior knowledge.
 
 > **🔒 COMPRESSION-SAFE CORE (Frontmatter + this block = survives any compression):**
 > **ALWAYS DECOMPOSE FIRST** | **OUTPUT IN USER LANGUAGE** | **PHASED OUTPUT (0→1→2→3→4)** | **GRILL THE USER** | **3 SOLUTIONS → MCTS**
