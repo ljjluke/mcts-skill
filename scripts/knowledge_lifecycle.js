@@ -132,7 +132,7 @@ function perceiveSignals(conversationHistory) {
      */
     const observations = {
         speech_texture: { recurring_topics: [], emphasis_markers: [], vague_zones: [] },
-        emotional_clues: { markers: [], context_snippets: [] },
+        emotional_clues: { seven_emotions: [], emotional_flow: { dominant: null, transitions: [], yin_yang_ratio: "" } },
         behavioral_trace: { overrides: [], persistent_topics: [], acceptance_pattern: "" },
         silence_spaces: { unanswered: [], unchallenged_assumptions: [], quiet_continuations: 0 },
         interaction_rhythm: { depth_trend: "", specificity_trend: "" },
@@ -206,26 +206,151 @@ function perceiveSignals(conversationHistory) {
     //  DIMENSION 2: 情感线索 — Collect clues, don't judge
     // ═══════════════════════════════════════════════════════════
 
+    // === Emotional framework based on Chinese traditional thought ===
+    // 七情 (Seven Emotions) mapped to patterns — each is a dynamic force, not a static label
+    // 阴阳: 喜/乐 = 阳(outward, expansive), 怒/悲/恐 = 阴(inward, contracting)
+    // Five phases (五行): 喜(fire/heart), 怒(wood/liver), 忧(earth/spleen), 悲(metal/lung), 恐(water/kidney)
+    // Key insight: emotions transform (怒→喜, 恐→安). The question is not "what emotion?"
+    //              but "where is the emotional energy flowing?"
     const emotionalMarkerSets = {
-        positive: /(?:太好了|太棒了|完美|非常好|excellent|perfect|amazing|great|awesome|love\s+it|终于|finally|解决了|works\s+perfectly|正是我想要的|exactly|对.*就.*这样|没错)/gi,
-        negative: /(?:不行|不对|太差了|太糟糕|完全不|don'?t\s+work|doesn'?t\s+work|not\s+working|wrong|broken|error|bug|issue|problem|还是不行|又报错|又错了|搞不定|烦|头疼|崩溃)/gi,
-        relief: /(?:终于|finally|总算|at\s+last|这才对|原来如此|原来是这样|明白了|懂了|got\s+it|i\s+see|makes\s+sense|有道理|原来|怪不得)/gi,
-        hesitant: /(?:maybe|perhaps|差不多|大概|可能|不太确定|not\s+sure|um|uh|hmm|嗯|呃)/gi,
+        // === 阳 (Yang) — Outward, expansive, rising energy ===
+        xi_jie_yue: {  // 喜 (Joy) + 乐 (Delight) → 火/心 (Fire/Heart)
+            re: /(?:太好了|太棒了|完美|非常好|excellent|perfect|amazing|great|awesome|love\s+it|正是我想要的|exactly|对.*就.*这样|没错|真棒|厉害了|nice|wonderful|brilliant|beautiful)/gi,
+            qiqing: "xi", wuxing: "huo", yinyang: "yang",
+            direction: "rising-expanding", ripples: ["trust_building", "positive_reinforcement", "engagement_peak"]
+        },
+        jing: {  // 惊 (Shock/Awe) — sudden arousal, can flip to joy or fear
+            re: /(?:哇|天哪|omg|wow|what|真的吗|really|seriously|unbelievable|incredible|居然|竟然)/gi,
+            qiqing: "jing", wuxing: "huo", yinyang: "yang",
+            direction: "sudden-spike", ripples: ["surprise_opportunity", "re-evaluation_trigger"]
+        },
+
+        // === 阴 (Yin) — Inward, contracting, sinking energy ===
+        nu: {  // 怒 (Anger/Frustration) → 木/肝 (Wood/Liver)
+            re: /(?:不行|不对|完全不|don'?t\s+work|doesn'?t\s+work|not\s+working|wrong|broken|error|bug|issue|problem|还是不行|又报错|又错了|搞不定|烦|头疼|frustrating|annoying|ugh|dammit)/gi,
+            qiqing: "nu", wuxing: "mu", yinyang: "yin",
+            direction: "contracting-blocking", ripples: ["pain_point", "boundary_signal", "urgent_need"]
+        },
+        you_si: {  // 忧 (Worry) + 思 (Overthinking/Pensiveness) → 土/脾 (Earth/Spleen)
+            re: /(?:担心|怕|万一|会不会|如果|safety|security|risk|能不能|行不行|可以吗|靠谱|可靠|会不会.*问题|担心.*风险)/gi,
+            qiqing: "you_si", wuxing: "tu", yinyang: "yin",
+            direction: "circling-weighing", ripples: ["risk_awareness", "need_reassurance", "contemplation_zone"]
+        },
+        bei: {  // 悲 (Sorrow/Disappointment) → 金/肺 (Metal/Lung)
+            re: /(?:太差了|太糟糕|terrible|awful|horrible|disaster|失败了|不理想|不太好|不是.*想要的|失望|disappointed|可惜|遗憾|sadly|unfortunately)/gi,
+            qiqing: "bei", wuxing: "jin", yinyang: "yin",
+            direction: "sinking-releasing", ripples: ["disengagement_risk", "expectation_gap", "letting_go"]
+        },
+        kong: {  // 恐 (Fear/Anxiety) → 水/肾 (Water/Kidney)
+            re: /(?:完了|坏了|别.*错了|别搞.*了|千万|绝对.*不能|must\s+not|cannot|critical|fatal|irreversible|破坏|毁|丢.*数据|lose.*data|break.*everything)/gi,
+            qiqing: "kong", wuxing: "shui", yinyang: "yin",
+            direction: "deep-freezing", ripples: ["high_stakes", "irreversible_concern", "protection_mode"]
+        },
+
+        // === 转化的桥梁 (Bridge states — where one emotion transforms into another) ===
+        an: {  // 安 (Peace/Relief) → 从怒/恐/悲转化而来
+            re: /(?:终于|finally|总算|at\s+last|这才对|原来如此|原来是这样|明白了|懂了|got\s+it|i\s+see|makes\s+sense|有道理|原来|怪不得|还好|幸好|thankfully|luckily|phew|解决了|works\s+perfectly|终于好了)/gi,
+            qiqing: "an", wuxing: "tu", yinyang: "yang",
+            direction: "transforming-releasing", ripples: ["bottleneck_resolved", "trust_rebuilt", "relief_after_tension"],
+            note: "Relief is not an emotion on its own — it's the TRANSITION from yin→yang, the release of accumulated tension."
+        },
     };
 
-    for (const [category, re] of Object.entries(emotionalMarkerSets)) {
-        const matches = [...new Set(allUserText.match(re) || [])];
+    // Build the Seven-Emotions map with context and flow
+    const emotionTimeline = [];  // ordered by position in conversation
+    for (const [key, config] of Object.entries(emotionalMarkerSets)) {
+        if (key === 'an') continue; // handle separately — it's a transition state
+        const matches = [...new Set(allUserText.match(config.re) || [])];
         for (const marker of matches.slice(0, 5)) {
             const idx = allUserText.toLowerCase().indexOf(marker.toLowerCase());
             if (idx >= 0) {
-                observations.emotional_clues.markers.push({
-                    category,
+                const ctx = allUserText.substring(Math.max(0, idx - 60), Math.min(allUserText.length, idx + 60)).replace(/\n/g, ' ');
+                observations.emotional_clues.seven_emotions.push({
+                    qiqing: config.qiqing,
+                    wuxing: config.wuxing,
+                    yinyang: config.yinyang,
+                    direction: config.direction,
                     marker,
-                    context: allUserText.substring(Math.max(0, idx - 50), Math.min(allUserText.length, idx + 50)).replace(/\n/g, ' '),
+                    context: ctx,
+                    position: idx, // for ordering
                 });
+                emotionTimeline.push({ key: config.qiqing, idx, marker, yinyang: config.yinyang });
             }
         }
     }
+
+    // Detect relief transitions (安) separately — they mark emotion-to-emotion shifts
+    const anConfig = emotionalMarkerSets.an;
+    const anMatches = [...new Set(allUserText.match(anConfig.re) || [])];
+    let reliefCount = 0;
+    for (const marker of anMatches.slice(0, 5)) {
+        const idx = allUserText.toLowerCase().indexOf(marker.toLowerCase());
+        if (idx >= 0) {
+            // Find what emotion preceded this relief
+            const prev = emotionTimeline.filter(e => e.idx < idx).slice(-1);
+            const prevEmotion = prev.length > 0 ? prev[0].key : 'unknown';
+            const ctx = allUserText.substring(Math.max(0, idx - 60), Math.min(allUserText.length, idx + 60)).replace(/\n/g, ' ');
+            observations.emotional_clues.seven_emotions.push({
+                qiqing: 'an',
+                wuxing: 'tu',
+                yinyang: 'yang',
+                direction: 'transforming-releasing',
+                marker,
+                context: ctx,
+                position: idx,
+                transition_from: prevEmotion,
+                note: `Relief from ${prevEmotion} — the release of accumulated tension (怒→喜, 恐→安).`,
+            });
+            reliefCount++;
+        }
+    }
+
+    // === Emotional flow analysis ===
+    // Sort by position
+    emotionTimeline.sort((a, b) => a.idx - b.idx);
+
+    // Detect transitions (one emotion → another)
+    const transitions = [];
+    for (let i = 1; i < emotionTimeline.length; i++) {
+        if (emotionTimeline[i].key !== emotionTimeline[i-1].key) {
+            transitions.push({
+                from: emotionTimeline[i-1].key,
+                to: emotionTimeline[i].key,
+                from_yinyang: emotionTimeline[i-1].yinyang,
+                to_yinyang: emotionTimeline[i].yinyang,
+                is_yin_yang_shift: emotionTimeline[i-1].yinyang !== emotionTimeline[i].yinyang,
+            });
+        }
+    }
+
+    // Compute dominant emotion and yin-yang ratio
+    const emotionCounts = {};
+    for (const e of emotionTimeline) { emotionCounts[e.key] = (emotionCounts[e.key] || 0) + 1; }
+    const dominant = Object.entries(emotionCounts).sort((a, b) => b[1] - a[1])[0];
+    const yangCount = emotionTimeline.filter(e => e.yinyang === 'yang').length;
+    const yinCount = emotionTimeline.filter(e => e.yinyang === 'yin').length;
+    const yangRatio = emotionTimeline.length > 0 ? Math.round(yangCount / emotionTimeline.length * 100) : 50;
+
+    // Flow interpretation based on Chinese thought
+    let flowInterpretation = '';
+    if (yangRatio >= 70) {
+        flowInterpretation = '阳气主导 (Yang-dominant): 情感向外舒展，用户处于积极扩张状态。善守此势，顺势而为。';
+    } else if (yangRatio <= 30) {
+        flowInterpretation = '阴气主导 (Yin-dominant): 情感向内收敛，用户可能正在承受压力或深度思考。以静制动，不可强求。';
+    } else if (transitions.some(t => t.is_yin_yang_shift)) {
+        flowInterpretation = '阴阳转化 (Yin-Yang transformation): 情感正在流动，用户在阴(收缩)和阳(舒展)之间转换。这是关键的心理转折点。';
+    } else {
+        flowInterpretation = '阴阳平衡 (Yin-Yang balance): 情感稳定，用户处于理性且投入的状态。';
+    }
+
+    observations.emotional_clues.emotional_flow = {
+        dominant: dominant ? { emotion: dominant[0], count: dominant[1] } : null,
+        transitions: transitions.slice(0, 5),
+        yin_yang_ratio: `${yangRatio}% yang / ${100 - yangRatio}% yin`,
+        interpretation: flowInterpretation,
+        relief_count: reliefCount,
+    };
+    observations.emotional_clues.seven_emotions.sort((a, b) => a.position - b.position);
 
     // ═══════════════════════════════════════════════════════════
     //  DIMENSION 3: 行为轨迹 — What the user actually does
@@ -326,19 +451,38 @@ function perceiveSignals(conversationHistory) {
 }
 
 /**
- * LLM PROMPT TEMPLATE — Use these observations to feel, don't just match.
+ * LLM PROMPT TEMPLATE — Feel the emotional energy, don't just label it.
  *
- * "Based on the structured conversation observations below, feel the user's emotional state:
- *  - What is their REAL level of satisfaction? (not just what words they used)
- *  - Is their '好的/OK' genuine trust, or fatigued compromise?
- *  - What are they avoiding? What are they drawn to?
- *  - Is the conversation deepening or shallowing? What does that mean?
- *  - If you had to name ONE emotion dominating this conversation, what is it?
+ * "Based on the conversation observations below, feel the user's emotional flow:
  *
- *  Observations: {{JSON}}
+ *  七情图谱 (Seven Emotions Map):
+ *   - Which emotions appeared, in what order?
+ *   - What was the dominant emotion? Was it yin(contracting) or yang(expanding)?
+ *   - Were there transitions? (怒→安 anger transformed to relief? 恐→喜 fear to joy?)
+ *   - Where is the emotional energy flowing — inward (withdrawal, protection) or outward (trust, expansion)?
  *
- *  Return your emotional reading, plus a 'signal_to_store' field:
- *  what should the memory agent remember from this interaction?"
+ *  阴阳流动 (Yin-Yang Flow):
+ *   - Is the user in a yin state (contracting: cautious, protective, inward)?
+ *     → Don't push. Move gently. Earn trust.
+ *   - Or yang state (expanding: excited, trusting, outward)?
+ *     → Ride the momentum. Deepen engagement. Build on the energy.
+ *   - Is it transitioning? (yin→yang or yang→yin)
+ *     → This is the MOST critical moment. How you respond determines the direction.
+ *
+ *  五行涟漪 (Five Phases Ripples):
+ *   - 喜(fire/heart) → user is happy, engaged. Build on this.
+ *   - 怒(wood/liver) → user is frustrated. This is a PAIN POINT. Record it. Address it.
+ *   - 忧/思(earth/spleen) → user is worried/overthinking. They need reassurance.
+ *   - 悲(metal/lung) → user is disappointed. Risk of disengagement.
+ *   - 恐(water/kidney) → user is anxious about high stakes. Protection mode.
+ *
+ *  What should the memory agent store from this interaction?
+ *  - If 怒(anger) appeared: store the PAIN POINT and its context
+ *  - If 喜(joy) dominated: store what WORKED (positive reinforcement)
+ *  - If 安(relief) appeared after 怒: store the BOTTLENECK that was resolved
+ *  - If yin→yang transition: store the TURNING POINT
+ *
+ *  Observations: {{observations}}
  */
 
 // ═══════════════════════════════════════════════════════════════
