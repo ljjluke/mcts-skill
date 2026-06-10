@@ -152,7 +152,11 @@ User intent → Constraint Collection
 ## 🚀 Install
 
 ```bash
-/plugin marketplace add ljjluke/mcts-skill
+# International (GitHub)
+/plugin marketplace add https://github.com/ljjluke/mcts-skill
+
+# China (Gitee)
+/plugin marketplace add https://gitee.com/ljjluke/mcts-skill
 ```
 
 Type any task. When you see the ⚡, it's working.

@@ -18,6 +18,8 @@
 <br>
 
 > 🌐 For English, see [README.md](./README.md)
+>
+> 📺 **Demo & Examples**: [github.com/ljjluke/mcts-skill-demo](https://github.com/ljjluke/mcts-skill-demo) — 真实使用日志展示 MCTS-TD 效果
 
 ---
 
@@ -158,12 +160,42 @@ AI: ⚡ 这事有好几种做法，先让我想清楚
 
 **MCTS（UCB 选择 + Welford 方差更新）+ TD(λ)（时序差分 + 资格迹）。知识图谱状态机（假设→验证→确认→争议→证伪→回滚）。**
 
+```
+用户消息
+    │
+    ▼
+┌─────────────┐    ┌──────────────────┐    ┌─────────────────┐
+│  发散引擎    │───▶│  推演引擎         │───▶│  仲裁引擎        │
+│             │    │                  │    │                 │
+│  八面审视   │    │  MCTS 树搜索     │    │  CLT-UCB 排序   │
+│  跨视角关联 │    │  UCB 选择        │    │  自检            │
+│  P0~P5 取舍 │    │  展开            │    │  盲区审计        │
+│             │    │  模拟推演        │    │  TD 更新         │
+└─────────────┘    │  回溯            │    └─────────────────┘
+                   └────────┬─────────┘
+                            │
+                            ▼
+                   ┌─────────────────┐
+                   │  知识图谱        │
+                   │                 │
+                   │  状态机          │
+                   │  假设→待验证→   │
+                   │  已确认→争议→   │
+                   │  证伪→休眠→     │
+                   │  归档            │
+                   └─────────────────┘
+```
+
 ---
 
 ## 🚀 安装
 
 ```bash
-/plugin marketplace add ljjluke/mcts-skill
+# 国际 (GitHub)
+/plugin marketplace add https://github.com/ljjluke/mcts-skill
+
+# 国内 (Gitee)
+/plugin marketplace add https://gitee.com/ljjluke/mcts-skill
 ```
 
 装好后输入任意任务，看到 ⚡ 标志说明生效。
