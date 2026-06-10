@@ -196,7 +196,7 @@ AI: ⚡ 这事有好几种做法，先让我想清楚
 /plugin install mcts-td-planner
 
 # 国内 (Gitee)
-/plugin marketplace add https://gitee.com/ljjluke/mcts-skill
+/plugin marketplace add https://gitee.com/luke2438107466/mcts-skill
 /plugin install mcts-td-planner
 ```
 

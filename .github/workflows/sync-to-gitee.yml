@@ -14,5 +14,5 @@ jobs:
 
       - name: Push to Gitee
         run: |
-          git remote add gitee https://${{ secrets.GITEE_USERNAME }}:${{ secrets.GITEE_TOKEN }}@gitee.com/ljjluke/mcts-skill.git
+          git remote add gitee https://${{ secrets.GITEE_USERNAME }}:${{ secrets.GITEE_TOKEN }}@gitee.com/luke2438107466/mcts-skill.git
           git push gitee main --force

@@ -157,7 +157,7 @@ User intent → Constraint Collection
 /plugin install mcts-td-planner
 
 # China (Gitee)
-/plugin marketplace add https://gitee.com/ljjluke/mcts-skill
+/plugin marketplace add https://gitee.com/luke2438107466/mcts-skill
 /plugin install mcts-td-planner
 ```
 
