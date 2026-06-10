@@ -105,262 +105,241 @@ function saveKG(entries) {
 function perceiveSignals(conversationHistory) {
     /**
      * "上善若水" — Like water, absorb without demanding.
-     * "听之以气" — Listen with qi, not with ears. Feel the rhythm, tone, what's unsaid.
+     * "听之以气" — Listen with qi, not ears.
      * "察言观色" — Observe what the user settles on. What they return to. What they avoid.
-     * "揣摩" — Gauge real intent through feedback loops (accept/modify/reject).
+     * "揣摩" — Gauge real intent through feedback loops.
      *
-     * Five perception dimensions, each with weighted sub-signals:
+     * IMPORTANT: This function does NOT judge emotion. It structures the conversation
+     * context so the LLM can make emotional judgments. The LLM is the "mind" that feels.
+     * This code is the "ears" that prepare what the mind needs to hear.
      *
-     *   DIMENSION 1: 言语信号 (What is said)
-     *     - Frequency: repeated topics → concern depth
-     *     - Emphasis: strong modifiers ("must"/"绝对不能") → priority weight
-     *     - Vagueness: hedging ("maybe"/"差不多") → uncertainty zone
+     * Five perception dimensions, each producing structured OBSERVATIONS (not judgments):
      *
-     *   DIMENSION 2: 情感信号 (How it is said)
-     *     - Excitement: superlatives, exclamation, emoji density → satisfaction surge
-     *     - Frustration: negation chains, brevity, repetition of failures → pain point
-     *     - Relief: "终于/finally" pattern → bottleneck identified
-     *     - Indifference: minimal response, topic shift → low priority signal
+     *   DIMENSION 1: 言语纹理 (The texture of speech)
+     *     — What topics recur? What words are emphasized? Where is the user vague?
      *
-     *   DIMENSION 3: 行为信号 (What the user does)
-     *     - Accept rate: how often user accepts vs modifies suggestions
-     *     - Override: user explicitly overrides AI choice → strong preference
-     *     - Return: user comes back to same topic across sessions → core concern
-     *     - Abandon: topic dropped mid-discussion → lost interest or resolved
+     *   DIMENSION 2: 情感线索 (Emotional clues — NOT judgments, just clues)
+     *     — What emotional markers appear? Where? What was the context?
      *
-     *   DIMENSION 4: 沉默信号 (What is NOT said)
-     *     - Skip: user skips a question → area they don't care about
-     *     - Avoid: topic mentioned by AI but user changes subject → sensitive area
-     *     - Assume: user doesn't question an AI assumption → it was correct
-     *     - Quiet accept: user says "继续/go on" without modification → trust signal
+     *   DIMENSION 3: 行为轨迹 (Behavioral trace)
+     *     — Accept/override patterns? Topics that persist across messages?
      *
-     *   DIMENSION 5: 节奏信号 (The rhythm of interaction)
-     *     - Pace: rapid replies → engaged; long pauses → thinking or disengaged
-     *     - Depth: short answers → surface level; long elaborations → deep engagement
-     *     - Escalation: user asks increasingly detailed follow-ups → growing trust
-     *     - De-escalation: user simplifies requests → fatigue or clarity found
+     *   DIMENSION 4: 留白之处 (The spaces between words)
+     *     — What was asked but not answered? What was assumed and not challenged?
+     *
+     *   DIMENSION 5: 互动节律 (The rhythm of exchange)
+     *     — Is the user going deeper or staying surface? Speeding up or slowing down?
      */
-    const signals = [];
+    const observations = {
+        speech_texture: { recurring_topics: [], emphasis_markers: [], vague_zones: [] },
+        emotional_clues: { markers: [], context_snippets: [] },
+        behavioral_trace: { overrides: [], persistent_topics: [], acceptance_pattern: "" },
+        silence_spaces: { unanswered: [], unchallenged_assumptions: [], quiet_continuations: 0 },
+        interaction_rhythm: { depth_trend: "", specificity_trend: "" },
+        raw_stats: { message_count: 0, user_message_count: 0, avg_length: 0, total_chars: 0 },
+    };
+
     const messages = Array.isArray(conversationHistory) ? conversationHistory : [];
-    if (messages.length === 0) return signals;
+    if (messages.length === 0) return observations;
 
-    // Helper
-    const textOf = (msg) => typeof msg === 'string' ? msg : (msg.content || msg.message || msg.role || '');
-    const roleOf = (msg) => msg.role || (typeof msg === 'string' ? 'user' : 'user');
-    const userMsgs = messages.filter(m => roleOf(m) === 'user');
-    const aiMsgs = messages.filter(m => roleOf(m) === 'assistant');
-    const allText = userMsgs.map(textOf).join('\n');
+    const userMsgs = messages.filter(m => (m.role || 'user') === 'user');
+    const aiMsgs = messages.filter(m => m.role === 'assistant');
+    const allUserText = userMsgs.map(m => typeof m === 'string' ? m : (m.content || m.message || '')).join('\n');
+    const allAiText = aiMsgs.map(m => typeof m === 'string' ? m : (m.content || m.message || '')).join('\n');
+
+    observations.raw_stats.message_count = messages.length;
+    observations.raw_stats.user_message_count = userMsgs.length;
+    observations.raw_stats.total_chars = allUserText.length;
+    observations.raw_stats.avg_length = userMsgs.length > 0 ? Math.round(allUserText.length / userMsgs.length) : 0;
 
     // ═══════════════════════════════════════════════════════════
-    //  DIMENSION 1: 言语信号 (What is said)
+    //  DIMENSION 1: 言语纹理 — Structure, don't judge
     // ═══════════════════════════════════════════════════════════
 
-    // 1a. Frequency: topic → depth of concern
+    // 1a. Recurring topics (with context)
     const wordFreq = {};
     for (const msg of userMsgs) {
-        const words = textOf(msg).toLowerCase().split(/\s+/).filter(w => w.length > 3);
+        const text = typeof msg === 'string' ? msg : (msg.content || msg.message || '');
+        const words = text.toLowerCase().split(/\s+/).filter(w => w.length > 3);
         for (const w of [...new Set(words)]) wordFreq[w] = (wordFreq[w] || 0) + 1;
     }
     for (const [word, count] of Object.entries(wordFreq)) {
         if (count >= 3) {
-            signals.push({ dimension: "speech", type: "FREQUENT_TOPIC", content: word, strength: Math.min(count * 0.15, 0.6),
-                note: `"${word}" appeared ${count} times across messages — deepening concern.` });
+            // Find context snippets where this word appears
+            const contexts = [];
+            for (const msg of userMsgs) {
+                const text = typeof msg === 'string' ? msg : (msg.content || msg.message || '');
+                if (text.toLowerCase().includes(word)) contexts.push(text.substring(0, 100));
+            }
+            observations.speech_texture.recurring_topics.push({ word, count, contexts: contexts.slice(0, 3) });
         }
     }
 
-    // 1b. Emphasis: strong language → priority
-    const emphasisPatterns = [
-        { re: /(?:必须|一定要|绝对不能|must|absolutely|cannot|no\s+way|critical|关键|核心)/gi, weight: 0.7 },
-        { re: /(?:重要|priority|important|urgent|紧急|尽快)/gi, weight: 0.5 },
-        { re: /(?:最好|should|prefer|倾向|偏好)/gi, weight: 0.3 },
-    ];
-    for (const { re, weight } of emphasisPatterns) {
-        const matches = allText.match(re);
-        if (matches && matches.length >= 2) {
-            const content = [...new Set(matches)].slice(0, 3).join(', ');
-            signals.push({ dimension: "speech", type: "EMPHASIS", content, strength: Math.min(weight + matches.length * 0.05, 0.9),
-                note: `Strong language pattern detected: "${content}" (${matches.length} occurrences).` });
+    // 1b. Emphasis markers — words that signal the user is making a point strongly
+    const emphasisRe = /(?:必须|一定要|绝对不能|must|absolutely|cannot|no\s+way|critical|关键|核心|重要|priority|important|urgent|紧急|尽快|最好|should|prefer|倾向|偏好)/gi;
+    const emphasisMatches = [...new Set(allUserText.match(emphasisRe) || [])];
+    if (emphasisMatches.length > 0) {
+        // For each marker, capture 60 chars of surrounding context
+        for (const marker of emphasisMatches.slice(0, 5)) {
+            const idx = allUserText.toLowerCase().indexOf(marker.toLowerCase());
+            if (idx >= 0) {
+                const ctx = allUserText.substring(Math.max(0, idx - 30), Math.min(allUserText.length, idx + 30));
+                observations.speech_texture.emphasis_markers.push({ marker, context: ctx.replace(/\n/g, ' ') });
+            }
         }
     }
 
-    // 1c. Vagueness: hedging → uncertainty zone (where user needs help)
-    const vaguePattern = /(?:maybe|perhaps|差不多|大概|可能|不太确定|not\s+sure|kind\s+of|sort\s+of|好像|似乎)/gi;
-    const vagueMatches = allText.match(vaguePattern);
-    if (vagueMatches && vagueMatches.length >= 2) {
-        const contexts = [];
-        const vagueRe = /(?:maybe|perhaps|差不多|大概|可能|不太确定|not\s+sure|kind\s+of|sort\s+of|好像|似乎)/gi;
-        let m;
-        while ((m = vagueRe.exec(allText)) !== null) {
-            const start = Math.max(0, m.index - 30);
-            const end = Math.min(allText.length, m.index + 30);
-            contexts.push(allText.substring(start, end).replace(/\n/g, ' '));
+    // 1c. Vague zones — where the user is uncertain
+    const vagueRe = /(?:maybe|perhaps|差不多|大概|可能|不太确定|not\s+sure|kind\s+of|sort\s+of|好像|似乎|不太清楚|不知道|不确定)/gi;
+    const vagueMatches = [...new Set(allUserText.match(vagueRe) || [])];
+    for (const marker of vagueMatches.slice(0, 5)) {
+        const idx = allUserText.toLowerCase().indexOf(marker.toLowerCase());
+        if (idx >= 0) {
+            observations.speech_texture.vague_zones.push({
+                marker,
+                context: allUserText.substring(Math.max(0, idx - 40), Math.min(allUserText.length, idx + 40)).replace(/\n/g, ' ')
+            });
         }
-        signals.push({ dimension: "speech", type: "UNCERTAINTY_ZONE", content: contexts.slice(0, 3).join(' | '),
-            strength: Math.min(vagueMatches.length * 0.1, 0.5),
-            note: `User expressed uncertainty ${vagueMatches.length} times — potential knowledge gaps or decision points.` });
     }
 
     // ═══════════════════════════════════════════════════════════
-    //  DIMENSION 2: 情感信号 (How it is said)
+    //  DIMENSION 2: 情感线索 — Collect clues, don't judge
     // ═══════════════════════════════════════════════════════════
 
-    // 2a. Excitement → satisfaction markers
-    const excitementRe = /(?:太好了|太棒了|完美|非常好|excellent|perfect|amazing|great|awesome|love\s+it|终于|finally|解决了|works|work\s+perfectly)/gi;
-    const excitementMatches = allText.match(excitementRe);
-    if (excitementMatches && excitementMatches.length > 0) {
-        const unique = [...new Set(excitementMatches)];
-        signals.push({ dimension: "emotion", type: "EXCITEMENT", content: unique.join(', '),
-            strength: Math.min(unique.length * 0.2, 0.8),
-            note: `User expressed excitement/satisfaction (${unique.join(', ')}). Marking as positive reinforcement.` });
-    }
-
-    // 2b. Frustration → pain points
-    const frustrationRe = /(?:不行|不对|太差了|太糟糕|完全不|don'?t\s+work|doesn'?t\s+work|not\s+working|wrong|broken|error|bug|issue|problem|还是不行|又报错|又错了)/gi;
-    const frustrationMatches = allText.match(frustrationRe);
-    if (frustrationMatches && frustrationMatches.length >= 2) {
-        const unique = [...new Set(frustrationMatches)];
-        // Find what they're frustrated ABOUT
-        const aboutRe = /(?:不行|不对|don'?t\s+work|not\s+working|wrong|broken|error|还是不行).{0,50}/gi;
-        const aboutMatches = allText.match(aboutRe)?.slice(0, 3) || [];
-        signals.push({ dimension: "emotion", type: "FRUSTRATION", content: aboutMatches.join(' | '),
-            strength: Math.min(unique.length * 0.2, 0.8),
-            note: `User expressed frustration ${unique.length} times. Pain point area: ${aboutMatches[0] || 'unspecified'}.` });
-    }
-
-    // 2c. Relief → bottleneck identified
-    const reliefRe = /(?:终于|finally|总算|at\s+last|这才对|原来如此|原来是这样|明白了|懂了|got\s+it|i\s+see|makes\s+sense|有道理)/gi;
-    const reliefMatches = allText.match(reliefRe);
-    if (reliefMatches && reliefMatches.length > 0) {
-        signals.push({ dimension: "emotion", type: "RELIEF", content: [...new Set(reliefMatches)].join(', '),
-            strength: Math.min(reliefMatches.length * 0.15, 0.6),
-            note: `User expressed relief/understanding — a bottleneck was likely resolved.` });
-    }
-
-    // 2d. Indifference → low priority or disengagement
-    const indifferencePatterns = {
-        minimal_replies: userMsgs.filter(m => textOf(m).length < 5).length,
-        rapid_topic_shift: detectTopicShifts(userMsgs),
+    const emotionalMarkerSets = {
+        positive: /(?:太好了|太棒了|完美|非常好|excellent|perfect|amazing|great|awesome|love\s+it|终于|finally|解决了|works\s+perfectly|正是我想要的|exactly|对.*就.*这样|没错)/gi,
+        negative: /(?:不行|不对|太差了|太糟糕|完全不|don'?t\s+work|doesn'?t\s+work|not\s+working|wrong|broken|error|bug|issue|problem|还是不行|又报错|又错了|搞不定|烦|头疼|崩溃)/gi,
+        relief: /(?:终于|finally|总算|at\s+last|这才对|原来如此|原来是这样|明白了|懂了|got\s+it|i\s+see|makes\s+sense|有道理|原来|怪不得)/gi,
+        hesitant: /(?:maybe|perhaps|差不多|大概|可能|不太确定|not\s+sure|um|uh|hmm|嗯|呃)/gi,
     };
-    if (indifferencePatterns.minimal_replies >= 3) {
-        signals.push({ dimension: "emotion", type: "INDIFFERENCE", content: `${indifferencePatterns.minimal_replies} minimal replies`,
-            strength: 0.3, note: "User giving very short responses — may be disengaged or topic is low priority." });
-    }
-    if (indifferencePatterns.rapid_topic_shift >= 2) {
-        signals.push({ dimension: "emotion", type: "TOPIC_SHIFT", content: `${indifferencePatterns.rapid_topic_shift} rapid shifts`,
-            strength: 0.4, note: "User rapidly changing topics — may be exploring or unsatisfied with current direction." });
+
+    for (const [category, re] of Object.entries(emotionalMarkerSets)) {
+        const matches = [...new Set(allUserText.match(re) || [])];
+        for (const marker of matches.slice(0, 5)) {
+            const idx = allUserText.toLowerCase().indexOf(marker.toLowerCase());
+            if (idx >= 0) {
+                observations.emotional_clues.markers.push({
+                    category,
+                    marker,
+                    context: allUserText.substring(Math.max(0, idx - 50), Math.min(allUserText.length, idx + 50)).replace(/\n/g, ' '),
+                });
+            }
+        }
     }
 
     // ═══════════════════════════════════════════════════════════
-    //  DIMENSION 3: 行为信号 (What the user does)
+    //  DIMENSION 3: 行为轨迹 — What the user actually does
     // ═══════════════════════════════════════════════════════════
 
-    // 3a. Override: user explicitly rejects AI suggestion
-    const overrideRe = /(?:不要|不用|别|don'?t|no\s+(?!problem|worries|rush)|换个|改成|换成|用.*代替|instead|rather|actually)/gi;
-    const overrideMatches = allText.match(overrideRe);
-    if (overrideMatches && overrideMatches.length >= 2) {
-        signals.push({ dimension: "behavior", type: "OVERRIDE", content: `${overrideMatches.length} overrides`,
-            strength: Math.min(overrideMatches.length * 0.15, 0.7),
-            note: `User explicitly overrode suggestions ${overrideMatches.length} times — strong preference signals.` });
+    // 3a. AI suggestions that user modified or rejected
+    for (let i = 0; i < userMsgs.length; i++) {
+        const text = typeof userMsgs[i] === 'string' ? userMsgs[i] : (userMsgs[i].content || userMsgs[i].message || '');
+        const overrideRe = /(?:不要|不用|别|don'?t|no\s+(?!problem|worries|rush)|换个|改成|换成|用.*代替|instead|rather|actually|应该是|不是.*是)/gi;
+        if (overrideRe.test(text)) {
+            const prevAiMsg = i > 0 ? (typeof aiMsgs[Math.min(i - 1, aiMsgs.length - 1)] === 'string' ? aiMsgs[Math.min(i - 1, aiMsgs.length - 1)] : (aiMsgs[Math.min(i - 1, aiMsgs.length - 1)]?.content || '')) : '';
+            observations.behavioral_trace.overrides.push({
+                user_said: text.substring(0, 120),
+                after_ai_suggested: prevAiMsg.substring(0, 120),
+            });
+        }
     }
 
-    // 3b. Return: user comes back to same topic
-    if (messages.length >= 4) {
-        const firstHalf = userMsgs.slice(0, Math.floor(userMsgs.length / 2)).map(textOf).join(' ');
-        const secondHalf = userMsgs.slice(Math.floor(userMsgs.length / 2)).map(textOf).join(' ');
+    // 3b. Topics persisting across the conversation
+    if (userMsgs.length >= 4) {
+        const mid = Math.floor(userMsgs.length / 2);
+        const firstHalf = userMsgs.slice(0, mid).map(m => typeof m === 'string' ? m : (m.content || m.message || '')).join(' ');
+        const secondHalf = userMsgs.slice(mid).map(m => typeof m === 'string' ? m : (m.content || m.message || '')).join(' ');
         const firstWords = new Set(firstHalf.toLowerCase().split(/\s+/).filter(w => w.length > 4));
         const secondWords = new Set(secondHalf.toLowerCase().split(/\s+/).filter(w => w.length > 4));
-        const persistent = [...firstWords].filter(w => secondWords.has(w));
-        if (persistent.length >= 3) {
-            signals.push({ dimension: "behavior", type: "PERSISTENT_TOPIC", content: persistent.slice(0, 5).join(', '),
-                strength: Math.min(persistent.length * 0.1, 0.7),
-                note: `Topics persisting across the conversation: ${persistent.slice(0, 5).join(', ')} — core concerns.` });
+        observations.behavioral_trace.persistent_topics = [...firstWords].filter(w => secondWords.has(w)).slice(0, 8);
+    }
+
+    // 3c. Acceptance pattern
+    const acceptRe = /(?:好的|ok|yes|对|可以|行|go\s+ahead|继续|good|great|thanks|谢谢|正是|没错|就是这样|perfect|exactly)/gi;
+    const acceptCount = (allUserText.match(acceptRe) || []).length;
+    const overrideCount = observations.behavioral_trace.overrides.length;
+    if (acceptCount > 0 || overrideCount > 0) {
+        observations.behavioral_trace.acceptance_pattern = `${acceptCount} acceptances, ${overrideCount} overrides`;
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  DIMENSION 4: 留白之处 — What is NOT said
+    // ═══════════════════════════════════════════════════════════
+
+    // 4a. AI asked questions → user didn't answer some = low priority
+    for (const aiMsg of aiMsgs) {
+        const text = typeof aiMsg === 'string' ? aiMsg : (aiMsg.content || aiMsg.message || '');
+        const questions = text.match(/[^。.!！?？\n]*\?/g) || [];
+        for (const q of questions) {
+            const qClean = q.trim();
+            if (qClean.length > 10) {
+                const answered = userMsgs.some(m => {
+                    const ut = typeof m === 'string' ? m : (m.content || m.message || '');
+                    return ut.length > 0;
+                });
+                if (!answered && observations.silence_spaces.unanswered.length < 5) {
+                    observations.silence_spaces.unanswered.push(qClean.substring(0, 100));
+                }
+            }
         }
     }
 
-    // 3c. Accept rate: how often user accepts vs modifies
-    const acceptRe = /(?:好的|ok|yes|对|可以|行|go\s+ahead|继续|good|great|thanks|谢谢|正是|没错|就是这样)/gi;
-    const acceptCount = (allText.match(acceptRe) || []).length;
-    if (acceptCount >= 3 && overrideMatches && overrideMatches.length < acceptCount) {
-        signals.push({ dimension: "behavior", type: "HIGH_ACCEPTANCE", content: `${acceptCount} acceptances vs ${overrideMatches?.length || 0} overrides`,
-            strength: 0.5, note: "User accepts suggestions at a high rate — trust building." });
+    // 4b. Quiet continuations — user says "继续/go on/下一步"
+    const quietRe = /(?:继续|go\s+on|next|下一个|然后|接着|proceed|keep\s+going|继续吧)/gi;
+    observations.silence_spaces.quiet_continuations = (allUserText.match(quietRe) || []).length;
+
+    // 4c. AI assumptions that went unchallenged
+    const assumptionRe = /(?:assume|假设|如果|assuming|should\s+be|probably|likely|一般|通常|应该|可能)/gi;
+    const aiAssumptions = (allAiText.match(assumptionRe) || []).length;
+    if (aiAssumptions >= 2 && overrideCount <= 1) {
+        observations.silence_spaces.unchallenged_assumptions = [
+            `${aiAssumptions} assumptions made by AI, ${overrideCount} challenged by user — most were likely correct.`
+        ];
     }
 
     // ═══════════════════════════════════════════════════════════
-    //  DIMENSION 4: 沉默信号 (What is NOT said)
+    //  DIMENSION 5: 互动节律 — The rhythm of exchange
     // ═══════════════════════════════════════════════════════════
 
-    // 4a. Skip: AI asked N questions, user only answered M (< N) → skipped topics are low-priority
-    const aiQuestions = aiMsgs.filter(m => (textOf(m).match(/\?/g) || []).length >= 2).length;
-    const userResponses = userMsgs.length;
-    if (aiQuestions >= 2 && userResponses < aiQuestions * 2) {
-        signals.push({ dimension: "silence", type: "SELECTIVE_RESPONSE",
-            content: `${aiQuestions} questions asked, ${userResponses} responses given`,
-            strength: 0.35, note: "User selectively responding — skipped questions indicate lower priority areas." });
-    }
-
-    // 4b. Quiet accept: user says "继续" or equivalent → trust without verification
-    const quietAcceptRe = /(?:继续|go\s+on|next|下一个|然后|接着|proceed|keep\s+going)/gi;
-    const quietAccepts = (allText.match(quietAcceptRe) || []).length;
-    if (quietAccepts >= 2 && acceptCount >= 3) {
-        signals.push({ dimension: "silence", type: "QUIET_TRUST", content: `${quietAccepts} quiet continuations`,
-            strength: 0.45, note: "User accepts and continues without modification — quiet trust signal." });
-    }
-
-    // 4c. Assumption confirmed: AI made an assumption, user didn't question it
-    const assumptionRe = /(?:assume|假设|如果|assuming|should\s+be|probably|likely|一般|通常)/gi;
-    const assumptionCount = (aiMsgs.map(textOf).join(' ').match(assumptionRe) || []).length;
-    if (assumptionCount >= 2 && overrideMatches && overrideMatches.length <= 1) {
-        signals.push({ dimension: "silence", type: "UNQUESTIONED_ASSUMPTIONS",
-            content: `${assumptionCount} assumptions made, ${overrideMatches?.length || 0} challenged`,
-            strength: 0.4, note: "User did not challenge AI assumptions — they were likely correct." });
-    }
-
-    // ═══════════════════════════════════════════════════════════
-    //  DIMENSION 5: 节奏信号 (The rhythm)
-    // ═══════════════════════════════════════════════════════════
-
-    // 5a. Depth: are user's messages getting longer or shorter?
-    const userMsgLengths = userMsgs.map(m => textOf(m).length);
+    const userMsgLengths = userMsgs.map(m => typeof m === 'string' ? m.length : ((m.content || m.message || '').length));
     if (userMsgLengths.length >= 3) {
-        const first3 = userMsgLengths.slice(0, 3).reduce((a, b) => a + b, 0) / 3;
-        const last3 = userMsgLengths.slice(-3).reduce((a, b) => a + b, 0) / 3;
-        if (last3 > first3 * 2) {
-            signals.push({ dimension: "rhythm", type: "DEEPENING", content: `msg length ${Math.round(first3)} → ${Math.round(last3)}`,
-                strength: 0.5, note: "User messages are getting longer — deepening engagement." });
-        } else if (last3 < first3 * 0.5) {
-            signals.push({ dimension: "rhythm", type: "SHORTENING", content: `msg length ${Math.round(first3)} → ${Math.round(last3)}`,
-                strength: 0.4, note: "User messages are getting shorter — may be fatigued or found clarity." });
+        const first3Avg = userMsgLengths.slice(0, 3).reduce((a, b) => a + b, 0) / 3;
+        const last3Avg = userMsgLengths.slice(-3).reduce((a, b) => a + b, 0) / 3;
+        if (last3Avg > first3Avg * 2) {
+            observations.interaction_rhythm.depth_trend = `deepening: avg msg length ${Math.round(first3Avg)} → ${Math.round(last3Avg)} chars`;
+        } else if (last3Avg < first3Avg * 0.5) {
+            observations.interaction_rhythm.depth_trend = `shortening: avg msg length ${Math.round(first3Avg)} → ${Math.round(last3Avg)} chars`;
         }
     }
 
-    // 5b. Escalation: increasingly specific follow-ups
     const specificityRe = /(?:具体|详细|detail|specifically|exactly|precisely|怎么|how|which|哪个|什么|what|为什么|why)/gi;
-    const firstHalfSpecific = userMsgs.slice(0, Math.floor(userMsgs.length / 2)).map(textOf).join(' ').match(specificityRe)?.length || 0;
-    const secondHalfSpecific = userMsgs.slice(Math.floor(userMsgs.length / 2)).map(textOf).join(' ').match(specificityRe)?.length || 0;
-    if (secondHalfSpecific > firstHalfSpecific * 1.5) {
-        signals.push({ dimension: "rhythm", type: "ESCALATING_DEPTH",
-            content: `specificity ${firstHalfSpecific} → ${secondHalfSpecific}`,
-            strength: 0.55, note: "User asking increasingly specific questions — growing trust and engagement." });
+    const mid = Math.floor(userMsgs.length / 2);
+    const firstHalfSpec = (userMsgs.slice(0, mid).map(m => typeof m === 'string' ? m : (m.content || m.message || '')).join(' ').match(specificityRe) || []).length;
+    const secondHalfSpec = (userMsgs.slice(mid).map(m => typeof m === 'string' ? m : (m.content || m.message || '')).join(' ').match(specificityRe) || []).length;
+    if (secondHalfSpec > firstHalfSpec * 1.5) {
+        observations.interaction_rhythm.specificity_trend = `increasing: ${firstHalfSpec} → ${secondHalfSpec} specific question markers`;
+    } else if (firstHalfSpec > secondHalfSpec * 1.5) {
+        observations.interaction_rhythm.specificity_trend = `decreasing: ${firstHalfSpec} → ${secondHalfSpec} specific question markers`;
     }
 
-    return signals;
+    return observations;
 }
 
-function detectTopicShifts(userMsgs) {
-    let shifts = 0;
-    const keywords = [];
-    for (let i = 1; i < userMsgs.length; i++) {
-        const prev = new Set(textOf(userMsgs[i - 1]).toLowerCase().split(/\s+/).filter(w => w.length > 4));
-        const curr = new Set(textOf(userMsgs[i]).toLowerCase().split(/\s+/).filter(w => w.length > 4));
-        const overlap = [...prev].filter(w => curr.has(w)).length;
-        const total = Math.max(prev.size, curr.size, 1);
-        if (overlap / total < 0.2) shifts++;
-    }
-    return shifts;
-}
-
-function textOf(msg) { return typeof msg === 'string' ? msg : (msg.content || msg.message || msg.role || ''); }
-function roleOf(msg) { return msg.role || (typeof msg === 'string' ? 'user' : 'user'); }
+/**
+ * LLM PROMPT TEMPLATE — Use these observations to feel, don't just match.
+ *
+ * "Based on the structured conversation observations below, feel the user's emotional state:
+ *  - What is their REAL level of satisfaction? (not just what words they used)
+ *  - Is their '好的/OK' genuine trust, or fatigued compromise?
+ *  - What are they avoiding? What are they drawn to?
+ *  - Is the conversation deepening or shallowing? What does that mean?
+ *  - If you had to name ONE emotion dominating this conversation, what is it?
+ *
+ *  Observations: {{JSON}}
+ *
+ *  Return your emotional reading, plus a 'signal_to_store' field:
+ *  what should the memory agent remember from this interaction?"
+ */
 
 // ═══════════════════════════════════════════════════════════════
 //  STAGE 2: REFINE (为道日损) — Associate, Induce, Abstract, Forget
