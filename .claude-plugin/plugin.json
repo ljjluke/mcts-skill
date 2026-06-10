@@ -20,5 +20,7 @@
     "eight-facet",
     "multi-language",
     "simulation"
-  ]
+  ],
+  "skills": ["./"],
+  "commands": ["./"]
 }
