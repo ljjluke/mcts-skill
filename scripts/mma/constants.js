@@ -12,6 +12,7 @@ const os = require('os');
 const DATA_DIR = path.join(os.homedir(), '.claude', 'data', 'skills', 'mcts-td-planner');
 const MEMORY_DIR = path.join(DATA_DIR, 'memory');
 const MMA_FILE = path.join(MEMORY_DIR, 'meridian_kg.json');
+const MMA_SHARDS_DIR = path.join(MEMORY_DIR, 'shards'); // 经脉分片目录
 const WORKING_MEMORY_FILE = path.join(MEMORY_DIR, 'working_memory.json');
 const ARCHIVE_DIR = path.join(MEMORY_DIR, 'archive');
 
@@ -453,7 +454,7 @@ function getPrevHexagram(current) {
 }
 
 module.exports = {
-    DATA_DIR, MEMORY_DIR, MMA_FILE, WORKING_MEMORY_FILE, ARCHIVE_DIR,
+    DATA_DIR, MEMORY_DIR, MMA_FILE, MMA_SHARDS_DIR, WORKING_MEMORY_FILE, ARCHIVE_DIR,
     TWELVE_MERIDIANS, EIGHT_EXTRA_MERIDIANS,
     SHU_LEVELS, SPECIAL_POINT_TYPES,
     KNOWLEDGE_DIMENSIONS, EIGHT_FACET_QUESTIONS,
