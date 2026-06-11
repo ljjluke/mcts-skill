@@ -2,7 +2,7 @@
  *  得气 (Deqi) — 知识召回 + 经气预热 + 三焦工作记忆 + 循经感传
  *  "刺之要，气至而有效" —《灵枢·九针十二原》
  * ═══════════════════════════════════════════════════════════════ */
-const { SHU_LEVELS, SPECIAL_POINT_TYPES } = require('./constants');
+const { SHU_LEVELS, SPECIAL_POINT_TYPES, HEXAGRAM_SEQUENCE } = require('./constants');
 const { ziwuLiuzhu } = require('./ziwu');
 const { loadWorkingMemory, saveWorkingMemory } = require('./io');
 
@@ -57,6 +57,14 @@ function deqi(kg, query, context = {}) {
     updateWorkingMemory(wm, top);
     saveWorkingMemory(wm);
 
+    // 卦序预召回 — 追加演化链上的下一卦知识
+    const evolutionResults = hexagramPreRecall(kg, top);
+    for (const er of evolutionResults) {
+        if (!top.find(t => t.point.id === er.point.id)) {
+            top.push(er);
+        }
+    }
+    
     return top;
 }
 
@@ -156,4 +164,38 @@ function propagateSensation(results, kg, threshold = 0.3) {
     results.push(...toAdd);
 }
 
-module.exports = { deqi, computeDeqiScore, propagateSensation, updateWorkingMemory };
+
+/**
+ * 卦序预召回 — 根据六十四卦演化链预召回后续知识
+ * 屯→蒙→需→讼→师→... 每条知识在卦序中有位置
+ * 召回当前知识时，同时预召回演化链上的下一卦知识
+ */
+function hexagramPreRecall(kg, topResults) {
+    const results = [];
+    for (const r of topResults.slice(0, 3)) { // 只对top-3做预召回
+        if (!r.point.hexagram_seq) continue;
+        const nextHex = getNextHexagram(r.point.hexagram_seq);
+        if (!nextHex) continue;
+        // 在所有经脉中查找hexagram_seq匹配的穴位
+        for (const [key, m] of Object.entries(kg.meridians)) {
+            for (const p of m.points) {
+                if (p.hexagram_seq === nextHex && !p.hidden) {
+                    results.push({
+                        point: p, meridian: key, meridian_name: m.name,
+                        deqi_score: r.deqi_score * 0.6, // 预召回权重较低
+                        source: 'hexagram_evolution',
+                        evolved_from: r.point.id,
+                    });
+                }
+            }
+        }
+    }
+    return results;
+}
+
+function getNextHexagram(current) {
+    const idx = HEXAGRAM_SEQUENCE.indexOf(current);
+    return idx >= 0 && idx < 63 ? HEXAGRAM_SEQUENCE[idx + 1] : null;
+}
+
+module.exports = { deqi, computeDeqiScore, propagateSensation, updateWorkingMemory, hexagramPreRecall };
