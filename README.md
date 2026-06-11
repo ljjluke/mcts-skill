@@ -42,6 +42,8 @@ After:  You ask → AI simulates all options internally → picks the best → e
 | 🗣️ **Language Adaptive** | Auto-detects the user's language — any language. English engine internally, user's language on display. Works for writing systems worldwide. |
 | 🖥 **Node.js Native** | Zero extra deps. Cross-platform (Win/Mac/Linux). Runs wherever Claude Code runs. |
 | 🧠 **Human-like Memory** | Associative recall → fragment completion → external verification. Knowledge graph with state machine. |
+| 🧠 **MMA Meridian Memory** | 12 meridians + 8 extraordinary vessels. Acupoint-based knowledge storage with Deqi recall and Ziwu Liuzhu context triggering. 7 human-like cognitive optimizations. |
+| 🕵️ **Memory Agent (Sub-Agent)** | Silent observer — Court Historian (records) + Remonstrance Official (alerts). 5 auto-checkpoints. Watches entire session, alerts only on contradictions. |
 | 🔒 **Compression-Safe** | Triple-layer rules (YAML + COMPRESSION-SAFE blocks + code enforcement). Survives long contexts. |
 | ✅ **Self-Check + Blindspot Audit** | Questions its own conclusions before executing. Finds what you missed. |
 
@@ -95,16 +97,20 @@ Inspired by Taoist Bagua (八卦), the Eight-Facet Mirror ensures every decision
 
 ---
 
-## 🧠 Human-like Memory System
+## 🧠 MMA Meridian Memory System
 
-| Human ability | Engine simulation |
-|--------------|-------------------|
-| See problem → recall experience | Associative recall — most relevant surfaces naturally |
-| Can't remember → piece it together | Fragment completion — follow clues to reconstruct |
-| Still don't know → look it up | External verification — search docs, ask user |
-| Old knowledge outdated → correct it | State machine — HYPOTHESIS→CONFIRMED→DISPUTED→REFUTED→Rollback |
-| Unused → fades over time | Memory decay — auto-archive after 30 days |
-| Mention → suddenly remember | Recall trigger — related cues bring archived knowledge back |
+Inspired by the human meridian system from the Yellow Emperor's Inner Canon (《黄帝内经》). Knowledge flows through 12 primary meridians like qi through channels. Each acupoint is a knowledge entry.
+
+| Human ability | MMA Engine |
+|--------------|------------|
+| See problem → recall experience | Deqi (得气) — context resonates with acupoints, best matches emerge |
+| Can't remember → piece together | Propagated Sensation (循经感传) — stimulate one point, sensation travels along meridian |
+| Strong emotion → vivid memory | Emotion Modulator — fear +15, anger +10, joy +8 consolidation boost |
+| Forget ≠ delete, just can't retrieve | Hidden Acupoint (隐穴) — marks hidden instead of deleting, can be awakened |
+| Working memory 7±2 chunks | Triple Burner (三焦气化) — upper 7, middle session, lower historical |
+| Sleep consolidates memory | Session End Replay (睡眠回放) — accelerated replay with emotion-weighted boost |
+| Expert chunks patterns | Acupoint Clusters (腧穴集群) — co-occurring points auto-form knowledge chunks |
+| Old knowledge outdated → correct | State machine — HYPOTHESIS→PROVISIONAL→CONFIRMED→DISPUTED→REFUTED→SLEEPING→ARCHIVED |
 
 ---
 
@@ -190,7 +196,7 @@ Knowledge graph: `~/.claude/data/skills/mcts-td-planner/` — physically separat
 
 ## 📊 Architecture
 
-**Algorithm**: MCTS (Upper Confidence Bound + Welford variance) + TD(λ) (Temporal Difference with eligibility traces). Knowledge graph with state machine (HYPOTHESIS→PROVISIONAL→CONFIRMED→DISPUTED→REFUTED→Rollback).
+**Algorithm**: MCTS (Upper Confidence Bound + Welford variance) + TD(λ) (Temporal Difference with eligibility traces). MMA (Meridian Memory Algorithm) — 12 meridians + 8 extraordinary vessels with Deqi recall.
 
 ```
 User Message
@@ -199,29 +205,23 @@ User Message
 ┌─────────────┐    ┌──────────────────┐    ┌─────────────────┐
 │  Diverge    │───▶│  Simulate        │───▶│  Converge       │
 │  Engine     │    │  Engine          │    │  Engine         │
-│             │    │                  │    │                 │
-│  Eight-     │    │  MCTS Tree       │    │  CLT-UCB Rank   │
-│  Facet Map  │    │  UCB Selection   │    │  Self-Check     │
-│  Cross-     │    │  Expansion       │    │  Blindspot      │
-│  Associate  │    │  Rollout Sim     │    │  Audit          │
-│  P0~P5 Cull │    │  Backpropagation │    │  TD Update      │
 └─────────────┘    └────────┬─────────┘    └─────────────────┘
-                            │
-                            ▼
-                   ┌─────────────────┐
-                   │  Knowledge      │
-                   │  Graph          │
-                   │                 │
-                   │  State Machine  │
-                   │  HYPOTHESIS→    │
-                   │  PROVISIONAL→   │
-                   │  CONFIRMED→     │
-                   │  DISPUTED→      │
-                   │  REFUTED→       │
-                   │  SLEEPING→      │
-                   │  ARCHIVED       │
-                   └─────────────────┘
-```
+                            │                        │
+          ┌─────────────────┴────────────────────────┘
+          ▼
+┌─────────────────────────────────────────────────────────┐
+│              🧠 Memory Agent (Silent Observer)            │
+│                                                          │
+│  ① PRE_ENGINE ─── deqi recall ────→ inject context       │
+│  ② DURING_DIVERGE ─ perceive 七情 ─→ emotion timeline    │
+│  ③ POST_SIMULATE ── ashi insert ──→ meridian acupoints   │
+│  ④ PRE_CONVERGE ── Yin-Yang check → ALERT if conflict    │
+│  ⑤ POST_EXECUTION ─ reinforce/drain → TD closed loop     │
+│  ⑥ SESSION_END ─── sleep replay ──→ consolidate          │
+│                                                          │
+│  MMA Engine: 12 Meridians + 8 Extra Vessels               │
+│  得气 · 子午流注 · 循经感传 · 补泻 · 阿是穴 · 隐穴        │
+└─────────────────────────────────────────────────────────┘
 
 ---
 
