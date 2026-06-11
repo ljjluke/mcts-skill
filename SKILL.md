@@ -23,21 +23,49 @@ alwaysApply: true
 > **Every user message goes through: Decompose → Diverge (8-Facet Mirror) → Converge (3 solutions) → MCTS Simulate → Decision.**
 > **Diverge engine is CONVERSATIONAL — grill the user, don't monologue. Output every phase visibly.**
 
-> **🧠 MEMORY PROTOCOL (MANDATORY — After every task):**
-> 1. **WRITE BACK (REQUIRED)**: Execute `node scripts/knowledge_lifecycle.js gate-check` on ALL new knowledge generated during this task. Store passing entries to `~/.claude/data/skills/mcts-td-planner/memory/mcts-td-value-archive.md`.
-> 2. **MAINTENANCE**: Run `node scripts/knowledge_lifecycle.js full-maintenance` — GC Roots tracking → Minor/Major GC → error detection → compaction.
-> 3. **TD CLOSED LOOP (MANDATORY — This is how the skill "gets smarter")**:
->    Before execution, recall past similar tasks from memory. Note their V_predicted values.
->    After execution, compute V_actual → TD_error = V_actual - V_predicted.
->    Update knowledge graph: `node scripts/knowledge_lifecycle.js gate-check-emotion --v_predicted <old> --v_actual <new>`.
->    If TD_error > 0 (did better than expected) → reinforce. If < 0 (did worse) → correct.
->    This loop is what makes MCTS-TD literally learn from experience.
-> 4. **CONTEXT RELEASE**: After TD update is persisted, the skill's reasoning context can be released.
-> 5. **RECALL ON START**: At the beginning of every new session, BEFORE any engine logic:
->    a) Run `node scripts/manage_memory.js status` — auto-creates memory directory.
->    b) Read `~/.claude/data/skills/mcts-td-planner/memory/mcts-td-value-archive.md`.
->    c) For each recalled knowledge, note its V and σ² — use as prior when MCTS selects paths.
->    d) EMPTY or new = cold start. Still works, just no prior knowledge.
+> **🧠 MEMORY AGENT LIFECYCLE (MANDATORY — Silent Observer, 5 Checkpoints):**
+>
+> The Memory Agent runs alongside every engine phase. It has 5 observation checkpoints:
+>
+> ```
+> ┌─────────────────────────────────────────────────────────────┐
+> │  MEMORY AGENT — 史官(Record Keeper) + 谏官(Remonstrance)     │
+> │  "左史记言，右史记事" —《礼记》                               │
+> │                                                              │
+> │  ① PRE_ENGINE — Engine start                                 │
+> │     Recall: node meridian_memory.js deqi                     │
+> │     Note V_predicted for TD closed loop                     │
+> │     Output: SILENT (unless cold start → log once)            │
+> │                                                              │
+> │  ② DURING_DIVERGE — Diverge phase                            │
+> │     Perceive: detect 七情 signals from conversation          │
+> │     Build emotion timeline                                   │
+> │     Output: SILENT                                            │
+> │                                                              │
+> │  ③ POST_SIMULATE — After MCTS simulation                    │
+> │     Record: ashi insert each insight into meridian system    │
+> │     Command: node meridian_memory.js ashi                    │
+> │     Also: cluster detect for chunking                        │
+> │     Output: SILENT                                            │
+> │                                                              │
+> │  ④ PRE_CONVERGE — Before decision                           │
+> │     Detect: Yin-Yang conflict (阴阳对冲)                      │
+> │     ⚡ ONLY WHEN CONFLICT: output Remonstrance Alert          │
+> │     Format: "谏官进谏: [conflict detail]"                     │
+> │     Max 2 alerts per session                                 │
+> │                                                              │
+> │  ⑤ POST_EXECUTION — After execution                         │
+> │     TD Closed Loop: V_actual - V_predicted                   │
+> │     Reinforce/Drain: node meridian_memory.js reinforce       │
+> │     Decay check + Session-end consolidation                  │
+> │     Output: SILENT                                            │
+> └─────────────────────────────────────────────────────────────┘
+> ```
+>
+> **Full rules**: agents/memory-agent.md | scripts/meridian_memory.js
+>
+> ⚠️ SKIPPING any checkpoint → Memory not recorded → Skill doesn't learn.
+> ⚠️ Behaviors ①②③⑤ run SILENTLY. Only ④ may interrupt the user.
 
 > **🔒 COMPRESSION-SAFE CORE (Frontmatter + this block = survives any compression):**
 > **ALWAYS DECOMPOSE FIRST** | **OUTPUT IN USER LANGUAGE** | **PHASED OUTPUT (0→1→2→3→4)** | **GRILL THE USER** | **3 SOLUTIONS → MCTS**
@@ -313,8 +341,10 @@ After convergence:
 | Simulate Engine | `engine/mcts-simulate.md` | MCTS tree search: Selection→Expansion→Simulation→Backpropagation |
 | Converge Engine | `engine/mcts-converge.md` | Aggregation + self-check + blindspot audit + TD update write-back |
 | TD Learning Engine | `engine/td-learner.md` | TD error, value update, knowledge graph, cross-session persistence |
-| 🧠 Memory Engine | `scripts/knowledge_lifecycle.js` | L-GCMS: gate filtering + tiered storage + forgetting curve + context recall |
-| 🖥 Compute Engine | `scripts/mcts_compute.js` | UCB/backprop/convergence/state machine + cull/coverage/user-ask logic (Pure Node.js, 50+ functions) |
+| 🧠 Memory Agent | `agents/memory-agent.md` | Silent observer: 史官+谏官 dual role, 5 checkpoints (recall→perceive→record→alert→consolidate) |
+| 🖥 MMA Engine | `scripts/meridian_memory.js` | Meridian Memory Algorithm: 得气/子午流注/循经感传/补泻/阿是穴/隐穴/睡眠回放/腧穴集群 |
+| 🖥 Compute Engine | `scripts/mcts_compute.js` | UCB/backprop/convergence/state machine + cull/coverage/user-ask logic |
+| 📋 Lifecycle Engine | `scripts/knowledge_lifecycle.js` | L-GCMS: gate filtering + tiered storage + forgetting curve + context recall (legacy, being replaced by MMA) |
 | Simulation Format | `policies/task-policy.md` | General solution generation rules, simulation format, scoring rubric |
 | 📖 Algorithm Ref | `references/algorithm-reference.md` | On-demand reference, not loaded in reasoning context |
 
