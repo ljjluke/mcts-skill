@@ -224,9 +224,11 @@ Divergence Process (multi-round iteration, until each facet is thought through):
     acquiring external information about the low-scoring facets.
     
     Examples of what this prevents:
-      - Facet1=2/10 "cannot crawl" → should search "海关数据公开API" "customs data API"
-      - Facet2=1/10 "no real data" → should search "中国海关总署月度统计" "UN Comtrade"
-      - Facet3=3/10 "HS10 not public" → should search "HS10编码查询" "海关编码查询平台"
+      - "I can't do that" instead of "Let me search how"
+      - Scoring a facet low and continuing without acquiring info
+      - Relying entirely on internal knowledge when external info is needed
+      - Outputting "templates" or "empty tables" as solutions
+      - Claiming capability limits without verifying what's actually possible
     
     After search, re-rate the facet. If still ≤3, you may proceed but ALL output
     from that facet must cite its information source or be marked 【待核实】.
