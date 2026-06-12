@@ -327,9 +327,9 @@ EVERY user message → immediately decompose:
 ```
 Decomposition result → Action:
 
-  ≥1 子需求有多方案 → ⚡ 启动激活信号 + 进入发散引擎
-  0 子需求有多方案 → 直接回答，跳过引擎
-  信息不足无法拆解 → 追问用户后重新拆解
+  ≥1 sub-need has options → ⚡ Activate engine + enter diverge
+  0 sub-needs have options → Direct answer, skip engine
+  Insufficient info → Ask user, then re-decompose
 ```
 
 ### Activation Signal
