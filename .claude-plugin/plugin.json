@@ -21,7 +21,9 @@
     "multi-language",
     "simulation"
   ],
-  "skills": [],
+  "skills": [
+    "./SKILL.md"
+  ],
   "commands": [
     "./SKILL.md"
   ]
