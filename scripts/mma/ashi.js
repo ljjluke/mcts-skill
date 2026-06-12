@@ -10,8 +10,18 @@ const { EMOTION_CONSOLIDATION, SHU_LEVELS, SOURCE_RELIABILITY } = require('./con
  * 阿是穴插入 — 新知识归经→选穴→创建→建立表里连接
  * 情绪调制: 七情强度决定初始巩固分
  * 阴阳对冲: 检测同经脉内tags重叠>50%+结论矛盾→DISPUTED
+ * 质量门: 拒绝无意义噪音
+ * 完整性标记: 标记缺失维度供补全
  */
 function ashiInsert(kg, entry) {
+    // Step 0: 质量门 — 拒绝真正的噪音
+    const qualityCheck = assessQuality(entry);
+    if (qualityCheck.verdict === 'REJECT') {
+        return { rejected: true, reason: qualityCheck.reason };
+    }
+
+    // 完整性分析 — 标记缺失维度
+    const completeness = assessCompleteness(entry);
     // Step 1: 归经 — 找最匹配的经脉
     let bestMeridian = null, bestScore = 0;
     for (const [key, m] of Object.entries(kg.meridians)) {
@@ -86,6 +96,10 @@ function ashiInsert(kg, entry) {
         task_type: entry.task_type || null,     // 情景记忆的上下文
         context_snapshot: entry.context || {},   // 编码时的上下文快照
         reconsolidation_window: null,           // 再巩固窗口(方案13)
+        // 完整性: 记录了哪些维度缺失
+        _missing_dimensions: completeness.missing,
+        _completion_suggestions: completeness.suggestions,
+        _needs_completion: completeness.missing.length > 0,
         related_points: entry.related_points || [],
         promotes: entry.promotes || [],
         inhibits: entry.inhibits || [],
@@ -162,7 +176,128 @@ function establishPairedConnection(kg, meridianKey, position, newPoint) {
     pp.related_points.push({ id: newPoint.id, relation: 'paired_meridian', position });
 }
 
-module.exports = { ashiInsert, detectYinYangConflict, generatePointId, computeElaborationLevel };
+module.exports = { ashiInsert, detectYinYangConflict, generatePointId, computeElaborationLevel, assessQuality, assessCompleteness };
+
+
+/**
+ * ═══════════════════════════════════════════════════════════════
+ *  质量门 — 精确区分"有用"和"噪音"
+ *  "知之为知之，不知为不知" —《论语》
+ *
+ *  原则: 宁可放行可疑信息（后面有衰减和补泻清理），
+ *        不可误杀真正有用的经验（哪怕只有一句话）。
+ *
+ *  真正噪音的判断标准（同时满足才拒绝）:
+ *  1. 描述长度 < 10 字（纯空/几乎无内容）
+ *  AND 2. 无 tags（无结构化信息）
+ *  AND 3. 无 emotion（无主观体验）
+ *  AND 4. 无 source 或 source=unknown（无来源）
+ *
+ *  只要有一个维度有信息 → 放行
+ * ═══════════════════════════════════════════════════════════════
+ */
+function assessQuality(entry) {
+    const desc = (entry.description || entry.summary || '').trim();
+    const tags = entry.tags || [];
+    const keywords = entry.keywords || [];
+    const source = entry.source || 'unknown';
+    const emotion = entry.emotion || null;
+    const category = entry.category || '';
+
+    // 检测点: 是否有任何实质性信息
+    const hasContent = desc.length >= 10 || tags.length > 0 || keywords.length > 0;
+    const hasContext = category || emotion || (source !== 'unknown' && source !== 'hearsay');
+    const hasSource = source !== 'unknown';
+
+    // 完全空: 没有任何信息
+    if (!desc && tags.length === 0 && !source && !emotion && !category) {
+        return { verdict: 'REJECT', score: 0, reason: '完全空内容' };
+    }
+
+    // 真正的噪音: 内容极短 + 无标签 + 无情绪 + 无来源
+    if (desc.length < 10 && tags.length === 0 && !emotion && source === 'unknown') {
+        return { verdict: 'REJECT', score: 0.1, reason: '无实质内容: 无描述/无标签/无情绪/无来源' };
+    }
+
+    // 极短描述但有关键结构化信息 → 放行
+    if (!hasContent && !hasContext && !hasSource) {
+        return { verdict: 'REJECT', score: 0.15, reason: '信息量极低' };
+    }
+
+    // 其他情况 → 全部放行
+    let qualityScore = 0.5;
+    if (desc.length >= 30) qualityScore += 0.15;
+    if (tags.length >= 2) qualityScore += 0.1;
+    if (keywords.length > 0) qualityScore += 0.05;
+    if (emotion && emotion !== 'neutral') qualityScore += 0.1;
+    if (source !== 'unknown') qualityScore += 0.1;
+    if (category) qualityScore += 0.05;
+
+    return { verdict: 'PASS', score: Math.min(1, qualityScore), reason: '含有效信息' };
+}
+
+/**
+ * ═══════════════════════════════════════════════════════════════
+ *  完整性检测 — 标记缺失维度
+ *  "方以类聚，物以群分" —《周易》
+ *
+ *  一个完整的知识条目应该包含:
+ *    核心层: description(描述) + tags(标签) + source(来源)
+ *    上下文层: category(分类) + context(上下文快照)
+ *    体验层: emotion(情绪) + keywords(关键词)
+ *
+ *  不拒绝，只标记。缺失的维度可以在后续被补全。
+ * ═══════════════════════════════════════════════════════════════
+ */
+function assessCompleteness(entry) {
+    const desc = (entry.description || entry.summary || '').trim();
+    const tags = entry.tags || [];
+    const source = entry.source || 'unknown';
+    const category = entry.category || '';
+    const emotion = entry.emotion || '';
+    const contextKeys = entry.context ? Object.keys(entry.context) : [];
+
+    const missing = [];
+    const suggestions = [];
+
+    // 核心层
+    if (desc.length < 20) {
+        missing.push('description');
+        suggestions.push('补充详细描述，说明做了什么、为什么这样做、结果如何');
+    }
+    if (tags.length === 0) {
+        missing.push('tags');
+        suggestions.push('添加2~3个标签，帮助知识被找到');
+    }
+    if (source === 'unknown') {
+        missing.push('source');
+        suggestions.push('标明信息来源: 亲历/告知/文档/推理');
+    }
+
+    // 上下文层
+    if (!category) {
+        missing.push('category');
+        suggestions.push('归入一个分类');
+    }
+    if (contextKeys.length === 0) {
+        missing.push('context');
+        suggestions.push('附加上下文快照(任务类型/技术栈等)');
+    }
+
+    // 体验层: 这不是必填的，但缺失会减信息量
+    if (!emotion) {
+        missing.push('emotion(可选)');
+    }
+    if (tags.length < 2) {
+        missing.push('more_tags(推荐)');
+    }
+
+    return {
+        missing,
+        suggestions: suggestions.slice(0, 3), // 最多3条建议
+        completeness_score: Math.round((1 - missing.length / 8) * 100) / 100,
+    };
+}
 
 
 /**
