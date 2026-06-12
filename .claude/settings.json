@@ -1,6 +1,7 @@
 {
   "enabledPlugins": {
-    "mcts-td-planner@mcts-td-planner": true
+    "mcts-td-planner@mcts-td-planner": true,
+    "mcts@mcts": true
   },
   "scheduled_tasks": [
     {

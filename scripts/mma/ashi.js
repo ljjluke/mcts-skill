@@ -5,6 +5,7 @@
  *  "方以类聚，物以群分" —《周易·系辞》
  * ═══════════════════════════════════════════════════════════════ */
 const { EMOTION_CONSOLIDATION, SHU_LEVELS, SOURCE_RELIABILITY } = require('./constants');
+const { markDirty } = require('./io');
 
 /**
  * 阿是穴插入 — 新知识归经→选穴→创建→建立表里连接
@@ -104,6 +105,7 @@ function ashiInsert(kg, entry) {
         promotes: entry.promotes || [],
         inhibits: entry.inhibits || [],
         hidden: false,
+        hexagram_seq: entry.hexagram_seq || assignHexagramSeq(kg, bestMeridian, meridian),
         created_at: entry.created_at || new Date().toISOString(),
         last_verified: entry.last_verified || new Date().toISOString(),
         td_error_history: [],
@@ -120,6 +122,7 @@ function ashiInsert(kg, entry) {
 
     // Step 6: 插入
     meridian.points.splice(insertPos, 0, newPoint);
+    markDirty(kg, bestMeridian);
 
     // Step 7: 表里经连接
     establishPairedConnection(kg, bestMeridian, insertPos, newPoint);
@@ -159,9 +162,10 @@ function detectYinYangConflict(meridian, newPoint) {
 }
 
 function generatePointId(kg, meridianKey) {
-    const meridian = kg.meridians[meridianKey] || kg.extra[meridianKey];
+    const seq = kg.meta.next_point_seq || 1;
+    kg.meta.next_point_seq = seq + 1;
     const prefix = meridianKey.substring(0, 3).toUpperCase();
-    return `${prefix}${String((meridian?.points?.length || 0) + 1).padStart(3, '0')}`;
+    return `${prefix}${String(seq).padStart(4, '0')}`;
 }
 
 function establishPairedConnection(kg, meridianKey, position, newPoint) {
@@ -176,7 +180,32 @@ function establishPairedConnection(kg, meridianKey, position, newPoint) {
     pp.related_points.push({ id: newPoint.id, relation: 'paired_meridian', position });
 }
 
-module.exports = { ashiInsert, detectYinYangConflict, generatePointId, computeElaborationLevel, assessQuality, assessCompleteness };
+/**
+ * 分配卦序 — 根据 meridian 已有 points 的 hexagram_seq 决定下一个
+ * 如果已有 points 中存在 hexagram_seq，取最后一个的下一卦
+ * 否则按 meridian 的起始位置分配
+ */
+function assignHexagramSeq(kg, meridianKey, meridian) {
+    const { HEXAGRAM_SEQUENCE, getNextHexagram } = require('./constants');
+    // 查找该经脉中最后一个有 hexagram_seq 的穴位
+    let lastSeq = null;
+    for (let i = meridian.points.length - 1; i >= 0; i--) {
+        if (meridian.points[i].hexagram_seq) {
+            lastSeq = meridian.points[i].hexagram_seq;
+            break;
+        }
+    }
+    if (lastSeq) {
+        return getNextHexagram(lastSeq) || HEXAGRAM_SEQUENCE[0];
+    }
+    // 没有已有的卦序，按 meridian 索引分配起始位置
+    const allKeys = Object.keys(kg.meridians);
+    const mIdx = allKeys.indexOf(meridianKey);
+    const startIdx = ((mIdx >= 0 ? mIdx : 0) * 5) % HEXAGRAM_SEQUENCE.length;
+    return HEXAGRAM_SEQUENCE[startIdx];
+}
+
+module.exports = { ashiInsert, detectYinYangConflict, generatePointId, computeElaborationLevel, assessQuality, assessCompleteness, assignHexagramSeq };
 
 
 /**

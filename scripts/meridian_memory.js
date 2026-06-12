@@ -67,7 +67,11 @@ function main() {
             case "deqi": {
                 const kg = loadMMA(), query = JSON.parse(args[1] || "{}"), ctx = JSON.parse(args[2] || "{}");
                 const results = deqi(kg, query, ctx);
-                recordCoOccurrence(kg, results.map(r => r.point.id));
+                // 只记录原始召回来源的共现，排除 propagated/paired/hexagram_evolution
+                const directIds = results
+                    .filter(r => !r.propagated_from && !r.evolved_from && r.source !== 'propagation' && r.source !== 'paired' && r.source !== 'hexagram_evolution')
+                    .map(r => r.point.id);
+                recordCoOccurrence(kg, directIds);
                 saveMMA(kg);
                 output({ count: results.length, results });
                 break;
@@ -151,7 +155,10 @@ function observeRoute(phase, data) {
             const query = data.query || { limit: 5 };
             const ctx = data.context || {};
             const recalled = deqi(kg, query, ctx);
-            recordCoOccurrence(kg, recalled.map(r => r.point.id));
+            const directIds = recalled
+                .filter(r => !r.propagated_from && !r.evolved_from && r.source !== 'propagation' && r.source !== 'paired' && r.source !== 'hexagram_evolution')
+                .map(r => r.point.id);
+            recordCoOccurrence(kg, directIds);
             result = {
                 phase: 'pre_engine',
                 recalled: recalled.length,

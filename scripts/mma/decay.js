@@ -5,13 +5,8 @@
  * ═══════════════════════════════════════════════════════════════ */
 const { EMOTION_CONSOLIDATION } = require('./constants');
 const { hidePoint } = require('./reinforce');
-const { findPointById } = require('./io');
-
-// 六爻状态映射 — 兼容新旧状态系统
-// reinforce.js 引入了六爻生命周期: chu1/yao2/yao3/yao4/yao5/yao6 → 状态
-// 确保衰减检查覆盖所有状态
-const CONFIRMED_LIKE = new Set(['CONFIRMED', 'ACTIVE', 'MATURE']);
-const PROVISIONAL_LIKE = new Set(['PROVISIONAL', 'HYPOTHESIS']);
+const { findPointById, markDirty } = require('./io');
+const { isInStatusSet } = require('./state_machine');
 
 /**
  * 记忆衰减检查 — 久不使用则"气虚"，自动降级或隐穴
@@ -37,15 +32,18 @@ function decayCheck(kg) {
             const sourceDecayFactor = (p.source_reliability && p.source_reliability < 0.5) ? 0.7 : 1.0;
             const effectiveDays = daysSince / sourceDecayFactor;
 
-            if (effectiveDays > hideThreshold && baseConsolidation <= 3 && !CONFIRMED_LIKE.has(p.status)) {
+            if (effectiveDays > hideThreshold && baseConsolidation <= 3 && !isInStatusSet(p.status, 'reliable')) {
                 hidePoint(kg, key, p.id);
+                markDirty(kg, key);
                 decayed.push({ point_id: p.id, meridian: key, action: 'hide',
                     days: Math.round(daysSince), memory_type: p.memory_type, source: p.source });
-            } else if (daysSince > 30 && CONFIRMED_LIKE.has(p.status) && p.status !== 'SLEEPING') {
+            } else if (daysSince > 30 && isInStatusSet(p.status, 'decayable') && p.status !== 'SLEEPING') {
                 p.status = 'SLEEPING'; p.slept_at = now.toISOString();
+                markDirty(kg, key);
                 decayed.push({ point_id: p.id, meridian: key, action: 'sleep', days: Math.round(daysSince) });
             } else if (daysSince <= 7 && p.status === 'SLEEPING') {
                 p.status = 'PROVISIONAL'; p.awoke_at = now.toISOString();
+                markDirty(kg, key);
                 decayed.push({ point_id: p.id, meridian: key, action: 'awaken', days: Math.round(daysSince) });
             }
         }

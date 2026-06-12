@@ -2,8 +2,9 @@
  *  补泻手法 (Reinforce/Reduce) — 价值更新 + 五行生克
  *  "盛则泻之，虚则补之" —《灵枢·经脉》
  * ═══════════════════════════════════════════════════════════════ */
-const { SHU_LEVELS, FIVE_ELEMENT, SIX_YAO_LIFECYCLE, YAO_TO_SHU, ARCHIVE_DIR } = require('./constants');
-const { findPointById } = require('./io');
+const { SHU_LEVELS, FIVE_ELEMENT, ARCHIVE_DIR } = require('./constants');
+const { findPointById, markDirty } = require('./io');
+const { getYaoStage, yaoToStatus, yaoToShuLevel } = require('./state_machine');
 const fs = require('fs');
 
 /**
@@ -46,27 +47,24 @@ function reinforceReduce(kg, pointId, tdError, experience = {}) {
     // 五输穴升级/降级
     updateShuLevel(point, technique, newQ);
 
-    // 六爻生命周期状态转换 (Six Yao Lifecycle)
-    // 根据n(验证次数)映射到六爻阶段
+    // 六爻生命周期状态转换 (Six Yao Lifecycle) — 使用统一状态机
     const yaoStage = getYaoStage(point.n);
     point.yao_stage = yaoStage;
-    // 六爻→五输穴映射
-    if (YAO_TO_SHU[yaoStage]) point.shu_level = YAO_TO_SHU[yaoStage];
-    
+    point.shu_level = yaoToShuLevel(yaoStage);
+
     // 本卦/之卦/变卦 — 三卦判断知识稳定性
     const trigram = computeTrigramStability(point);
-    point.ben_gua = trigram.ben;      // original hexagram: current q trend
-    point.zhi_gua = trigram.zhi;      // derived hexagram: TD error direction
-    point.bian_gua = trigram.bian;    // changing hexagram: sigma2 mutation risk
-    
-    // 六爻阶段→旧状态映射(兼容)
-    const yaoToStatus = { chu1: 'HYPOTHESIS', yao2: 'PROVISIONAL', yao3: 'ACTIVE', yao4: 'MATURE', yao5: 'CONFIRMED', yao6: 'CONFIRMED' };
-    point.status = yaoToStatus[yaoStage] || 'HYPOTHESIS';
-    
+    point.ben_gua = trigram.ben;
+    point.zhi_gua = trigram.zhi;
+    point.bian_gua = trigram.bian;
+
+    // 六爻→状态映射 (统一状态机)
+    point.status = yaoToStatus(yaoStage);
+
     // 上爻转化: 顶峰→升华(原穴)或衰退(休眠)
     if (yaoStage === 'yao6') {
         if (trigram.zhi === 'ji' && trigram.bian === 'xiao') {
-            point.special_type = 'yuan'; // elevated to Yuan-source — key high-frequency knowledge
+            point.special_type = 'yuan';
             point.yao6_direction = 'ascend';
         } else if (trigram.zhi === 'xiong' || trigram.bian === 'da') {
             point.status = 'SLEEPING'; point.slept_at = new Date().toISOString();
@@ -86,6 +84,7 @@ function reinforceReduce(kg, pointId, tdError, experience = {}) {
 
     // 五行生克关系更新
     updateFiveElementRelations(kg, meridianKey, point, technique);
+    markDirty(kg, meridianKey);
 
     return { point, meridian: meridianKey, technique, delta, newQ: point.q, newSigma2: point.sigma2,
         reconsolidation_active: inWindow };
@@ -140,18 +139,6 @@ function hidePoint(kg, meridianKey, pointId) {
     fs.writeFileSync(archiveFile, JSON.stringify(archive, null, 2), 'utf-8');
 }
 
-
-/**
- * 六爻生命周期阶段判定 — 根据验证次数n映射
- */
-function getYaoStage(n) {
-    if (n <= 0) return 'chu1';
-    if (n <= 2) return 'yao2';
-    if (n <= 9) return 'yao3';
-    if (n <= 19) return 'yao4';
-    if (n <= 49) return 'yao5';
-    return 'yao6';
-}
 
 /**
  * 本卦/之卦/变卦 — 三卦判断知识稳定性
