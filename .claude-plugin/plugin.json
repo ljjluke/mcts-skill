@@ -20,11 +20,5 @@
     "eight-facet",
     "multi-language",
     "simulation"
-  ],
-  "skills": [
-    "./"
-  ],
-  "commands": [
-    "./.claude-plugin/commands"
   ]
 }
