@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.6.1 (2026-06-14)
+
+### Fixed
+- `marketplace.json`: 移除 `$schema` 字段 — Linux Claude Code 严格 JSON schema 验证报错
+- `hooks/hooks.json`: start-up 消息英文化
+- `SKILL.md`: 引擎激活规则 + 分解示例全面英文化
+- 全项目中非文化中文清理（SKILL.md/CHANGELOG/engine/*.md 等）
+- 经脉分片原子写入完善 — SessionEnd hooks 自动保存记忆
+
+### Added
+- `hooks/hooks.json`: SessionEnd hooks 自动巩固记忆
+
+### Changed
+- `SKILL.md` → `SKILL_DEV.md`: 重命名以避免本地项目与插件缓存重复注册
+- 中英文 README 全面更新，反映 v1.6.x 全部新功能
+- Version bumped 1.6.0 → 1.6.1 across all files
+
 ## 1.6.0 (2026-06-12)
 
 ### Major — Brain-Inspired Memory Engine
