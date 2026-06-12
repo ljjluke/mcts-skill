@@ -43,51 +43,15 @@ Constraint Collection = First step to doing right thing
 
 ## 0.1 Constraint Detection Checklist
 
-```
-After receiving task, immediately execute following constraint detection,
-cannot skip:
+Run `node scripts/mcts_guard.js constraint-checklist` to see the full checklist (9 items:
+tech_stack, dependencies, architecture, compliance, performance, security,
+time_budget, backward_compat, user_preference).
 
-┌──────────────────────────────────────────────────────────────────┐
-│  Constraint Detection Checklist                                  │
-├──────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│  □ Tech Stack Constraints:                                       │
-│    Is the tech stack involved in task already in current project?│
-│    What language, framework, database, middleware is project     │
-│    using?                                                        │
-│    Any version restrictions? (e.g., only Java 8, not 17)         │
-│                                                                  │
-│  □ Dependency Constraints:                                       │
-│    Can new third-party dependencies be introduced?               │
-│    ("Cannot introduce external dependencies")                    │
-│    If yes, any version or license restrictions?                  │
-│                                                                  │
-│  □ Architecture Constraints:                                     │
-│    Any hard architecture design rules? (must be microservices,   │
-│    must be monolithic)                                           │
-│    Any design patterns that cannot be used or must be used?      │
-│                                                                  │
-│  □ Policy/Compliance Constraints:                                │
-│    Any company or industry policy restrictions?                  │
-│    (Data cannot leave region, must have audit logs, etc.)        │
-│                                                                  │
-│  □ Performance Constraints:                                      │
-│    Any performance requirements?                                 │
-│    (Response time, throughput, concurrency)                      │
-│                                                                  │
-│  □ Security Constraints:                                         │
-│    Any security requirements?                                    │
-│    (Encryption standards, auth methods, OWASP compliance, etc.)  │
-│                                                                  │
-│  □ Time/Cost Constraints:                                        │
-│    Any deadline or budget limits?                                │
-│                                                                  │
-│  □ Implicit Constraints:                                         │
-│    Constraints user didn't explicitly say but can infer from     │
-│    project context?                                              │
-│    (e.g., Project uses MySQL → Cannot use MongoDB)               │
-│                                                                  │
-└──────────────────────────────────────────────────────────────────┘
+```
+After receiving task, immediately execute the checklist above.
+Each item must be checked before proceeding.
+Items with auto_detect=true can be checked from project code.
+Items with auto_detect=false MUST be asked to the user — never assume.
 ```
 
 ---

@@ -411,66 +411,15 @@ Converge ≠ Cut ideas. Converge = Cluster → Complete → Cull → Crystallize
 
 ③ Cull: Remove infeasible or obviously inferior directions based on clear criteria
 
-  Culling is not subjective "feels bad", but each elimination condition
-  corresponds to one facet of the Eight-Facet Mirror.
-  Eight elimination criteria executed in priority order — once high priority
-  triggers, eliminate immediately, don't look further.
+  Culling uses P0~P4 priority criteria (defined in `node scripts/mcts_compute.js cull` — --criteria flag).
+  Standard priority order:
+    P0: Boundary (violates hard constraints) → Eliminate
+    P1: Foundation (exceeds resources) → Eliminate or downgrade
+    P2: Force (capability mismatch) → Eliminate or supplement
+    P3: Risk (unbearable worst case) → Eliminate or mark high-risk
+    P4: Compare (clearly inferior to another) → Eliminate or merge
 
-┌─────────────────────────────────────────────────────────────────────┐
-│  Culling Criteria (corresponding to eight facets, sorted by         │
-│                    priority)                                        │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                     │
-│  P0-Boundary Cull (corresponds to Facet7: Boundary & Limit):       │
-│    Ask: Does this direction violate any hard constraints?          │
-│    Trigger to eliminate: Violates law/compliance/insurmountable    │
-│                          resource limit/user explicitly forbids    │
-│    Source: Facet7's diverge result (lines that cannot be crossed)  │
-│                                                                     │
-│  P1-Foundation Cull (corresponds to Facet2: Foundation & Capacity):│
-│    Ask: Can current resources/capabilities support this direction? │
-│    Trigger to eliminate: Required resources far exceed available   │
-│                          (>200%) and cannot be supplemented        │
-│    Trigger to mark: Required resources slightly exceed available   │
-│                     (100%~200%) → salvageable but lower priority   │
-│    Source: Facet2's diverge result (available resources and        │
-│            constraints)                                             │
-│                                                                     │
-│  P2-Force Cull (corresponds to Facet1: Source of Force):          │
-│    Ask: Does the leading party have capability to execute this     │
-│         direction?                                                  │
-│    Trigger to eliminate: Core capability completely mismatched     │
-│                          (e.g., asking non-programmer to handwrite │
-│                           a compiler)                               │
-│    Trigger to downgrade: Capability partially missing but can be   │
-│                          learned/outsourced → mark "need to        │
-│                          supplement capability"                     │
-│    Source: Facet1's diverge result (who leads, what capabilities)  │
-│                                                                     │
-│  P3-Risk Cull (corresponds to Facet5: Risk & Abyss):              │
-│    Ask: Does this direction have unbearable risk?                  │
-│    Trigger to eliminate: Worst case causes irreversible loss       │
-│                          (data loss/legal consequences/            │
-│                           physical harm)                            │
-│    Trigger to downgrade: Worst case severe but tolerable → mark    │
-│                          "high risk", increase variance            │
-│    Source: Facet5's diverge result (deepest pits and worst cases)  │
-│                                                                     │
-│  P4-Compare Cull (corresponds to Facet8: Convergence & Mutual      │
-│                  Benefit, multi-direction horizontal comparison):  │
-│    Ask: Is this direction clearly inferior to another direction?   │
-│    Method:                                                          │
-│      ① List all retained directions' performance on 8 facets       │
-│         (good/medium/poor)                                          │
-│      ② If Direction A ≥ Direction B on ≥6 facets, and              │
-│         significantly better on at least 2 facets                  │
-│         → A dominates B, eliminate B                                │
-│      ③ If Direction A = Direction B on ≥5 facets, only 1~2 differ  │
-│         → A and B highly overlap → merge into one direction        │
-│            (keep A's advantages + supplement B's advantages)        │
-│      ④ If neither condition met → keep all directions, no culling  │
-│                                                                     │
-│  P5-Minimum Retention:                                              │
+  After P0~P4, P5-Minimum Retention applies: at least 2 directions must remain.
 │    After P0~P4 execution, if remaining directions < 2:             │
 │      → Return to diverge phase, re-diverge based on reasons        │
 │         for elimination                                             │

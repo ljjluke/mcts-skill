@@ -325,17 +325,31 @@ function main() {
             case "cull": {
                 const s = JSON.parse(o.solutions || "[]");
                 const criteria = JSON.parse(o.criteria || "{}");
-                // Apply culling rules: P0(boundary) → P1(foundation) → P2(force) → P3(risk) → P4(compare)
-                // This is a numerical pass-through; full culling logic is in the LLM diverge engine
+                // Culling criteria: P0(boundary) → P1(foundation) → P2(force) → P3(risk) → P4(compare)
+                // Each criterion maps to a solution field set by the LLM during converge
                 const kept = [], culled = [];
+                const cullPriority = ['boundary','foundation','force','risk','compare'];
                 for (const sol of s) {
                     const violates = [];
-                    if (criteria.boundary && sol.violates_boundary) violates.push('P0-boundary');
-                    if (criteria.foundation && sol.exceeds_resources) violates.push('P1-foundation');
+                    for (const rule of cullPriority) {
+                        if (criteria[rule]) {
+                            const flagMap = {
+                                boundary: 'violates_boundary',
+                                foundation: 'exceeds_resources',
+                                force: 'capability_mismatch',
+                                risk: 'unbearable_risk',
+                                compare: 'dominated',
+                            };
+                            if (sol[flagMap[rule]]) violates.push(`P${cullPriority.indexOf(rule)}-${rule}`);
+                        }
+                    }
                     if (violates.length > 0) { culled.push({ id: sol.id, reasons: violates }); }
                     else kept.push(sol);
                 }
-                output({ kept: kept.map(x => x.id), culled, summary: `${s.length} -> ${kept.length} kept, ${culled.length} culled` });
+                const summary = kept.length < 2
+                    ? `${s.length} -> ${kept.length} kept (P5: need at least 2, re-diverge)`
+                    : `${s.length} -> ${kept.length} kept, ${culled.length} culled`;
+                output({ kept: kept.map(x => x.id), culled, summary, minimum_retention_violated: kept.length < 2 });
                 break;
             }
             case "coverage-matrix": {
