@@ -86,34 +86,32 @@ User Need
 │                                                         │
 ├─────────────────────────────────────────────────────────┤
 │       🗣️ SURPRISE & CONFIRM — Horizon Scan Feedback      │
-│       "让用户知道你以为知道的东西"                         │
+│       "Show the user what you found that they didn't     │
+│        know to ask for"                                   │
 │                                                         │
 │  AFTER completing Horizon Scan but BEFORE entering       │
 │  Eight-Facet Mirror, you MUST present your findings      │
 │  to the user and ask them for direction.                 │
 │                                                         │
-│  Format:                                                 │
-│    "🔍 我搜索了一些资料，发现了一些你可能感兴趣的方面： │
-│                                                                                                                          
-│     ① [具体发现1] — 这个方向可能是因为...                │
-│     ② [具体发现2] — 这与你的需求有这些关联...           │
-│     ③ [具体发现3] — 目前不确定的是...                    │
-│                                                                                                                          
-│     你想先从哪个方向深入？或者这些都相关吗？"             │
+│  Format (in user's language):                            │
+│    "🔍 I searched and found some areas you might be      │
+│     interested in:                                       │
+│      ① [Finding 1] — this could be relevant because...   │
+│      ② [Finding 2] — relates to your need in this way... │
+│      ③ [Finding 3] — there are unknowns here...          │
+│      Which direction should I explore first?"            │
 │                                                         │
-│  The purpose of this step is:                            │
-│  • Show the user things they DIDN'T ask about but MIGHT  │
-│    find valuable — this is the "用户自己都不知道" moment │
+│  The purpose of this step:                               │
+│  • Show the user things they DIDN'T ask about but        │
+│    MIGHT find valuable — the "用户自己都不知道" moment   │
 │  • Let the user CHOOSE the direction — don't assume      │
 │  • Validate that your search is in the right ballpark    │
 │                                                         │
-│  ⛔ Do NOT skip this step and proceed directly to        │
-│     Eight-Facet Mirror. The user needs to see what you   │
-│     found before you start analyzing.                     │
-│                                                         │
+│  ⛔ Do NOT skip this step. Do NOT proceed directly to    │
+│     Eight-Facet Mirror without presenting findings.      │
 │  ⛔ Do NOT just summarize — ask SPECIFIC questions        │
 │     about what you discovered that the user didn't ask   │
-│     for. This is the whole point of horizon scanning.    │
+│     for. The output must be in the user's language.       │
 │                                                         │
 ├─────────────────────────────────────────────────────────┤
 │                Diverge Phase (Brainstorming)            │
