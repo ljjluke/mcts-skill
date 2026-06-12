@@ -1,5 +1,5 @@
 {
-  "description": "MCTS-TD Memory hooks — auto memory management: load -> read -> write -> consolidate",
+  "description": "MCTS-TD Memory hooks — 全程跟随 Agent: Setup 启动后台监控, SessionStart 清理旧版+加载记忆, SessionEnd 巩固",
   "hooks": {
     "Setup": [
       {
@@ -7,7 +7,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "echo \"[MCTS-TD] Memory Agent 已装载 — 史官记录中\"",
+            "command": "node -e \"const p=require('path').join(require('os').homedir(),'.claude/plugins/cache/mcts-td-planner/mcts-td-planner');const d=require('fs').readdirSync(p).filter(x=>/^\\d/.test(x)).sort();const s=require('path').join(p,d[d.length-1],'scripts/agent_daemon.js');if(require('fs').existsSync(s)){require('child_process').execSync('node \\\"'+s+'\\\" start > /dev/null 2>&1 \\u0026');console.log('[MCTS-TD] Agent daemon started')}else{console.log('[MCTS-TD] Agent daemon starting...')}\"",
             "timeout": 5
           }
         ]
@@ -19,8 +19,20 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const fs=require('fs');const path=require('path');const os=require('os');const cache=path.join(os.homedir(),'.claude/plugins/cache/mcts-td-planner/mcts-td-planner');if(!fs.existsSync(cache))process.exit(0);const dirs=fs.readdirSync(cache).filter(d=>/^\\d+\\.\\d+\\.\\d+$/.test(d)).sort((a,b)=>{const[a1,a2,a3]=a.split('.').map(Number);const[b1,b2,b3]=b.split('.').map(Number);return b1-a1||b2-a2||b3-a3});const latest=dirs[0];for(const d of dirs.slice(1)){fs.rmSync(path.join(cache,d),{recursive:true,force:true})};console.log('[MCTS-TD] Ready v'+latest);(function(){try{const io=require(path.join(cache,latest,'scripts/mma/io'));const kg=io.loadMMA();if(kg.meta.total_points>0){console.log('[MCTS-TD] Memory loaded: '+kg.meta.total_points+' knowledge points across '+(Object.keys(kg.meridians).filter(k=>kg.meridians[k].points.length>0).length)+' meridians')}else{console.log('[MCTS-TD] Cold start — no prior knowledge')}}catch(e){console.log('[MCTS-TD] Memory engine loaded')}})()\"",
+            "command": "node -e \"const fs=require('fs');const path=require('path');const os=require('os');const cache=path.join(os.homedir(),'.claude/plugins/cache/mcts-td-planner/mcts-td-planner');if(!fs.existsSync(cache))process.exit(0);const dirs=fs.readdirSync(cache).filter(d=>/^\\d+\\.\\d+\\.\\d+$/.test(d)).sort((a,b)=>{const[a1,a2,a3]=a.split('.').map(Number);const[b1,b2,b3]=b.split('.').map(Number);return b1-a1||b2-a2||b3-a3});const latest=dirs[0];for(const d of dirs.slice(1)){fs.rmSync(path.join(cache,d),{recursive:true,force:true})};console.log('[MCTS-TD] Ready v'+latest);(function(){try{const io=require(path.join(cache,latest,'scripts/mma/io'));const kg=io.loadMMA();if(kg.meta.total_points>0){console.log('[MCTS-TD] Memory loaded: '+kg.meta.total_points+' points across '+(Object.keys(kg.meridians).filter(k=>kg.meridians[k].points.length>0).length)+' meridians')}else{console.log('[MCTS-TD] Cold start')}}catch(e){}})()\"",
             "timeout": 15
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"const fs=require('fs');const path=require('path');const os=require('os');const mem=path.join(os.homedir(),'.claude/data/skills/mcts-td-planner/memory');const bf=path.join(mem,'agent_buffer.json');let buf={pending:[]};if(fs.existsSync(bf)){try{buf=JSON.parse(fs.readFileSync(bf,'utf-8'))}catch(e){}};buf.pending.push({type:'deqi',data:{auto:true},timestamp:new Date().toISOString()});if(buf.pending.length>50)buf.pending=buf.pending.slice(-50);fs.writeFileSync(bf,JSON.stringify(buf))\"",
+            "timeout": 3
           }
         ]
       }
@@ -31,8 +43,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const path=require('path');const os=require('os');const cache=path.join(os.homedir(),'.claude/plugins/cache/mcts-td-planner/mcts-td-planner');const dirs=require('fs').readdirSync(cache).filter(d=>/^\\d+\\.\\d+\\.\\d+$/.test(d)).sort();const p=path.join(cache,dirs[0]);try{const io=require(p+'/scripts/mma/io');const kg=io.loadMMA();const count=kg.meta.total_points;io.saveMMA(kg);console.log('[MCTS-TD] Session saved — '+count+' points consolidated')}catch(e){console.log('[MCTS-TD] Session end')}\"",
-            "timeout": 30
+            "command": "node -e \"const fs=require('fs');const path=require('path');const os=require('os');const mem=path.join(os.homedir(),'.claude/data/skills/mcts-td-planner/memory');const bf=path.join(mem,'agent_buffer.json');let buf={pending:[]};if(fs.existsSync(bf)){try{buf=JSON.parse(fs.readFileSync(bf,'utf-8'))}catch(e){}};buf.pending.push({type:'session_end',data:{},timestamp:new Date().toISOString()});fs.writeFileSync(bf,JSON.stringify(buf))\"",
+            "timeout": 3
           }
         ]
       }
