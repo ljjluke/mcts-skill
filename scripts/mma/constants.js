@@ -15,6 +15,8 @@ const MMA_FILE = path.join(MEMORY_DIR, 'meridian_kg.json');
 const MMA_SHARDS_DIR = path.join(MEMORY_DIR, 'shards'); // 经脉分片目录
 const WORKING_MEMORY_FILE = path.join(MEMORY_DIR, 'working_memory.json');
 const ARCHIVE_DIR = path.join(MEMORY_DIR, 'archive');
+const WAL_DIR = path.join(MEMORY_DIR, 'wal');
+const LOCK_DIR = path.join(MEMORY_DIR, 'locks');
 
 // ===== 十二经脉 (12 Primary Meridians) =====
 // 领域无关的通用认知维度 — 适配任何领域(编程/教育/医疗/驾驶/...)
@@ -454,7 +456,7 @@ function getPrevHexagram(current) {
 }
 
 module.exports = {
-    DATA_DIR, MEMORY_DIR, MMA_FILE, MMA_SHARDS_DIR, WORKING_MEMORY_FILE, ARCHIVE_DIR,
+    DATA_DIR, MEMORY_DIR, MMA_FILE, MMA_SHARDS_DIR, WORKING_MEMORY_FILE, ARCHIVE_DIR, WAL_DIR, LOCK_DIR,
     TWELVE_MERIDIANS, EIGHT_EXTRA_MERIDIANS,
     SHU_LEVELS, SPECIAL_POINT_TYPES,
     KNOWLEDGE_DIMENSIONS, EIGHT_FACET_QUESTIONS,

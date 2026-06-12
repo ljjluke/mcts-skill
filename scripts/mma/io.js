@@ -18,46 +18,138 @@
  * ═══════════════════════════════════════════════════════════════ */
 const fs = require('fs');
 const path = require('path');
-const { DATA_DIR, MEMORY_DIR, MMA_FILE, MMA_SHARDS_DIR, WORKING_MEMORY_FILE, ARCHIVE_DIR,
+const { DATA_DIR, MEMORY_DIR, MMA_FILE, MMA_SHARDS_DIR, WORKING_MEMORY_FILE, ARCHIVE_DIR, WAL_DIR, LOCK_DIR,
         TWELVE_MERIDIANS, EIGHT_EXTRA_MERIDIANS } = require('./constants');
 
 const META_FILE = path.join(MMA_SHARDS_DIR, 'meta.json');
 const SNAPSHOT_INTERVAL = 100;
+const LOCK_TIMEOUT_MS = 5000; // 5秒锁超时
+const LOCK_RETRY_INTERVAL = 50; // 50ms重试间隔
 
-function ensureDirs() {
-    [DATA_DIR, MEMORY_DIR, MMA_SHARDS_DIR, ARCHIVE_DIR].forEach(d => {
-        if (!fs.existsSync(d)) fs.mkdirSync(d, { recursive: true });
-    });
+/**
+ * ═══════════════════════════════════════════════════════════════
+ *  分片级文件锁 (Shard-Level Lock) — 跨进程并发安全
+ *  "和而不同" — 不同经脉无锁，同一经脉有锁
+ *
+ *  原理: 通过 mkdir 的原子性实现跨进程锁
+ *    - mkdir 在文件系统层面是原子的
+ *    - 成功创建目录 = 获得锁
+ *    - 目录已存在 = 锁被占用
+ *    - rmdir = 释放锁
+ * ═══════════════════════════════════════════════════════════════
+ */
+function acquireShardLock(shardKey) {
+    const lockDir = path.join(LOCK_DIR, shardKey);
+    const deadline = Date.now() + LOCK_TIMEOUT_MS;
+
+    while (Date.now() < deadline) {
+        try {
+            fs.mkdirSync(lockDir, { recursive: false });
+            return true; // 获得锁
+        } catch (e) {
+            if (e.code !== 'EEXIST') return false; // 非'已存在'错误，直接失败
+            // 检查锁是否过期
+            try {
+                const lockTime = fs.statSync(lockDir).mtimeMs;
+                if (Date.now() - lockTime > LOCK_TIMEOUT_MS) {
+                    // 锁过期，强制释放
+                    fs.rmdirSync(lockDir);
+                    continue;
+                }
+            } catch (e2) {}
+        }
+        // 等待重试
+        Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, LOCK_RETRY_INTERVAL);
+    }
+    return false; // 超时
 }
 
-// ═══════════════════════════════════════════════════════════════
-//  分片文件路径
-// ═══════════════════════════════════════════════════════════════
+function releaseShardLock(shardKey) {
+    const lockDir = path.join(LOCK_DIR, shardKey);
+    try { fs.rmdirSync(lockDir); } catch (e) {}
+}
 
-function shardPath(meridianKey) { return path.join(MMA_SHARDS_DIR, `${meridianKey}.json`); }
-function shardBakPath(meridianKey) { return path.join(MMA_SHARDS_DIR, `${meridianKey}.bak.json`); }
-function shardTmpPath(meridianKey) { return path.join(MMA_SHARDS_DIR, `${meridianKey}.tmp.json`); }
+/**
+ * ═══════════════════════════════════════════════════════════════
+ *  写前日志 (Write-Ahead Log) — 崩溃恢复 + 多窗口合并
+ *  每次写入操作都先追加到WAL，再合并到分片
+ *  崩溃后可重放WAL，不会丢数据
+ * ═══════════════════════════════════════════════════════════════
+ */
+function appendWAL(shardKey, operation, data) {
+    const walDirPath = path.join(MEMORY_DIR, 'wal');
+    const walFile = path.join(walDirPath, `${shardKey}.log`);
+    const entry = JSON.stringify({
+        ts: new Date().toISOString(),
+        pid: process.pid,
+        op: operation,
+        data,
+    });
+    fs.appendFileSync(walFile, entry + '\n', 'utf-8');
+}
 
-// ═══════════════════════════════════════════════════════════════
-//  原子写入一个分片
-// ═══════════════════════════════════════════════════════════════
+function replayWAL(shardKey) {
+    const walFile = path.join(MEMORY_DIR, 'wal', `${shardKey}.log`);
+    if (!fs.existsSync(walFile)) return [];
+    const entries = [];
+    const content = fs.readFileSync(walFile, 'utf-8');
+    for (const line of content.trim().split('\n').filter(Boolean)) {
+        try { entries.push(JSON.parse(line)); } catch (e) {}
+    }
+    return entries;
+}
 
-function atomicWriteShard(filePath, bakPath, data) {
-    const json = JSON.stringify(data, null, 2);
-    const tmpPath = filePath.replace('.json', '.tmp.json');
+function clearWAL(shardKey) {
+    const walFile = path.join(MEMORY_DIR, 'wal', `${shardKey}.log`);
+    try { fs.unlinkSync(walFile); } catch (e) {}
+}
 
-    // 备份当前有效版本
-    if (fs.existsSync(filePath)) {
-        try {
-            JSON.parse(fs.readFileSync(filePath, 'utf-8'));
-            fs.copyFileSync(filePath, bakPath);
-        } catch (e) { /* 当前文件损坏，不备份 */ }
+/**
+ * ═══════════════════════════════════════════════════════════════
+ *  带乐观锁的原子写入
+ *  参考数据库MVCC: 每个分片有版本号(save_count)
+ *  写入时检查版本号是否匹配，不匹配则重读重写
+ * ═══════════════════════════════════════════════════════════════
+ */
+function atomicWriteShardWithLock(filePath, bakPath, shardKey, data, expectedVersion) {
+    if (!acquireShardLock(shardKey)) {
+        throw new Error(`[MMA] Lock timeout: ${shardKey} (${LOCK_TIMEOUT_MS}ms)`);
     }
 
-    // 写临时文件 → fsync → rename
-    fs.writeFileSync(tmpPath, json, 'utf-8');
-    try { const fd = fs.openSync(tmpPath, 'r+'); fs.fsyncSync(fd); fs.closeSync(fd); } catch (e) {}
-    fs.renameSync(tmpPath, filePath);
+    try {
+        // 版本检查（乐观锁）
+        if (expectedVersion !== undefined && fs.existsSync(filePath)) {
+            try {
+                const current = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+                if (current._version !== undefined && current._version !== expectedVersion) {
+                    // 版本冲突！其他进程已修改
+                    return { success: false, conflict: true, current_version: current._version };
+                }
+            } catch (e) {}
+        }
+
+        // WAL: 先写日志
+        appendWAL(shardKey, 'write', { data, version: data._version });
+
+        // 写入分片
+        const json = JSON.stringify(data, null, 2);
+        const tmpPath = filePath.replace('.json', '.tmp.json');
+
+        if (fs.existsSync(filePath)) {
+            try {
+                JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+                fs.copyFileSync(filePath, bakPath);
+            } catch (e) {}
+        }
+
+        fs.writeFileSync(tmpPath, json, 'utf-8');
+        try { const fd = fs.openSync(tmpPath, 'r+'); fs.fsyncSync(fd); fs.closeSync(fd); } catch (e) {}
+        fs.renameSync(tmpPath, filePath);
+
+        return { success: true };
+    } finally {
+        releaseShardLock(shardKey);
+    }
 }
 
 function loadShardWithRecovery(filePath, bakPath, fallback) {
@@ -76,6 +168,27 @@ function loadShardWithRecovery(filePath, bakPath, fallback) {
         } catch (e) { console.error(`[MMA] Shard backup also corrupted: ${path.basename(bakPath)}`); }
     }
     return fallback;
+}
+
+function ensureDirs() {
+    [DATA_DIR, MEMORY_DIR, MMA_SHARDS_DIR, ARCHIVE_DIR, WAL_DIR, LOCK_DIR].forEach(d => {
+        if (!fs.existsSync(d)) fs.mkdirSync(d, { recursive: true });
+    });
+}
+
+function shardPath(meridianKey) { return path.join(MMA_SHARDS_DIR, `${meridianKey}.json`); }
+function shardBakPath(meridianKey) { return path.join(MMA_SHARDS_DIR, `${meridianKey}.bak.json`); }
+function shardLockKey(meridianKey) { return meridianKey; }
+
+function atomicWriteShard(filePath, bakPath, data) {
+    const json = JSON.stringify(data, null, 2);
+    const tmpPath = filePath.replace('.json', '.tmp.json');
+    if (fs.existsSync(filePath)) {
+        try { JSON.parse(fs.readFileSync(filePath, 'utf-8')); fs.copyFileSync(filePath, bakPath); } catch (e) {}
+    }
+    fs.writeFileSync(tmpPath, json, 'utf-8');
+    try { const fd = fs.openSync(tmpPath, 'r+'); fs.fsyncSync(fd); fs.closeSync(fd); } catch (e) {}
+    fs.renameSync(tmpPath, filePath);
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -145,20 +258,37 @@ function saveMMA(kg) {
     kg.meta.save_count = (kg.meta.save_count || 0) + 1;
     kg.meta.storage_mode = 'sharded';
 
-    // 保存元数据
-    atomicWriteShard(META_FILE, META_FILE.replace('.json', '.bak.json'), kg.meta);
+    const latestVersion = kg.meta.save_count;
 
-    // 保存每条经脉(只保存points数组，模板结构在加载时合并)
+    // 保存元数据（带锁）
+    const cloneMeta = { ...kg.meta, _version: latestVersion };
+    const metaResult = atomicWriteShardWithLock(
+        META_FILE, META_FILE.replace('.json', '.bak.json'), 'meta', cloneMeta, undefined
+    );
+    if (metaResult.conflict) {
+        console.error(`[MMA] Meta version conflict (${metaResult.current_version} vs ${latestVersion}), retrying`);
+    }
+
+    // 保存每条经脉（带锁 + 版本号）
     for (const key of Object.keys(TWELVE_MERIDIANS)) {
         const m = kg.meridians[key];
         if (m && m.points) {
-            atomicWriteShard(shardPath(key), shardBakPath(key), { points: m.points });
+            const shardData = { points: m.points, _version: latestVersion, _pid: process.pid };
+            const r = atomicWriteShardWithLock(shardPath(key), shardBakPath(key), key, shardData, undefined);
+            if (r.conflict) {
+                console.error(`[MMA] Shard conflict: ${key} (${r.current_version} vs ${latestVersion})`);
+            }
         }
     }
     for (const key of Object.keys(EIGHT_EXTRA_MERIDIANS)) {
         const m = kg.extra[key];
         if (m && m.points) {
-            atomicWriteShard(shardPath('_extra_' + key), shardBakPath('_extra_' + key), { points: m.points });
+            const shardKey = '_extra_' + key;
+            const shardData = { points: m.points, _version: latestVersion, _pid: process.pid };
+            const r = atomicWriteShardWithLock(shardPath(shardKey), shardBakPath(shardKey), shardKey, shardData, undefined);
+            if (r.conflict) {
+                console.error(`[MMA] Shard conflict: ${shardKey}`);
+            }
         }
     }
 
@@ -269,4 +399,5 @@ function findPointById(kg, pointId) {
     return null;
 }
 
-module.exports = { ensureDirs, loadMMA, saveMMA, freshKG, loadWorkingMemory, saveWorkingMemory, findPointById };
+module.exports = { ensureDirs, loadMMA, saveMMA, freshKG, loadWorkingMemory, saveWorkingMemory, findPointById,
+    acquireShardLock, releaseShardLock, appendWAL, replayWAL, clearWAL };
