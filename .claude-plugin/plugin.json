@@ -1,5 +1,5 @@
 {
-  "name": "mcts-td-planner",
+  "name": "mcts",
   "version": "1.6.1",
   "description": "Universal decision engine — MCTS tree search × TD temporal learning × Eight-Facet Mirror (Taoist Bagua). Think first, execute once. Multi-language (zh/ja/ko/en).",
   "author": {
