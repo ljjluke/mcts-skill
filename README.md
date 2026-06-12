@@ -173,18 +173,18 @@ User intent → Constraint Collection
 ```bash
 # International (GitHub)
 /plugin marketplace add https://github.com/ljjluke/mcts-skill
-/plugin install mcts-td-planner
+/plugin install mcts
 
 # China (Gitee)
 /plugin marketplace add https://gitee.com/luke2438107466/mcts-skill
-/plugin install mcts-td-planner
+/plugin install mcts
 ```
 
 ## 🔄 Upgrade
 
 ```bash
-/plugin marketplace update mcts-td-planner
-/plugin install mcts-td-planner
+/plugin marketplace update mcts
+/plugin install mcts
 /reload-plugins
 ```
 
