@@ -22,9 +22,6 @@
     "simulation"
   ],
   "skills": [
-    "./skills/mcts-td-planner"
-  ],
-  "commands": [
-    "./skills/mcts-td-planner"
+    "./"
   ]
 }
