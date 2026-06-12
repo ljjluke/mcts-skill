@@ -39,13 +39,19 @@ After:  You ask → AI simulates all options internally → picks the best → e
 | 🎯 **MCTS Tree Search** | Like AlphaGo — Selection → Expansion → Simulation → Backprop. Multi-round convergence on optimal path. |
 | ⚖️ **Temporal Difference (TD)** | Learns from every execution. Gets smarter across sessions. |
 | ☯️ **Eight-Facet Mirror** | Inspired by Taoist Bagua (八卦) — 8 universal perspectives ensure no blind spot. |
-| 🗣️ **Language Adaptive** | Auto-detects the user's language — any language. English engine internally, user's language on display. Works for writing systems worldwide. |
+| 🗣️ **Language Adaptive** | Auto-detects the user's language — any language. English engine internally, user's language on display. |
 | 🖥 **Node.js Native** | Zero extra deps. Cross-platform (Win/Mac/Linux). Runs wherever Claude Code runs. |
-| 🧠 **Human-like Memory** | Associative recall → fragment completion → external verification. Knowledge graph with state machine. |
-| 🧠 **MMA Meridian Memory** | 12 meridians + 8 extraordinary vessels. Acupoint-based knowledge storage with Deqi recall and Ziwu Liuzhu context triggering. 7 human-like cognitive optimizations. |
-| 🕵️ **Memory Agent (Sub-Agent)** | Silent observer — Court Historian (records) + Remonstrance Official (alerts). 5 auto-checkpoints. Watches entire session, alerts only on contradictions. |
-| 🔒 **Compression-Safe** | Triple-layer rules (YAML + COMPRESSION-SAFE blocks + code enforcement). Survives long contexts. |
+| 🧠 **Brain-Inspired Memory** | Episodic vs semantic memory · Reconsolidation window · Source monitoring · Elaboration depth |
+| 🏥 **Eight-Principle Diagnosis** | Exterior/Interior + Cold/Heat + Deficiency/Excess → Pulse diagnosis → Weight adjustment |
+| 🧠 **MMA Meridian Memory** | 12 meridians + 8 vessels + acupoint storage · Sharded storage (single shard loss = 1/16 impact) |
+| 🕵️ **Memory Agent Sub-Agent** | Court Historian (records) + Remonstrance Official (alerts). 5 checkpoints, speaks only on conflict. |
+| 🛡️ **9 Compliance Guards** | Anti-single-solution / Phase enforcement / Info priority / Diversity / Self-check / MemoryAgent / Compliance audit / Constraints / Engine mode |
+| 🎯 **Qi-Zheng Adaptive MCTS** | Dynamic UCB explore-exploit constant (0.5~2.5) + Shi (momentum) maturity |
+| ☯️ **Ganzhi + Liuyao + Feixing** | Spacetime encoding (10 stems+12 branches+60 Jiazi) · Hexagram stability · Nine Palaces Flying Stars |
+| 📊 **Four Images Maturity** | Old Yang / Young Yin / Young Yang / Old Yin — knowledge health quadrant |
+| 🔒 **Storage Safety** | Atomic write + dual copy + auto backup + shard crash recovery + old format migration |
 | ✅ **Self-Check + Blindspot Audit** | Questions its own conclusions before executing. Finds what you missed. |
+| 🔌 **Unified CLI** | `node scripts/mcts.js <engine> <cmd>` — 5 engines behind one entry point |
 
 ---
 
@@ -111,6 +117,13 @@ Inspired by the human meridian system from the Yellow Emperor's Inner Canon (《
 | Sleep consolidates memory | Session End Replay (睡眠回放) — accelerated replay with emotion-weighted boost |
 | Expert chunks patterns | Acupoint Clusters (腧穴集群) — co-occurring points auto-form knowledge chunks |
 | Old knowledge outdated → correct | State machine — HYPOTHESIS→PROVISIONAL→CONFIRMED→DISPUTED→REFUTED→SLEEPING→ARCHIVED |
+| **🆕 Episodic vs Semantic** | Episodic (experience) decays fast 60d / Semantic (knowledge) decays slow 90d |
+| **🆕 Memory Reconsolidation** | 30-min unstable window after recall, plasticity ×1.5 during window |
+| **🆕 Source Monitoring** | 7 reliability levels (firsthand 1.0→hearsay 0.2), reliable source ×1.1 weight |
+| **🆕 Elaboration Depth** | 4 levels (shallow/medium/deep/deepest) → initial consolidation +0~+6 |
+| **🆕 Eight-Principle Diagnosis** | Exterior/Interior + Cold/Heat + Deficiency/Excess → Pulse → Weight adjust |
+| **🆕 Four Images Maturity** | Old Yang / Young Yin / Young Yang / Old Yin — knowledge health quadrant |
+| **🆕 Meridian Sharding** | 16 independent meridian files, single shard loss = 1/16 impact, auto backup restore |
 
 ---
 
