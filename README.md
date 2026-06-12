@@ -170,9 +170,12 @@ User intent → Constraint Collection
 ## 🔄 Upgrade
 
 ```bash
-/plugin marketplace update
+/plugin marketplace update mcts-td-planner
 /plugin install mcts-td-planner
+/reload-plugins
 ```
+
+> Old versions are auto-cleaned after upgrade — no manual cleanup needed.
 
 Type any task. When you see the ⚡, it's working.
 

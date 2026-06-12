@@ -210,9 +210,12 @@ AI: ⚡ 这事有好几种做法，先让我想清楚
 ## 🔄 升级
 
 ```bash
-/plugin marketplace update
+/plugin marketplace update mcts-td-planner
 /plugin install mcts-td-planner
+/reload-plugins
 ```
+
+> 升级后旧版本会自动清理，无需手动操作。
 
 ### ⚡ 记忆安全
 
