@@ -302,24 +302,24 @@ Before anything else — before deciding "is this simple" or "do I need the engi
 ```
 EVERY user message → immediately decompose:
 
-  "帮我实现登录"
-    → 方案选择点分析:
-       认证方式? (JWT/Session/OAuth/...) → 有多个选择 ✓
-       前端实现? (React/Vue/原生/...) → 可能多个选择 ✓
-       密码存储? (bcrypt/argon2) → 只有一个合理做法 ✗
-    → 至少有1个子需求有多方案 → 启动发散引擎 ✓
+  "Add user login"
+    → Decision point analysis:
+       Auth method? (JWT/Session/OAuth/...) → multiple choices ✓
+       Frontend? (React/Vue/Native/...) → multiple choices ✓
+       Password storage? (bcrypt/argon2) → only one valid choice ✗
+    → At least 1 sub-need has options → start engine ✓
 
-  "1+1等于几"
-    → 方案选择点分析: 没有选择点，只有一个答案
-    → 直接回答，不启动引擎
+  "What is 1+1?"
+    → Decision point analysis: No decision points, one answer
+    → Direct answer, skip engine
 
-  "这段代码什么意思" (附代码)
-    → 方案选择点分析: 纯解释/审查，没有需要决策的地方
-    → 直接解释，不启动引擎
+  "Explain this code" (with code)
+    → Decision point analysis: Pure explanation, no decisions
+    → Direct explanation, skip engine
 
-  "你好"
-    → 方案选择点分析: 打招呼，没有任务
-    → 直接回复，不启动引擎
+  "Hello"
+    → Decision point analysis: Greeting, no task
+    → Direct reply, skip engine
 ```
 
 ### Step 1: Activate Based on Decomposition
