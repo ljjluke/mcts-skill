@@ -169,9 +169,10 @@ function processBuffer() {
         } catch (e) {}
     }
 
-    // 2. ashi — 写入新知识（已去重）
+    // 2. ashi — 写入新知识（已去重）+ 教学相长
     const ashiItems = merged.get('ashi_items') || [];
     let insertedCount = 0;
+    const insertedPoints = [];
     for (const entry of ashiItems.slice(0, BATCH_MAX)) {
         try {
             const data = entry.data || {};
@@ -179,10 +180,62 @@ function processBuffer() {
             const result = ashi.ashiInsert(kg, data);
             if (result && !result.rejected) {
                 insertedCount++;
+                insertedPoints.push(result);
             }
         } catch (e) {}
     }
     if (insertedCount > 0) results.push({ type: 'ashi', count: insertedCount });
+
+    // 教学相长: 新知识关联旧知识（温故知新）
+    for (const ins of insertedPoints) {
+        try {
+            const newPoint = ins.point;
+            const newTags = newPoint.tags || [];
+            if (newTags.length === 0) continue;
+
+            // 用新知识的 tags 做一次召回
+            const teachQuery = { tags: newTags, category: newPoint.category || '', limit: 10 };
+            const related = deqi.deqi(kg, teachQuery, {});
+
+            for (const rel of related) {
+                if (!rel.point || rel.point.id === newPoint.id) continue;
+
+                // 计算关联度: tags 重叠率
+                const relTags = rel.point.tags || [];
+                const overlap = newTags.filter(t => relTags.includes(t)).length;
+                const similarity = overlap / Math.max(newTags.length, 1);
+
+                if (similarity >= 0.8) {
+                    // 高度关联 → 阴阳对冲检测 (切磋琢磨)
+                    const newV = newPoint.q || 0.5;
+                    const oldV = rel.point.q || 0.5;
+                    if (Math.abs(newV - oldV) > 0.4) {
+                        // 观点相反 → DISPUTED
+                        rel.point.status = 'DISPUTED';
+                        rel.point.conflict_with = newPoint.id;
+                        rel.point.conflict_reason = `切磋琢磨: tags重叠${Math.round(similarity*100)}%, V差${Math.abs(newV-oldV).toFixed(2)}`;
+                    } else {
+                        // 观点一致 → 建立关联
+                        newPoint.related_points = newPoint.related_points || [];
+                        if (!newPoint.related_points.find(r => r.id === rel.point.id)) {
+                            newPoint.related_points.push({ id: rel.point.id, relation: 'teaching_learning', similarity });
+                        }
+                        rel.point.related_points = rel.point.related_points || [];
+                        if (!rel.point.related_points.find(r => r.id === newPoint.id)) {
+                            rel.point.related_points.push({ id: newPoint.id, relation: 'teaching_learning', similarity });
+                        }
+                    }
+                } else if (similarity >= 0.6) {
+                    // 中等关联 → 建立轻度关联
+                    newPoint.related_points = newPoint.related_points || [];
+                    if (!newPoint.related_points.find(r => r.id === rel.point.id)) {
+                        newPoint.related_points.push({ id: rel.point.id, relation: 'related', similarity });
+                    }
+                }
+            }
+            results.push({ type: 'teaching', point_id: newPoint.id, connected: related.length });
+        } catch (e) {}
+    }
 
     // 3. session_end
     if (merged.has('session_end_last')) {
