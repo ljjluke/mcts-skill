@@ -29,7 +29,7 @@ alwaysApply: true
 >
 > ```
 > ┌─────────────────────────────────────────────────────────────┐
-> │  MEMORY AGENT — 史官(Record Keeper) + 谏官(Remonstrance)     │
+> │  MEMORY AGENT — Historian (Record Keeper) + Censor (Remonstrance)     │
 > │  "左史记言，右史记事" —《礼记》                               │
 > │                                                              │
 > │  ① PRE_ENGINE — Engine start                                 │
@@ -38,7 +38,7 @@ alwaysApply: true
 > │     Output: SILENT (unless cold start → log once)            │
 > │                                                              │
 > │  ② DURING_DIVERGE — Diverge phase                            │
-> │     Perceive: detect 七情 signals from conversation          │
+> │     Perceive: detect Qi-Qing (seven emotions) signals from conversation          │
 > │     Build emotion timeline                                   │
 > │     Output: SILENT                                            │
 > │                                                              │
@@ -54,9 +54,9 @@ alwaysApply: true
 > │     Output: SILENT                                            │
 > │                                                              │
 > │  ④ PRE_CONVERGE — Before decision                           │
-> │     Detect: Yin-Yang conflict (阴阳对冲)                      │
+> │     Detect: Yin-Yang conflict                      │
 > │     ⚡ ONLY WHEN CONFLICT: output Remonstrance Alert          │
-> │     Format: "谏官进谏: [conflict detail]"                     │
+> │     Format: "Remonstrance: [conflict detail]"                     │
 > │     Max 2 alerts per session                                 │
 > │                                                              │
 > │  ⑤ POST_EXECUTION — After execution                         │
@@ -84,21 +84,21 @@ alwaysApply: true
 >   ⛔ If unsure: node scripts/mcts_guard.js decomposition-guard --claim '<JSON>'
 >   ⛔ If blocked: expand facets, list alternatives, acquire info first.
 >
-> STEP 0.5 (MANDATORY — Demand Refinement / 需求补全):
+> STEP 0.5 (MANDATORY — Demand Refinement):
 >   Before generating ANY solution, CHECK if the user's request is complete enough to generate valid solutions.
 >   ⛔ If CRITICAL info is missing (tech stack, dependencies, constraints, preferences, boundaries):
 >      → PAUSE → Ask structured questions (use AskUserQuestion — NOT free text)
 >      → NEVER assume "probably ok" for unstated constraints
 >   ⛔ If the request is vague or multi-interpretable:
->      → Clarify before proceeding — "你有具体的XX要求吗？"
+>      → Clarify before proceeding — "Any specific requirements?"
 >   ⛔ If you can self-confirm from project code: do it (e.g. read package.json for tech stack)
 >   → After answers, proceed to STEP 1.
 >
-> STEP 1: Output [八面审视镜] — 8 facets each with: concrete dimension name + score 0-10 + known info + blindspots + ideas.
-> STEP 2: Output [侦查报告] — per-facet recon findings + cross-validation.
-> STEP 3: Output [收敛方案] — 2~8 solutions, each with: approach + basis + complexity + difference from others + facet coverage matrix.
+> STEP 1: Output [Eight-Facet Mirror] — 8 facets each with: concrete dimension name + score 0-10 + known info + blindspots + ideas.
+> STEP 2: Output [Reconnaissance Report] — per-facet recon findings + cross-validation.
+> STEP 3: Output [Solutions] — 2~8 solutions, each with: approach + basis + complexity + difference from others + facet coverage matrix.
 >   → THEN auto-enter MCTS simulate. Do NOT pause for confirmation.
-> STEP 4: Output [决策报告] — MCTS ranking (V/n/σ²/confidence) + self-check (flaw find + reverse think + risk assess) + blindspot audit.
+> STEP 4: Output [Decision Report] — MCTS ranking (V/n/σ²/confidence) + self-check (flaw find + reverse think + risk assess) + blindspot audit.
 >
 > INFO ACQUISITION (5-level, NEVER skip ①→②→③):
 >   ① Memory graph query  ② Self-learn (web/code/docs)  ③ Diverge handoff  ④ Ask user (constraints ONLY)  ⑤ Assume (+0.1 variance)
@@ -389,9 +389,9 @@ After convergence:
 | Converge Engine | `engine/mcts-converge.md` | Aggregation + self-check + blindspot audit + TD update write-back |
 | TD Learning Engine | `engine/td-learner.md` | TD error, value update, knowledge graph, cross-session persistence |
 | 🧠 Memory Agent | `agents/memory-agent.md` | Silent observer: 史官+谏官 dual role, 5 checkpoints (recall→perceive→record→alert→consolidate) |
-| 🖥 MMA Engine | `scripts/meridian_memory.js` | Meridian Memory Algorithm: 得气/子午流注/循经感传/补泻/阿是穴/隐穴/睡眠回放/腧穴集群 |
+| 🖥 MMA Engine | `scripts/meridian_memory.js` | Meridian Memory Algorithm: Deqi/Ziwu/Propagation/Reinforce/Ashi/隐穴/睡眠回放/腧穴集群 |
 | 🖥 Compute Engine | `scripts/mcts_compute.js` | UCB/backprop/convergence/state machine + cull/coverage/user-ask logic |
-| 🛡️ Compliance Guard | `scripts/mcts_guard.js` | 7引擎守卫: 反唯一方案/阶段强制/信息获取优先级/方案多样性/自检/Memory Agent/合规审计 |
+| 🛡️ Compliance Guard | `scripts/mcts_guard.js` | 7 guards: anti-single/phase-enforce/info-priority/diversity/self-check/memory-agent/compliance |
 | 📋 Lifecycle Engine | `scripts/knowledge_lifecycle.js` | L-GCMS: gate filtering + tiered storage + forgetting curve + context recall (legacy, being replaced by MMA) |
 | Simulation Format | `policies/task-policy.md` | General solution generation rules, simulation format, scoring rubric |
 | 📖 Algorithm Ref | `references/algorithm-reference.md` | On-demand reference, not loaded in reasoning context |

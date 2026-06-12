@@ -61,7 +61,7 @@ User Need
                                  │
                                  ▼
 ┌──────────────────────────────────────────────────────────────────────────┐
-│  ☷ 坤 F2: 根基承载 — Assess Capability & Fill Gaps                                  │
+│  ☷ 坤 F2: Foundation — Assess Capability                                  │
 │  "地势坤，君子以厚德载物"                                                  │
 │                                                                          │
 │  Action:                                                                   │
@@ -73,20 +73,20 @@ User Need
                                  │
                                  ▼
 ┌──────────────────────────────────────────────────────────────────────────┐
-│  ☳ 震 F3: 变动突破 — Feedback Unknown Territory                                     │
+│  ☳ 震 F3: Change — Feedback Unknown                                     │
 │  "帝出乎震，万物出乎震" — New things emerge from disruption                                │
 │                                                                          │
 │  Action:                                                                   │
 │  ① Present F1 external findings to user                                │
 │  ② Tell user: I found directions you may not have noticed...                      │
 │  ③ Ask user: Which direction should I explore first?                                             │
-│  → ⛔ 禁止: Skip to subsequent analysis                                     │
-│  → ⛔ 禁止: Summarize without asking questions                                                │
+│  → ⛔ FORBIDDEN: Skip to subsequent analysis                                     │
+│  → ⛔ FORBIDDEN: Summarize without asking questions                                                │
 └────────────────────────────────┬─────────────────────────────────────────┘
                                  │
                                  ▼
 ┌──────────────────────────────────────────────────────────────────────────┐
-│  ☴ 巽 F4: 渗透传播 — Knowledge Breadth Scan                                         │
+│  ☴ 巽 F4: Penetration — Knowledge Breadth                                         │
 │  "随风巽，君子以申命行事" — Wind penetrates every gap                                    │
 │                                                                          │
 │  Action:                                                                   │
@@ -98,7 +98,7 @@ User Need
                                  │
                                  ▼
 ┌──────────────────────────────────────────────────────────────────────────┐
-│  ☵ 坎 F5: 风险深渊 — Deep Dive Risk                                             │
+│  ☵ 坎 F5: Risk — Deep Dive                                             │
 │  "习坎，重险也。水流而不盈" — Water knows every low point                            │
 │                                                                          │
 │  Action:                                                                   │
@@ -111,7 +111,7 @@ User Need
                                  │
                                  ▼
 ┌──────────────────────────────────────────────────────────────────────────┐
-│  ☲ 离 F6: 显眼依附 — Track External Dependencies                                         │
+│  ☲ 离 F6: Dependencies — Track External                                         │
 │  "明两作，大人以继明照于四方"                                            │
 │                                                                          │
 │  Action:                                                                   │
@@ -123,7 +123,7 @@ User Need
                                  │
                                  ▼
 ┌──────────────────────────────────────────────────────────────────────────┐
-│  ☶ 艮 F7: 边界止步 — Hard Constraint Check                                           │
+│  ☶ 艮 F7: Boundary — Hard Constraint                                           │
 │  "艮其背，不获其身" — Know when to stop                                    │
 │                                                                          │
 │  Action:                                                                   │
@@ -136,7 +136,7 @@ User Need
                                  │
                                  ▼
 ┌──────────────────────────────────────────────────────────────────────────┐
-│  ☱ 兑 F8: 汇聚共赢 — Conflict Balance & Direction Focus                                  │
+│  ☱ 兑 F8: Convergence — Balance & Focus                                  │
 │  "丽泽兑，君子以朋友讲习" — Two lakes connected to flow                              │
 │                                                                          │
 │  Action:                                                                   │

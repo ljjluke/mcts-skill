@@ -27,13 +27,13 @@ description: MCTS-TD Decision Engine "Step 0" — Requirement Constraint Collect
 
 ### Core Position
 
-在约束收集完成后、八面镜审视开始之前，插入一层"文化视角切换器"。Use 12 Chinese thought paradigms to examine from diverse dimensions，Output blindspot list for 8-facet mirror to carry。
+After constraint collection, before 8-facet mirror, insert a cultural perspective switcher.Use 12 Chinese thought paradigms to examine from diverse dimensions，Output blindspot list for 8-facet mirror to carry。
 
-**Matrix does NOT replace nor analyzed by the 8-facet mirror**。视角矩阵是给八面镜的"眼镜"——Let mirror examine with perspective-derived blindspots。
+**Matrix does NOT replace nor analyzed by the 8-facet mirror** — it provides lenses for it — Let mirror examine with perspective-derived blindspots。
 
 ### Perspective Output Rules
 
-每个视角的输出必须是**probing questions**，not assertions/conclusions：
+Each perspective output must be probing questions, not assertions/conclusions:
 
 ```
 ✅ CORRECT: Military perspective asks:"Who is surprise force? Host-guest dynamics?"
@@ -44,20 +44,20 @@ description: MCTS-TD Decision Engine "Step 0" — Requirement Constraint Collect
 
 Each paradigm = a way of seeing problems:
 
-| # | 视角 | Core Question | Origin |
+| # | Perspective | Core Question | Origin |
 |---|------|---------|---------|
-| 1 | **兵家** | 这是谁和谁的博弈？最优的战略位置在哪？奇正关系如何？主客方谁更有利？ | 孙子/孙膑《孙子兵法》 |
-| 2 | **医家** | 这个系统的症结在哪？气血（资源/信息）怎么流通？表里寒热虚实怎么判断？ | 《黄帝内经》/张仲景 |
-| 3 | **农家** | 根本的生存资料是什么？周期性规律是什么？什么才是"根本"而不只是"表面"？ | 氾胜之/贾思勰《齐民要术》 |
-| 4 | **工匠** | 这件事做成需要什么条件？核心工艺/手艺在哪？怎么从0到1？有什么现成工具复用？ | 鲁班/《天工开物》 |
-| 5 | **纵横家** | 各方的利益诉求是什么？最大的公约数在哪？合纵还是连横？谁是可以争取的盟友？ | 鬼谷子/苏秦张仪 |
-| 6 | **道家** | 这件事的反向是什么？不做什么比做什么更重要？强行干预还是顺势而为？ | 老子/庄子 |
-| 7 | **法家** | 规则是什么？激励和惩罚怎么设置？制度保障在哪？怎么执行才能落地？ | 韩非子/商鞅 |
-| 8 | **儒家** | 这件事的伦理根基是什么？人的价值在哪？秩序和人情如何平衡？ | 孔子/孟子 |
-| 9 | **史家** | 历史上类似的事发展结果如何？这件事处在什么"周期"阶段？兴衰规律的启示？ | 司马迁/《资治通鉴》 |
-| 10 | **阴阳家** | 哪些力量在对抗？怎么达到平衡？相生相克关系如何？变化趋势是什么？ | 邹衍/阴阳五行 |
-| 11 | **禅家** | 放下所有预设再来看，这件事的本质是什么？哪些是概念/标签/执念？ | 慧能/《坛经》 |
-| 12 | **水利家** | 资源怎么流动？通路在哪断在哪？堵和疏哪个更有效？疏导的渠道是什么？ | 李冰/潘季驯 |
+| 1 | **Military** | 这是谁和谁的博弈？最优的战略位置在哪？奇正关系如何？主客方谁更有利？ | 孙子/孙膑《孙子兵法》 |
+| 2 | **Medical** | 这个系统的症结在哪？气血（资源/信息）怎么流通？表里寒热虚实怎么判断？ | 《黄帝内经》/张仲景 |
+| 3 | **Agricultural** | 根本的生存资料是什么？周期性规律是什么？什么才是"根本"而不只是"表面"？ | 氾胜之/贾思勰《齐民要术》 |
+| 4 | **Artisan** | 这件事做成需要什么条件？核心工艺/手艺在哪？怎么从0到1？有什么现成工具复用？ | 鲁班/《天工开物》 |
+| 5 | **Strategist** | 各方的利益诉求是什么？最大的公约数在哪？合纵还是连横？谁是可以争取的盟友？ | 鬼谷子/苏秦张仪 |
+| 6 | **Daoist** | 这件事的反向是什么？不做什么比做什么更重要？强行干预还是顺势而为？ | 老子/庄子 |
+| 7 | **Legalist** | 规则是什么？激励和惩罚怎么设置？制度保障在哪？怎么执行才能落地？ | 韩非子/商鞅 |
+| 8 | **Confucian** | 这件事的伦理根基是什么？人的价值在哪？秩序和人情如何平衡？ | 孔子/孟子 |
+| 9 | **Historical** | 历史上类似的事发展结果如何？这件事处在什么"周期"阶段？兴衰规律的启示？ | 司马迁/《资治通鉴》 |
+| 10 | **Yin-Yang** | 哪些力量在对抗？怎么达到平衡？相生相克关系如何？变化趋势是什么？ | 邹衍/阴阳五行 |
+| 11 | **Zen** | 放下所有预设再来看，这件事的本质是什么？哪些是概念/标签/执念？ | 慧能/《坛经》 |
+| 12 | **Hydraulic** | 资源怎么流动？通路在哪断在哪？堵和疏哪个更有效？疏导的渠道是什么？ | 李冰/潘季驯 |
 
 ### 5-Element Perspective Selector
 

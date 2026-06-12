@@ -1,5 +1,5 @@
 {
-  "description": "MCTS-TD Memory hooks — 自动记忆管理: 加载→读取→写入→巩固",
+  "description": "MCTS-TD Memory hooks — auto memory management: load -> read -> write -> consolidate",
   "hooks": {
     "Setup": [
       {

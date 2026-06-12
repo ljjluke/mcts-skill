@@ -2,36 +2,36 @@
 
 ## 1.6.0 (2026-06-12)
 
-### Major — 记忆引擎仿脑化 (Brain-Inspired Memory)
-- **情景记忆 vs 语义记忆**: 穴位新增 `memory_type` 字段(episodic/semantic)。情景记忆衰减快(60d)、语义记忆衰减慢(90d)。编码特异性: 情景记忆匹配当前 task_type 时得气分数×1.15
-- **记忆再巩固 (Reconsolidation)**: 得气召回后穴位进入30分钟"不稳定窗口"，窗口内TD更新可塑性×1.5，巩固分+3。"温故而知新"的神经基础
-- **源监控 (Source Monitoring)**: 7级来源可靠性(亲历1.0→传闻0.2)。`source` 字段激活，得气计分时可靠源×1.1、不可靠源×0.7
-- **精细加工深度**: 4级评估(浅/中/深/最深)→影响初始巩固分(+0~+6)。"格物致知"的层次映射
+### Major — Brain-Inspired Memory Engine
+- **Episodic vs Semantic Memory**: acupoints add `memory_type` 字段(episodic/semantic)。Episodic decays fast (60d), semantic slow (90d)。Encoding specificity: episodic task_type match -> deqi score x1.15
+- **Memory Reconsolidation**: deqi recall opens 30-min reconsolidation window，window TD update plasticity x1.5, consolidation +3。The neural basis of "review the old, know the new"
+- **Source Monitoring**: 7-level source reliability (firsthand 1.0 -> hearsay 0.2).`source` 字段激活，得气计分时可靠源×1.1、不可靠源×0.7
+- **Elaboration Depth**: 4 levels (shallow/medium/deep/deepest) -> consolidation +0~+6."格物致知"的层次映射
 
 ### Added
-- `scripts/mcts_guard.js` — 9引擎合规守卫: 反唯一方案/阶段强制/信息获取优先级/方案多样性/自检/MemoryAgent/合规审计/约束检查/引擎模式
-- `scripts/mcts.js` — 统一CLI入口，一命令管理5子引擎(compute/guard/mma/lang/memory)
-- `scripts/mma/diagnosis.js` — 八纲辨证知识诊断: 表里寒热虚实→脉象(浮沉数迟缓滑涩平)→权重调整
-- `scripts/mcts_guard.js constraint-checklist` — 9项约束检查(6硬3软)，区分 auto_detect/必须问用户
+- `scripts/mcts_guard.js` — 9 Compliance Guards: anti-single/phase-enforce/info-priority/diversity/self-check/memory-agent/compliance/constraint/engine-mode
+- `scripts/mcts.js` — Unified CLI, one command for 5 engines (compute/guard/mma/lang/memory)
+- `scripts/mma/diagnosis.js` — Eight-Principle Diagnosis: Biao-Li-Han-Re-Xu-Shi -> Pulse -> Weight adjust
+- `scripts/mcts_guard.js constraint-checklist` — 9 constraint checks (6 hard 3 soft), auto_detect vs ask-user
 - `scripts/mcts_guard.js engine-mode` — 4模式自动判定(full/quick/re-simulate/direct)
-- `scripts/mma/constants.js` — 天干地支时空编码(10天干+12地支+60甲子+日干支精确算法+十二消息卦)
-- `scripts/mma/constants.js` — `SOURCE_RELIABILITY` 7级源可靠性权重
+- `scripts/mma/constants.js` — Ganzhi encoding (10 stems + 12 branches + 60 Jiazi + precise algorithm + 12 XiaoXi)
+- `scripts/mma/constants.js` — `SOURCE_RELIABILITY` 7-level source reliability weights
 
 ### Changed
-- SKILL.md: COMPRESSION-SAFE 块扩展为完整可执行框架(30行)，压缩后仍可独立运行
-- SKILL.md: 新增 Compliance Guard 和 Unified CLI 入口
-- 5个 engine/*.md + 2个 agents/*.md: 全部加入守卫调用点
+- SKILL.md: COMPRESSION-SAFE block expanded to 30-line executable framework
+- SKILL.md: Added Compliance Guard and Unified CLI entry
+- 5 engine/*.md + 2 agents/*.md: guard call points added
 - `ashi.js`: 新增 memory_type/source/elaboration_level/context_snapshot/reconsolidation_window 字段
 - `decay.js`: 情景记忆60d衰减+源不可靠加速衰减；兼容六爻新状态(ACTIVE/MATURE)
-- `deqi.js`: 得气计分加入源监控权重+编码特异性+再巩固窗口；中焦72h自动降入下焦
-- `reinforce.js`: 六爻生命周期+本卦/之卦/变卦；再巩固窗口内塑性×1.5
-- `ziwu.js`: 九宫飞星四级叠加+天干地支经脉增强；修复时支bug(day%12→精确日地支)
-- `status.js`: 新增 `computeFourImages` 四象成熟度诊断
-- `io.js`: 新增 `findPointById` 通用查找，删除 reinforce.js/cluster.js 重复代码
-- `mcts_compute.js`: 奇正相生自适应UCB(0.5~2.5)+势成熟度；cull/coverage-matrix 真实实现
-- `language_guard.js`: 修复 lang 截断(ha→zh)；新增 scriptToLang 映射
-- `knowledge_lifecycle.js`: loadKG 解析失败加错误日志
-- `meridian_memory.js`: 新增 four-images/diagnose 命令
+- `deqi.js`: deqi scoring: source monitoring + encoding specificity + reconsolidation; middle burner 72h auto-demote
+- `reinforce.js`: LiuYao lifecycle + Ben/Zhi/Bian trigrams; reconsolidation plasticity x1.5
+- `ziwu.js`: Jiugong Feixing 4-level + Ganzhi meridian enhancement; fixed hour branch bug
+- `status.js`: added computeFourImages maturity diagnosis
+- `io.js`: added findPointById, removed duplicates from reinforce.js/cluster.js
+- `mcts_compute.js`: Qi-Zheng adaptive UCB (0.5~2.5) + Shi maturity; cull/coverage-matrix implemented
+- `language_guard.js`: fixed lang truncation (ha->zh); added scriptToLang map
+- `knowledge_lifecycle.js`: loadKG parse failure logging added
+- `meridian_memory.js`: added four-images/diagnose commands
 - Version bumped 1.5.0 → 1.6.0 across all files
 
 ### Fixed

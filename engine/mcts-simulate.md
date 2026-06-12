@@ -43,7 +43,7 @@ Layer 2 — Counterfactual
   → Output: robustness V_robustness
 
 Layer 3 — Perspective Cross-Validation
-  "从不同的文化视角看这个方案，有什么新发现？"
+  "From different cultural perspectives, what new insights?"
   → Select 2-3 perspective findings most relevant
   → Re-examine through perspective questions
   → Output: perspective cross-score V_perspective
