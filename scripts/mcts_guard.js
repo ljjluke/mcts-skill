@@ -500,20 +500,20 @@ function output(data) { log(JSON.stringify(data, null, 2)); }
 function main() {
     const args = process.argv.slice(2);
     if (args.length < 1) {
-        log("MCTS-TD Engine Compliance Guard (合规守护)");
-        log("  法者，天下之程式也 —《管子》");
+        log("MCTS-TD Engine Compliance Guard (引擎合规守护)");
+        log("  法者，天下之程式也 — Guanzi");
         log("");
         log("Usage: node mcts_guard.js <command> [args...]");
-        log("  decomposition-guard  — 反'唯一方案'检查");
-        log("  phase-enforce        — 阶段输出强制验证");
-        log("  info-gap-guard       — 信息获取5级优先级检查");
-        log("  diversity-challenge  — 方案多样性强制反问");
-        log("  self-check-guard     — 自检核对清单");
-        log("  memory-agent-guard   — Memory Agent检查点验证");
-        log("  compliance-report    — 全流程合规审计报告");
-        log("  constraint-checklist — 约束检查清单");
-        log("  engine-mode          — 引擎模式判定");
-        log("  all-guards           — 输出所有守卫清单(供LLM参考)");
+        log("  decomposition-guard  — Anti single-solution check");
+        log("  phase-enforce        — Phase output compliance");
+        log("  info-gap-guard       — Info acquisition priority check");
+        log("  diversity-challenge  — Solution diversity check");
+        log("  self-check-guard     — Self-check list");
+        log("  memory-agent-guard   — Memory Agent checkpoints verify");
+        log("  compliance-report    — Full pipeline compliance audit");
+        log("  constraint-checklist — Constraint checklist");
+        log("  engine-mode          — Engine mode selection");
+        log("  all-guards           — Output all guard checklists");
         process.exit(0);
     }
 

@@ -41,23 +41,23 @@ function main() {
     const args = process.argv.slice(2);
     if (args.length === 0) {
         log("MMA — Meridian Memory Algorithm (经络记忆算法)");
-        log("  得气 · 子午流注 · 循经感传 · 补泻 · 阿是穴");
-        log("  情绪调制 · 三焦工作记忆 · 隐穴 · 经气预热 · 阴阳对冲 · 睡眠回放 · 腧穴集群");
+        log("  Deqi · Ziwu Liuzhu · Propagated Sensation · Reinforce/Reduce · Ashi");
+        log("  Emotion Modulation · Triple Burner Working Memory · Hidden Acupoint · Priming · Yin-Yang Conflict · Sleep Replay · Acupoint Clusters");
         log("");
         log("Usage: node meridian_memory.js <command> [args]");
-        log("  deqi      <query_json> [context_json]  — 得气召回");
-        log("  ashi      <entry_json>                  — 阿是穴插入");
-        log("  reinforce <point_id> <td_error> [exp_json] — 补泻更新");
-        log("  ziwu      [context_json]               — 子午流注");
-        log("  status                                  — 系统全景");
-        log("  four-images                             — 四象成熟度诊断");
-        log("  diagnose  <query_json> [context_json]   — 八纲辨证知识诊断");
-        log("  decay                                   — 衰减检查");
-        log("  replay    [limit]                       — 温故知新");
-        log("  session-end <session_json>              — 睡眠回放");
-        log("  cluster                                 — 腧穴集群检测");
-        log("  observe   --phase <name> [--data json]   — 一键观察点路由");
-        log("  load                                    — 加载KG");
+        log("  deqi      <query_json> [context_json]  — Deqi recall");
+        log("  ashi      <entry_json>                  — Ashi acupoint insert");
+        log("  reinforce <point_id> <td_error> [exp_json] — Tonify/Drain update");
+        log("  ziwu      [context_json]               — Ziwu Liuzhu");
+        log("  status                                  — System status");
+        log("  four-images                             — Four Images diagnosis");
+        log("  diagnose  <query_json> [context_json]   — Eight-Principle diagnosis");
+        log("  decay                                   — Decay check");
+        log("  replay    [limit]                       — Experience replay");
+        log("  session-end <session_json>              — Session end consolidation");
+        log("  cluster                                 — Acupoint cluster detection");
+        log("  observe   --phase <name> [--data json]   — Observe point route");
+        log("  load                                    — Load KG");
         return;
     }
 

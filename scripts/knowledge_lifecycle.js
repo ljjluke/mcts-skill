@@ -875,7 +875,7 @@ function main() {
     const args = process.argv.slice(2);
     if (args.length < 1) {
         log("MCTS-TD Memory Agent — Three-Stage Knowledge Lifecycle");
-        log("  上善若水(Perceive) · 为道日损(Refine) · 无为之用(Recall)");
+        log("  Perceive(上善若水) · Refine(为道日损) · Recall(无为之用)");
         log("Usage: node knowledge_lifecycle.js <command> [args...]");
         log("Commands: perceive, refine, recall, full-lifecycle, gate-check, gate-check-emotion,");
         log("          memory-strength, natural-selection, status, load-kg, save-kg");

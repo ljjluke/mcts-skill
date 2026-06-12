@@ -64,16 +64,16 @@ function loadShardWithRecovery(filePath, bakPath, fallback) {
     // 尝试主文件
     if (fs.existsSync(filePath)) {
         try { return JSON.parse(fs.readFileSync(filePath, 'utf-8')); }
-        catch (e) { console.error(`[MMA] 分片损坏: ${path.basename(filePath)} — ${e.message}`); }
+        catch (e) { console.error(`[MMA] Shard corrupted: ${path.basename(filePath)} — ${e.message}`); }
     }
     // 尝试备份
     if (fs.existsSync(bakPath)) {
         try {
             const data = JSON.parse(fs.readFileSync(bakPath, 'utf-8'));
             fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
-            console.error(`[MMA] 分片 ${path.basename(filePath)} 已从备份恢复`);
+            console.error(`[MMA] Shard ${path.basename(filePath)} recovered from backup`);
             return data;
-        } catch (e) { console.error(`[MMA] 分片备份也损坏: ${path.basename(bakPath)}`); }
+        } catch (e) { console.error(`[MMA] Shard backup also corrupted: ${path.basename(bakPath)}`); }
     }
     return fallback;
 }
@@ -85,29 +85,29 @@ function loadShardWithRecovery(filePath, bakPath, fallback) {
 function loadMMA() {
     ensureDirs();
 
-    // 自动迁移: 如果旧格式 meridian_kg.json 存在且分片目录为空
+    // Auto-migrate: legacy meridian_kg.json exists and shards dir is empty
     if (fs.existsSync(MMA_FILE) && !fs.existsSync(META_FILE)) {
         try {
             const oldData = JSON.parse(fs.readFileSync(MMA_FILE, 'utf-8'));
             if (oldData.meridians && oldData.extra) {
-                console.error('[MMA] 检测到旧格式 meridian_kg.json，自动迁移到分片...');
+                console.error('[MMA] Detected legacy meridian_kg.json, auto-migrating to shards...');
                 migrateToShards(oldData);
                 // 迁移成功后保留旧文件为备份
                 const migratedBak = MMA_FILE.replace('.json', '.migrated.bak.json');
                 fs.renameSync(MMA_FILE, migratedBak);
-                console.error(`[MMA] 迁移完成，旧文件已备份为 ${path.basename(migratedBak)}`);
+                console.error(`[MMA] Migration complete, legacy file backed up as ${path.basename(migratedBak)}`);
             }
         } catch (e) {
-            console.error(`[MMA] 旧格式迁移失败: ${e.message}，将使用分片模式冷启动`);
+            console.error(`[MMA] Legacy migration failed: ${e.message}, cold-starting in shard mode`);
         }
     }
 
-    // 加载元数据
+    // Load meta shard
     const meta = loadShardWithRecovery(META_FILE, META_FILE.replace('.json', '.bak.json'), null);
 
-    // 如果没有元数据(全新) → 冷启动
+    // No meta → cold start
     if (!meta) {
-        console.error('[MMA] 分片模式冷启动');
+        console.error('[MMA] Cold start in shard mode');
         return freshKG();
     }
 

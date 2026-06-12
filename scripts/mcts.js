@@ -56,20 +56,20 @@ const ENGINES = {
 };
 
 function usage() {
-    console.log("MCTS-TD 统一CLI — node scripts/mcts.js <engine> <command> [args...]");
+    console.log("MCTS-TD Unified CLI — node scripts/mcts.js <engine> <command> [args...]");
     console.log("");
     for (const [name, cfg] of Object.entries(ENGINES)) {
         console.log(`  ${name.padEnd(10)} — ${cfg.desc}`);
     }
     console.log("");
-    console.log("示例:");
+    console.log("Examples:");
     console.log("  node scripts/mcts.js compute ucb --v 0.8 --n 3 --parent-n 10");
-    console.log("  node scripts/mcts.js guard decomposition-guard --claim '{\"task\":\"登录\"}'");
+    console.log("  node scripts/mcts.js guard decomposition-guard --claim '{\"task\":\"login\"}'");
     console.log("  node scripts/mcts.js mma deqi '{\"category\":\"debug\"}'");
-    console.log("  node scripts/mcts.js lang detect --message '你好'");
+    console.log("  node scripts/mcts.js lang detect --message 'Hello'");
     console.log("");
-    console.log("💡 如果忘记了子命令，直接输入引擎名查看帮助:");
-    console.log("  node scripts/mcts.js mma      → 列出所有MMA命令");
+    console.log("Tip: Forget which sub-commands? Just type the engine name:");
+    console.log("  node scripts/mcts.js mma      → lists all MMA commands");
 }
 
 function main() {
@@ -81,8 +81,8 @@ function main() {
 
     const cfg = ENGINES[engine];
     if (!cfg) {
-        console.error(`未知引擎: ${engine}`);
-        console.error(`可用引擎: ${Object.keys(ENGINES).join(', ')}`);
+        console.error(`Unknown engine: ${engine}`);
+        console.error(`Available: ${Object.keys(ENGINES).join(', ')}`);
         process.exit(1);
     }
 
