@@ -264,10 +264,10 @@ After the standard blindspot audit, **AND** after comparing with Step 0.5's cult
 ```
 Step: Compare simulation outputs against Step 0.5 100-Schools Perspective findings
 
-  ① Extract all blindspots from Step 0.5
-  ② Check each blindspot against ranked solutions：
-     - Covered ✅ → mark "已覆盖"，记录由哪个方案覆盖
-     - Not covered ❌ → mark "Blindspot missed"
+  1. Extract all blindspots from Step 0.5
+  2. Check each blindspot against ranked solutions：
+     - Covered -> mark covered, note which solution
+     - Not covered -> mark blindspot missed
 
   ③ Generate perspective coverage table:
      ┌──────────────────┬──────────┬──────────┬──────────┬──────┐
@@ -280,12 +280,12 @@ Step: Compare simulation outputs against Step 0.5 100-Schools Perspective findin
      └──────────────────┴──────────┴──────────┴──────────┴──────┘
 
   4. Missed blindspot handling:
-     If 3+Perspective blindspot未被任何方案覆盖
+     If 3+Perspective blindspots not covered by any solution
        -> WARNING: coverage gap → Return to converge, generate solutions
-     若有1-2个Perspective blindspot未被覆盖
-       → 💡 在决策报告中标注"未覆盖盲点"，供用户参考
-     若无遗漏
-       → ✅ 视角覆盖完整，进入最终决策
+     If 1-2Perspective blindspots not covered
+       -> NOTE: annotate uncovered blindspots in decision report
+     If none missed
+       -> Full coverage, proceed to final decision
 ```
 
 ### Blindspot Audit Framework
