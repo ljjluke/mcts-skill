@@ -1,5 +1,4 @@
 {
-  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "mcts-td-planner",
   "version": "1.6.0",
   "description": "Universal decision engine — MCTS tree search × TD temporal learning × Eight-Facet Mirror. Brainstorm all approaches, simulate each one, pick the best, execute once.",
