@@ -1,70 +1,53 @@
 #!/usr/bin/env node
 /**
  * ═══════════════════════════════════════════════════════════════
- *  MMA Memory Agent Daemon — 跟屁虫子Agent
+ *  MMA Memory Agent Daemon — 全程跟随后台进程
  *  "左史记言，右史记事" —《礼记》
  *
- *  从 Claude 启动的那一刻就开始运行，全程监控。
- *  一个持续运行的进程，通过 hooks Setup 自动拉起。
+ *  零配置、零端口、零依赖。通过 hooks Setup 自动启动。
+ *  通过文件系统 buffer 与主进程通信，不消耗任何端口。
  *
- *  工作方式:
- *  1. 作为后台进程运行，通过文件系统中转信息
- *  2. 每次用户对话时，通过 UserPromptSubmit hook 写入信息到
- *     ~/.claude/data/skills/mcts-td-planner/memory/agent_buffer.json
- *  3. 本 daemon 读取 buffer，自动执行 deqi/ashi/reinforce 等操作
- *  4. 结果写入 meridian_kg.json，静默完成
- *
- *  启动方式: node scripts/agent_daemon.js 2>/dev/null &
- *  停止方式: touch ~/.claude/data/skills/mcts-td-planner/memory/agent_daemon.stop
- *
- *  通过 hooks Setup 事件自动启动:
- *    hooks/hooks.json 中 Setup 事件执行本脚本
+ *  质量控制:
+ *  1. 指纹去重 — 相同 description 不重复写入
+ *  2. LRU 缓存 — 已处理的知识不重复处理
+ *  3. 质量门 — ashi.js 内置的 quality gate 过滤噪音
+ *  4. 召回控制 — deqi 只对有实际上下文的请求响应
  * ═══════════════════════════════════════════════════════════════ */
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+const crypto = require('crypto');
 
 const DATA_DIR = path.join(os.homedir(), '.claude', 'data', 'skills', 'mcts-td-planner');
 const MEMORY_DIR = path.join(DATA_DIR, 'memory');
 const BUFFER_FILE = path.join(MEMORY_DIR, 'agent_buffer.json');
 const STOP_FILE = path.join(MEMORY_DIR, 'agent_daemon.stop');
-const SHARDS_DIR = path.join(MEMORY_DIR, 'shards');
+const CACHE_FILE = path.join(MEMORY_DIR, 'agent_cache.json');
 
-// MMA 引擎路径（从插件缓存加载）
+const POLL_INTERVAL = 2000; // 2秒轮询
+const CACHE_MAX = 1000; // LRU缓存上限
+const BATCH_MAX = 20; // 单次处理上限
+
 let MMA_SCRIPTS_DIR = null;
+let io = null, deqi = null, ashi = null, reinforce = null, decay = null;
+let kg = null; // 内存中的知识图谱缓存
+let kgVersion = 0;
+let fingerprintCache = []; // LRU指纹缓存
+
+// ═══════════════════════════════════════════════════════════════
+//  初始化
+// ═══════════════════════════════════════════════════════════════
 
 function findMMAScripts() {
-    const candidates = [
-        path.join(os.homedir(), '.claude', 'plugins', 'cache', 'mcts-td-planner', 'mcts-td-planner'),
-    ];
-    // 尝试找到最新的版本
-    for (const base of candidates) {
-        if (!fs.existsSync(base)) continue;
-        const versions = fs.readdirSync(base).filter(d => /^\d+\.\d+\.\d+$/.test(d)).sort();
-        if (versions.length > 0) {
-            const scriptsDir = path.join(base, versions[versions.length - 1], 'scripts');
-            if (fs.existsSync(scriptsDir)) {
-                MMA_SCRIPTS_DIR = scriptsDir;
-                return scriptsDir;
-            }
-        }
+    const base = path.join(os.homedir(), '.claude', 'plugins', 'cache', 'mcts-td-planner', 'mcts-td-planner');
+    if (!fs.existsSync(base)) return null;
+    const versions = fs.readdirSync(base).filter(d => /^\d+\.\d+\.\d+$/.test(d)).sort();
+    for (const v of versions.reverse()) {
+        const d = path.join(base, v, 'scripts');
+        if (fs.existsSync(d)) return d;
     }
     return null;
 }
-
-function loadMMA() {
-    if (!MMA_SCRIPTS_DIR) return null;
-    try {
-        const io = require(path.join(MMA_SCRIPTS_DIR, 'mma', 'io'));
-        return io;
-    } catch (e) {
-        console.error('[MMA Daemon] Failed to load MMA engine:', e.message);
-        return null;
-    }
-}
-
-// IO 模块缓存
-let io = null, deqi = null, ashi = null, reinforce = null, decay = null;
 
 function loadModules() {
     if (!MMA_SCRIPTS_DIR) return false;
@@ -76,168 +59,207 @@ function loadModules() {
         decay = require(path.join(MMA_SCRIPTS_DIR, 'mma', 'decay'));
         return true;
     } catch (e) {
-        console.error('[MMA Daemon] Module load error:', e.message);
+        console.error('[MMA Daemon] Load error:', e.message);
         return false;
     }
 }
 
-function ensureDirs() {
-    [DATA_DIR, MEMORY_DIR, SHARDS_DIR].forEach(d => {
-        if (!fs.existsSync(d)) fs.mkdirSync(d, { recursive: true });
-    });
+function init() {
+    MMA_SCRIPTS_DIR = findMMAScripts();
+    if (!MMA_SCRIPTS_DIR) return false;
+    return loadModules();
 }
+
+// ═══════════════════════════════════════════════════════════════
+//  LRU 指纹缓存 — 防重复
+// ═══════════════════════════════════════════════════════════════
+
+function computeFingerprint(entry) {
+    const content = entry.description || entry.data?.description || JSON.stringify(entry);
+    return crypto.createHash('md5').update(content.substring(0, 200)).digest('hex');
+}
+
+function isDuplicate(fp) {
+    return fingerprintCache.includes(fp);
+}
+
+function addFingerprint(fp) {
+    fingerprintCache.unshift(fp);
+    if (fingerprintCache.length > CACHE_MAX) fingerprintCache.pop();
+}
+
+function loadFingerprintCache() {
+    try {
+        if (fs.existsSync(CACHE_FILE)) {
+            fingerprintCache = JSON.parse(fs.readFileSync(CACHE_FILE, 'utf-8'));
+            if (!Array.isArray(fingerprintCache)) fingerprintCache = [];
+        }
+    } catch (e) { fingerprintCache = []; }
+}
+
+function saveFingerprintCache() {
+    try {
+        fs.writeFileSync(CACHE_FILE, JSON.stringify(fingerprintCache.slice(0, CACHE_MAX)));
+    } catch (e) {}
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  缓存加载KG（避免频繁读文件）
+// ═══════════════════════════════════════════════════════════════
+
+function ensureKG() {
+    const metaFile = path.join(MEMORY_DIR, 'shards', 'meta.json');
+    let currentVer = 0;
+    try {
+        if (fs.existsSync(metaFile)) {
+            currentVer = JSON.parse(fs.readFileSync(metaFile, 'utf-8')).save_count || 0;
+        }
+    } catch (e) {}
+    if (!kg || currentVer !== kgVersion) {
+        kg = io.loadMMA();
+        kgVersion = currentVer;
+    }
+    return kg;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  Buffer 处理核心
+// ═══════════════════════════════════════════════════════════════
 
 function processBuffer() {
     if (!fs.existsSync(BUFFER_FILE)) return;
 
     let buffer;
-    try {
-        buffer = JSON.parse(fs.readFileSync(BUFFER_FILE, 'utf-8'));
-    } catch (e) { return; }
+    try { buffer = JSON.parse(fs.readFileSync(BUFFER_FILE, 'utf-8')); }
+    catch (e) { return; }
 
-    if (!buffer || buffer.length === 0) return;
+    const pending = buffer.pending || [];
+    if (pending.length === 0) return;
 
-    const kg = io.loadMMA();
+    const kg = ensureKG();
     if (!kg) return;
 
-    const processed = [];
+    // 合并同类操作: 多个 deqi 只执行最新一次
+    const merged = new Map();
+    for (const entry of pending) {
+        merged.set(entry.type + '_last', entry);
+        if (entry.type === 'ashi') {
+            const fp = computeFingerprint(entry);
+            if (!isDuplicate(fp)) {
+                if (!merged.has('ashi_items')) merged.set('ashi_items', []);
+                merged.get('ashi_items').push(entry);
+                addFingerprint(fp);
+            }
+        }
+    }
 
-    for (const entry of buffer) {
+    const results = [];
+
+    // 1. deqi — 只执行最新一次
+    const lastDeqi = merged.get('deqi_last');
+    if (lastDeqi) {
         try {
-            switch (entry.type) {
-                case 'deqi': {
-                    // 自动得气召回
-                    const results = deqi.deqi(kg, entry.query || {}, entry.context || {});
-                    processed.push({ type: 'deqi', count: results.length, top: results.slice(0, 3).map(r => r.point?.id) });
-                    break;
-                }
-                case 'ashi': {
-                    // 自动阿是穴插入（记录知识）
-                    const result = ashi.ashiInsert(kg, entry.data || {});
-                    if (result && !result.rejected) {
-                        processed.push({ type: 'ashi', point_id: result.point?.id, meridian: result.meridian });
-                    } else if (result && result.rejected) {
-                        // 被质量门拒绝，静默忽略
-                    }
-                    break;
-                }
-                case 'reinforce': {
-                    // 自动补泻更新
-                    const r = reinforce.reinforceReduce(kg, entry.point_id, entry.td_error || 0, entry.experience || {});
-                    if (r) processed.push({ type: 'reinforce', point_id: entry.point_id, technique: r.technique });
-                    break;
-                }
-                case 'session_end': {
-                    // 会话结束鞏固
-                    decay.decayCheck(kg);
-                    processed.push({ type: 'session_end' });
-                    break;
-                }
+            const ctx = lastDeqi.data?.context || {};
+            // 只在有任务类型或标签时才召回，避免空召回
+            if (ctx.current_task_type || ctx.tags) {
+                const query = { tags: ctx.tags || [], category: ctx.category || '', limit: 5 };
+                const res = deqi.deqi(kg, query, ctx);
+                results.push({ type: 'deqi', count: res.length });
             }
-        } catch (e) {
-            processed.push({ type: entry.type, error: e.message });
-        }
+        } catch (e) {}
     }
 
-    // 保存知识图谱
-    io.saveMMA(kg);
+    // 2. ashi — 写入新知识（已去重）
+    const ashiItems = merged.get('ashi_items') || [];
+    let insertedCount = 0;
+    for (const entry of ashiItems.slice(0, BATCH_MAX)) {
+        try {
+            const data = entry.data || {};
+            // 质量门: ashiInsert 内部已有 assessQuality
+            const result = ashi.ashiInsert(kg, data);
+            if (result && !result.rejected) {
+                insertedCount++;
+            }
+        } catch (e) {}
+    }
+    if (insertedCount > 0) results.push({ type: 'ashi', count: insertedCount });
 
-    // 写入处理结果
-    const resultFile = path.join(MEMORY_DIR, 'agent_result.json');
-    fs.writeFileSync(resultFile, JSON.stringify({
-        processed_at: new Date().toISOString(),
-        processed: processed.length,
-        details: processed,
-    }, null, 2));
+    // 3. session_end
+    if (merged.has('session_end_last')) {
+        try {
+            decay.decayCheck(kg);
+            results.push({ type: 'session_end' });
+        } catch (e) {}
+    }
 
-    // 清空 buffer（只保留最后处理时间标记）
-    fs.writeFileSync(BUFFER_FILE, JSON.stringify({ last_processed: new Date().toISOString(), pending: [] }));
+    // 批量保存
+    if (results.length > 0) {
+        io.saveMMA(kg);
+        saveFingerprintCache();
+    }
+
+    // 清理 buffer — 只保留运行标记
+    fs.writeFileSync(BUFFER_FILE, JSON.stringify({
+        last_processed: new Date().toISOString(),
+        daemon_pid: process.pid,
+        pending: [],
+    }));
 }
 
-// 写入信息到 buffer（供 UserPromptSubmit hook 调用）
+// ═══════════════════════════════════════════════════════════════
+//  Daemon 主循环
+// ═══════════════════════════════════════════════════════════════
+
+function start() {
+    if (!init()) {
+        console.error('[MMA Daemon] Init failed');
+        process.exit(1);
+    }
+    io.ensureDirs();
+    loadFingerprintCache();
+    if (fs.existsSync(STOP_FILE)) fs.unlinkSync(STOP_FILE);
+
+    const loop = () => {
+        if (fs.existsSync(STOP_FILE)) { process.exit(0); }
+        try { processBuffer(); } catch (e) {}
+        setTimeout(loop, POLL_INTERVAL);
+    };
+    loop();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  CLI / 公开接口
+// ═══════════════════════════════════════════════════════════════
+
 function writeToBuffer(type, data) {
-    ensureDirs();
-    let buffer = { last_processed: null, pending: [] };
+    const memDir = MEMORY_DIR;
+    if (!fs.existsSync(memDir)) fs.mkdirSync(memDir, { recursive: true });
+    let buf = { pending: [] };
     if (fs.existsSync(BUFFER_FILE)) {
-        try { buffer = JSON.parse(fs.readFileSync(BUFFER_FILE, 'utf-8')); } catch (e) {}
+        try { buf = JSON.parse(fs.readFileSync(BUFFER_FILE, 'utf-8')); } catch (e) {}
     }
-    buffer.pending.push({
-        type,
-        data,
-        timestamp: new Date().toISOString(),
-    });
-    fs.writeFileSync(BUFFER_FILE, JSON.stringify(buffer, null, 2));
+    buf.pending = buf.pending || [];
+    buf.pending.push({ type, data, ts: Date.now() });
+    if (buf.pending.length > 200) buf.pending = buf.pending.slice(-200);
+    fs.writeFileSync(BUFFER_FILE, JSON.stringify(buf));
 }
 
-// === CLI: 支持直接调用写入 ===
 if (require.main === module) {
-    const args = process.argv.slice(2);
-    const cmd = args[0];
-
-    if (cmd === 'start') {
-        // 启动守护进程
-        console.log('[MMA Daemon] Starting...');
-        ensureDirs();
-
-        if (!findMMAScripts()) {
-            console.error('[MMA Daemon] Cannot find MMA engine scripts');
-            process.exit(1);
-        }
-
-        if (!loadModules()) {
-            console.error('[MMA Daemon] Cannot load MMA modules');
-            process.exit(1);
-        }
-
-        // 移除可能残留的 stop 文件
-        if (fs.existsSync(STOP_FILE)) fs.unlinkSync(STOP_FILE);
-
-        let lastCheck = null;
-
-        const loop = () => {
-            // 检查停止信号
-            if (fs.existsSync(STOP_FILE)) {
-                console.log('[MMA Daemon] Stop signal received, exiting');
-                process.exit(0);
-            }
-
-            try {
-                processBuffer();
-            } catch (e) {
-                // 静默错误，不要崩溃
-            }
-
-            setTimeout(loop, 2000); // 每 2 秒检查一次
-        };
-
-        loop();
-    } else if (cmd === 'write') {
-        // 写入 buffer（由 hooks 调用）
-        const type = args[1];
+    const cmd = process.argv[2];
+    if (cmd === 'start') { start(); }
+    else if (cmd === 'write') {
+        const type = process.argv[3] || 'ashi';
         let data = {};
-        try { data = JSON.parse(args[2] || '{}'); } catch (e) {}
+        try { data = JSON.parse(process.argv[4] || '{}'); } catch (e) {}
         writeToBuffer(type, data);
         console.log('OK');
-    } else if (cmd === 'stop') {
-        // 发送停止信号
+    }
+    else if (cmd === 'stop') {
         fs.writeFileSync(STOP_FILE, new Date().toISOString());
-        console.log('Stop signal sent');
-    } else if (cmd === 'status') {
-        // 查看 daemon 状态
-        const running = !fs.existsSync(STOP_FILE);
-        console.log(JSON.stringify({
-            running,
-            scripts_dir: MMA_SCRIPTS_DIR,
-            buffer_exists: fs.existsSync(BUFFER_FILE),
-            memory_dir: MEMORY_DIR,
-        }, null, 2));
-    } else {
-        console.log('MMA Memory Agent Daemon');
-        console.log('Usage:');
-        console.log('  node agent_daemon.js start       — 启动守护进程');
-        console.log('  node agent_daemon.js write <type> [json]  — 写入buffer');
-        console.log('  node agent_daemon.js stop        — 停止');
-        console.log('  node agent_daemon.js status      — 状态');
+        console.log('Stopped');
+    }
+    else {
+        console.log('MMA Agent Daemon — node agent_daemon.js [start|write|stop]');
     }
 }
 
