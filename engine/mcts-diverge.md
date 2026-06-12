@@ -217,6 +217,21 @@ Divergence Process (multi-round iteration, until each facet is thought through):
       ② Check external resources/search
       ③ Ask user (info that truly cannot be self-acquired)
     After completion, re-self-rate until all blindspots are marked "completed" or "user confirmed skip"
+    
+    **⛔ FORCE-SEARCH (if any facet scores ≤3)**:
+    If any facet gets a rating ≤3, this means you KNOW VERY LITTLE about that dimension.
+    You MUST execute WebSearch before proceeding. Do NOT continue to solutions without first
+    acquiring external information about the low-scoring facets.
+    
+    Examples of what this prevents:
+      - Facet1=2/10 "cannot crawl" → should search "海关数据公开API" "customs data API"
+      - Facet2=1/10 "no real data" → should search "中国海关总署月度统计" "UN Comtrade"
+      - Facet3=3/10 "HS10 not public" → should search "HS10编码查询" "海关编码查询平台"
+    
+    After search, re-rate the facet. If still ≤3, you may proceed but ALL output
+    from that facet must cite its information source or be marked 【待核实】.
+    
+    **NEVER produce a "template" or "empty table" as a solution when you could have searched for real data.**
 
   Round 4: Divergence-convergence self-check
     Ask yourself:
