@@ -23,7 +23,7 @@ alwaysApply: true
 > **Every user message goes through: Decompose → Diverge (8-Facet Mirror) → Converge (3 solutions) → MCTS Simulate → Decision.**
 > **Diverge engine is CONVERSATIONAL — grill the user, don't monologue. Output every phase visibly.**
 
-> **🧠 MEMORY AGENT LIFECYCLE (MANDATORY — Silent Observer, 5 Checkpoints):**
+> **🧠 MEMORY AGENT LIFECYCLE (MANDATORY — Silent Observer, 6 Checkpoints):**
 >
 > The Memory Agent runs alongside every engine phase. It has 5 observation checkpoints:
 >
@@ -46,6 +46,11 @@ alwaysApply: true
 > │     Record: ashi insert each insight into meridian system    │
 > │     Command: node meridian_memory.js ashi                    │
 > │     Also: cluster detect for chunking                        │
+> │     Output: SILENT                                            │
+> │  ③.5 COMPLETE — Knowledge completion (silent)               │
+> │     Check: each recalled acupoint for _needs_completion      │
+> │     Action: fill missing dimensions from current context      │
+> │     Command: node meridian_memory.js reinforce <id> 0        │
 > │     Output: SILENT                                            │
 > │                                                              │
 > │  ④ PRE_CONVERGE — Before decision                           │

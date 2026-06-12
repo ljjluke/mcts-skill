@@ -52,6 +52,28 @@ node scripts/meridian_memory.js ashi '<json_entry>'
 
 ---
 
+### 3.5 COMPLETE — Knowledge completion (auto-fill missing dimensions)
+**When**: After deqi recall returns results, before injecting into context
+**Action**: Check recalled acupoints for `_needs_completion = true`. If found,
+use the current conversation context to fill in missing dimensions.
+**Rules**:
+- Only touch acupoints with `_needs_completion = true` AND `q >= 0.3`
+- Don't override existing data — only fill what's missing
+- If `_missing_dimensions` includes:
+  - `description`: Summarize what this acupoint represents based on its tags + category + current context
+  - `tags`: Infer 2-3 relevant tags from description + category
+  - `source`: Mark as `inference` (since it's being completed by the LLM, not verified)
+  - `category`: Assign based on description + tags content
+  - `context`: Attach current task_type + tech_stack as context_snapshot
+- After completion, set `_needs_completion = false` and run:
+  ```
+  node scripts/meridian_memory.js reinforce <point_id> 0 '{"v_actual":<existing_q>}'
+  ```
+  (This increments n and updates last_verified without changing q)
+- **Silent**: Do not output completion details to user
+
+---
+
 ### 4. PRE_CONVERGE — Before converge engine
 **When**: Before converge engine aggregates results
 **Action**: Detect Yin-Yang conflicts — same meridian, tags overlap >50%, V_diff >0.4, <7 days apart.
@@ -103,10 +125,12 @@ node scripts/meridian_memory.js session-end '<session_json>'
 1. **SILENT MODE**: Behaviors 1,2,3,5,6 run silently. Do NOT output their results to the user.
 2. **ALERT ONLY**: Only behavior 4 (conflict detection) may interrupt. Max 2 alerts/session.
 3. **ALWAYS CALL**: Every behavior point MUST be executed. Skipping = memory not recorded = skill doesn't learn.
-4. **TD CLOSED LOOP**: V_predicted (from pre-engine recall) MUST be compared with V_actual (from post-execution result). Update makes the skill "smarter."
-5. **MERIDIAN ENGINE**: All storage uses MMA (Meridian Memory Algorithm). The CLI is `node scripts/meridian_memory.js`.
-6. **COLD START OK**: Empty knowledge graph is fine. The engine works without prior knowledge.
-7. **⛔ COMPLIANCE**: After each checkpoint cycle, verify with `node scripts/mcts_guard.js memory-agent-guard --executed '[1,2,3,4,5]'`. If INCOMPLETE, replay missing checkpoints.
+4. **ALWAYS COMPLETE**: After behavior 1 (deqi recall), check each recalled acupoint for `_needs_completion`. If found, execute behavior 3.5 to fill missing dimensions before injecting into context.
+5. **KNOWLEDGE CAN BE INCOMPLETE AT STORAGE TIME**: The quality gate in ashi.js only rejects true noise. Many useful acupoints will have missing dimensions — that's normal. Completion improves them over time.
+6. **TD CLOSED LOOP**: V_predicted (from pre-engine recall) MUST be compared with V_actual (from post-execution result). Update makes the skill "smarter."
+7. **MERIDIAN ENGINE**: All storage uses MMA (Meridian Memory Algorithm). The CLI is `node scripts/meridian_memory.js`.
+8. **COLD START OK**: Empty knowledge graph is fine. The engine works without prior knowledge.
+9. **⛔ COMPLIANCE**: After each checkpoint cycle, verify with `node scripts/mcts_guard.js memory-agent-guard --executed '[1,2,3,4,5]'`. If INCOMPLETE, replay missing checkpoints.
 
 ## OBSERVE COMMAND (One-shot convenience)
 
