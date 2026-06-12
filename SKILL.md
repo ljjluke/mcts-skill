@@ -84,6 +84,16 @@ alwaysApply: true
 >   ⛔ If unsure: node scripts/mcts_guard.js decomposition-guard --claim '<JSON>'
 >   ⛔ If blocked: expand facets, list alternatives, acquire info first.
 >
+> STEP 0.5 (MANDATORY — Demand Refinement / 需求补全):
+>   Before generating ANY solution, CHECK if the user's request is complete enough to generate valid solutions.
+>   ⛔ If CRITICAL info is missing (tech stack, dependencies, constraints, preferences, boundaries):
+>      → PAUSE → Ask structured questions (use AskUserQuestion — NOT free text)
+>      → NEVER assume "probably ok" for unstated constraints
+>   ⛔ If the request is vague or multi-interpretable:
+>      → Clarify before proceeding — "你有具体的XX要求吗？"
+>   ⛔ If you can self-confirm from project code: do it (e.g. read package.json for tech stack)
+>   → After answers, proceed to STEP 1.
+>
 > STEP 1: Output [八面审视镜] — 8 facets each with: concrete dimension name + score 0-10 + known info + blindspots + ideas.
 > STEP 2: Output [侦查报告] — per-facet recon findings + cross-validation.
 > STEP 3: Output [收敛方案] — 2~8 solutions, each with: approach + basis + complexity + difference from others + facet coverage matrix.
