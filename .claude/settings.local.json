@@ -1,0 +1,5 @@
+{
+  "enabledPlugins": {
+    "mcts-td-planner@mcts-td-planner": true
+  }
+}
