@@ -47,99 +47,108 @@ User Need
 └──────────────────────────┬──────────────────────────────┘
                            │
                            ▼
-┌─────────────────────────────────────────────────────────┐
-│       🔭 HORIZON SCAN — Before Eight-Facet Mirror       │
-│       "跳出井底，先看世界"                               │
-│                                                         │
-│  Before locking into the 8-facet framework, expand your │
-│  view first. Execute ALL of the following:               │
-│                                                         │
-│  ① WebSearch: "what are the standard approaches for     │
-│     [user_task] in the industry"                         │
-│     → Find out what exists OUTSIDE your own knowledge   │
-│     → 3 search queries minimum                          │
-│     → Report: "Existing approaches I found: ..."        │
-│                                                         │
-│  ② WebSearch: "unconventional methods / alternatives    │
-│     for [user_task]"                                     │
-│     → Find things you WOULDN'T normally think of         │
-│     → Report: "Unconventional ideas: ..."               │
-│                                                         │
-│  ③ Cross-domain analogy: "What other industries/fields  │
-│     solve similar problems?"                             │
-│     → If the task is "data crawling", look at            │
-│       journalism, intelligence, scientific research      │
-│     → Report: "Cross-domain patterns: ..."              │
-│                                                         │
-│  Output: [Horizon Scan Report]                          │
-│  Title: "🔭 地平线扫描 — [task name]"                     │
-│  Content: Industry standard approaches + Unconventional │
-│           ideas + Cross-domain analogies                │
-│                                                         │
-│  ⛔ ABSOLUTELY FORBIDDEN:                               │
-│  • Skipping WebSearch and relying on internal knowledge │
-│  • Starting the Eight-Facet Mirror without horizon scan │
-│  • "I already know about this topic" — still search.    │
-│    External knowledge > your training data               │
-│  • Reporting "0 results" from WebSearch — keep trying   │
-│    different search terms                               │
-│                                                         │
-├─────────────────────────────────────────────────────────┤
-│       🗣️ SURPRISE & CONFIRM — Horizon Scan Feedback      │
-│       "Show the user what you found that they didn't     │
-│        know to ask for"                                   │
-│                                                         │
-│  AFTER completing Horizon Scan but BEFORE entering       │
-│  Eight-Facet Mirror, you MUST present your findings      │
-│  to the user and ask them for direction.                 │
-│                                                         │
-│  Format (in user's language):                            │
-│    "🔍 I searched and found some areas you might be      │
-│     interested in:                                       │
-│      ① [Finding 1] — this could be relevant because...   │
-│      ② [Finding 2] — relates to your need in this way... │
-│      ③ [Finding 3] — there are unknowns here...          │
-│      Which direction should I explore first?"            │
-│                                                         │
-│  The purpose of this step:                               │
-│  • Show the user things they DIDN'T ask about but        │
-│    MIGHT find valuable — the "用户自己都不知道" moment   │
-│  • Let the user CHOOSE the direction — don't assume      │
-│  • Validate that your search is in the right ballpark    │
-│                                                         │
-│  ⛔ Do NOT skip this step. Do NOT proceed directly to    │
-│     Eight-Facet Mirror without presenting findings.      │
-│  ⛔ Do NOT just summarize — ask SPECIFIC questions        │
-│     about what you discovered that the user didn't ask   │
-│     for. The output must be in the user's language.       │
-│                                                         │
-├─────────────────────────────────────────────────────────┤
-│                Diverge Phase (Brainstorming)            │
-│                                                         │
-│  Now proceed to Eight-Facet Mirror, informed by the     │
-│  horizon scan above. Each facet should reference what   │
-│  you found during the scan.                             │
-│                                                         │
-│  Eight-Facet Mirror iterative review: not "go once",    │
-│  but "reflect repeatedly"                               │
-│    Facet1→Facet8: review each facet                     │
-│    Cross-facet association (Facet5 discovery triggers   │
-│      Facet2 re-review)                                  │
-│    Blindspot completion (if missing info, go query/ask) │
-│    Until each facet is thought through clearly           │
-│                                                         │
-│  🗣️ ENGAGEMENT CHECKPOINT (after blindspot round):       │
-│    "Here are the blindspots I found in facets [X,Y,Z].  │
-│     Can you tell me more about [specific question]?"    │
-│    Don't guess — if you're unsure, ASK.                │
-│                                                         │
-│  Output: 8 facets' concrete dimensions + self-ratings   │
-│          + recon findings + idea fragments              │
-└──────────────────────────┬──────────────────────────────┘
-                           │
-                           ▼
-┌─────────────────────────────────────────────────────────┐
-│  🗣️ DIRECTION CHECK (before converging to solutions):     │
+┌──────────────────────────────────────────────────────────────────────────┐
+│  ☰ Qian F1: Source of Force — External Scan x3                                   │
+│  "天行健，君子以自强不息"                                                  │
+│                                                                          │
+│  Action (search externally, not self-question):                                      │
+│  ① WebSearch: "[task] industry standard approaches"                     │
+│  ② WebSearch: "[task] unconventional / alternative"                     │
+│  ③ WebSearch: "[task] cross-domain analogy"                             │
+│  → Output: Industry + Unconventional + Cross-domain                               │
+│  → ⛔ FORBIDDEN: skip search, internal knowledge only                                           │
+└────────────────────────────────┬─────────────────────────────────────────┘
+                                 │
+                                 ▼
+┌──────────────────────────────────────────────────────────────────────────┐
+│  ☷ 坤 F2: 根基承载 — Assess Capability & Fill Gaps                                  │
+│  "地势坤，君子以厚德载物"                                                  │
+│                                                                          │
+│  Action:                                                                   │
+│  ① Assess self/KG capability for this task                           │
+│  ② Find gaps -> search to fill (not guess)                                       │
+│  ③ If score <=3 -> MUST WebSearch + ask user                                │
+│  Output: Capability match + areas to supplement                                      │
+└────────────────────────────────┬─────────────────────────────────────────┘
+                                 │
+                                 ▼
+┌──────────────────────────────────────────────────────────────────────────┐
+│  ☳ 震 F3: 变动突破 — Feedback Unknown Territory                                     │
+│  "帝出乎震，万物出乎震" — New things emerge from disruption                                │
+│                                                                          │
+│  Action:                                                                   │
+│  ① Present F1 external findings to user                                │
+│  ② Tell user: I found directions you may not have noticed...                      │
+│  ③ Ask user: Which direction should I explore first?                                             │
+│  → ⛔ 禁止: Skip to subsequent analysis                                     │
+│  → ⛔ 禁止: Summarize without asking questions                                                │
+└────────────────────────────────┬─────────────────────────────────────────┘
+                                 │
+                                 ▼
+┌──────────────────────────────────────────────────────────────────────────┐
+│  ☴ 巽 F4: 渗透传播 — Knowledge Breadth Scan                                         │
+│  "随风巽，君子以申命行事" — Wind penetrates every gap                                    │
+│                                                                          │
+│  Action:                                                                   │
+│  ① Query memory (MMA deqi) + search                                        │
+│  ② 还有哪些相关的领域/技术/方案可以渗透进来？                            │
+│  ③ Search each candidate for known pitfalls + best practices                             │
+│  Output: Knowledge breadth map + risks per candidate                                    │
+└────────────────────────────────┬─────────────────────────────────────────┘
+                                 │
+                                 ▼
+┌──────────────────────────────────────────────────────────────────────────┐
+│  ☵ 坎 F5: 风险深渊 — Deep Dive Risk                                             │
+│  "习坎，重险也。水流而不盈" — Water knows every low point                            │
+│                                                                          │
+│  Action:                                                                   │
+│  ① Search known pitfalls and failure cases                                               │
+│  ② Worst case for each candidate?                                       │
+│  ③ No risks found? Search not deep enough                                    │
+│  Output: Risk list + mitigation plans                                              │
+│  → ⛔ "这个方案没有风险" = 你没认真找                                     │
+└────────────────────────────────┬─────────────────────────────────────────┘
+                                 │
+                                 ▼
+┌──────────────────────────────────────────────────────────────────────────┐
+│  ☲ 离 F6: 显眼依附 — Track External Dependencies                                         │
+│  "明两作，大人以继明照于四方"                                            │
+│                                                                          │
+│  Action:                                                                   │
+│  ① Search each candidate dependency tech/platform status                                    │
+│  ② Check for deprecation, EOL, major bugs?                        │
+│  ③ If dependency unclear -> search to confirm                                         │
+│  Output: Dependency health check report                                           │
+└────────────────────────────────┬─────────────────────────────────────────┘
+                                 │
+                                 ▼
+┌──────────────────────────────────────────────────────────────────────────┐
+│  ☶ 艮 F7: 边界止步 — Hard Constraint Check                                           │
+│  "艮其背，不获其身" — Know when to stop                                    │
+│                                                                          │
+│  Action:                                                                   │
+│  ① Check each item in constraint-checklist                                         │
+│     → node mcts_guard.js constraint-checklist                             │
+│  ② Hard violated -> eliminate                                               │
+│  ③ Soft not met -> downgrade                                              │
+│  Output: Constraint satisfaction matrix                                                     │
+└────────────────────────────────┬─────────────────────────────────────────┘
+                                 │
+                                 ▼
+┌──────────────────────────────────────────────────────────────────────────┐
+│  ☱ 兑 F8: 汇聚共赢 — Conflict Balance & Direction Focus                                  │
+│  "丽泽兑，君子以朋友讲习" — Two lakes connected to flow                              │
+│                                                                          │
+│  Action:                                                                   │
+│  ① Synthesize F1-F7 findings, list conflicts                                   │
+│  ② User wants vs user may not know but beneficial                                   │
+│  ③ Decisions needing user -> present clearly                                        │
+│  Output: Conflict list + pending user decisions                                │
+└────────────────────────────────┬─────────────────────────────────────────┘
+                                 │
+                                 ▼
+┌──────────────────────────────────────────────────────────────────────────┐
+│  🗣️ DIRECTION CHECK (before converging to solutions):                     │
 │                                                         │
 │  "From the 8 facets, the key tensions I see are:        │
 │     [Tension A] vs [Tension B]                          │
@@ -184,10 +193,14 @@ User Need
                            │
                            ▼
 ┌─────────────────────────────────────────────────────────┐
-│         FINAL TRIAGING → Keep Exactly 3 (for MCTS)       │
-│                                                         │
-│  All details confirmed. Now narrow to 3 using 3 sources:│
-│                                                         │
+│         FINAL TRIAGING → Keep 5~8 (for MCTS Simulation)       │
+│                                                              │
+│  All details confirmed. Now narrow to keep 5~8 solutions:    │
+│  ⚠️ "Keep exactly 3" is DEPRECATED — insufficient for        │
+│     multi-perspective scrutable reasoning.                   │
+│  ⚠️ Upper limit raised from 3 to 8 to allow richer           │
+│     cross-validation during simulation.                      │
+│                                                              │
 │  SOURCE 1 — MEMORY (knowledge_lifecycle.js):             │
 │    Query: past similar tasks? user preference patterns?  │
 │    Which approaches succeeded/failed before?             │
@@ -201,12 +214,15 @@ User Need
 │    Coverage: which cover the MOST facets?                │
 │    Actionability: which are truly doable right now?       │
 │                                                         │
-│  ⚠️ Every dropped direction needs a specific reason.     │
-│  ⚠️ All 3 kept MUST pass the user's detail check first.  │
-│  ⚠️ If <3 viable → go back to user: ''Need more?.''     │
-│                                                         │
-│  Output: 3 structured solutions                       │
-│          (each with complete description and basis)     │
+│  ⚠️ Every dropped direction needs a specific reason.      │
+│  ⚠️ All kept solutions MUST pass the user's detail        │
+│     check first.                                          │
+│  ⚠️ If <5 viable → keep all viable, go to user:          │
+│     "Only X viable solutions found, need more?"           │
+│  ⚠️ If >8 viable → tighten to 8 using P4 compare cull    │
+│                                                          │
+│  Output: 5~8 structured solutions                        │
+│          (each with complete description and basis)      │
 │  Confirm: Show to user, wait for confirmation before    │
 │           entering Simulate Engine                      │
 └──────────────────────────────────────────────────────────┘
@@ -309,7 +325,7 @@ Divergence Process (multi-round iteration, until each facet is thought through):
       - Claiming capability limits without verifying what's actually possible
     
     After search, re-rate the facet. If still ≤3, you may proceed but ALL output
-    from that facet must cite its information source or be marked 【待核实】.
+    from that facet must cite its information source or be marked [pending verification].
     
     **NEVER produce a "template" or "empty table" as a solution when you could have searched for real data.**
     
@@ -317,7 +333,7 @@ Divergence Process (multi-round iteration, until each facet is thought through):
     **you MUST ask the user for specific data sources / API endpoints / reference links**
     **before proceeding. Do NOT decide "this is impossible" on behalf of the user.**
     
-    **⛔ "用户自己选的方案" is NOT a valid reason to skip delivering real value.**
+    **⛔ "user chose the plan" is NOT a valid reason to skip delivering real value.**
     **If you offered the user a choice between "empty template" and "real data with search",**
     **and they chose the template, that is YOUR fault for not offering the right choices.**
 
@@ -446,17 +462,43 @@ Culling Result:
 
 ④ Crystallize: Write complete solution description for each retained direction
 
-  Not "Facet1 says X, Facet2 says Y" fragments, but a complete solution:
+  Not "Facet1 says X, Facet2 says Y" fragments, but a complete solution.
+  ⚠️ EACH solution MUST also include an Eight-Facet Scrutable Scorecard:
+
     Solution Name: [Short identifier]
-    Core Approach: [One-sentence description of how this solution works]
-    Main Basis: [Which findings from diverge phase is this solution based on?
-                 From which facets?]
-    Constraint Check: [Which constraints satisfied? Which violated?
-                       Which uncertain?]
+    Core Approach: [One-sentence description]
+    Main Basis: [Which findings from diverge phase? From which facets?]
+    Constraint Check: [Which constraints satisfied/violated/uncertain?]
     Key Risks: [Main risks extracted from Risk & Abyss facet]
     Expected Complexity: [Small/Medium/Large]
-    Difference from Other Solutions: [What's essentially different from
-                                       Solution B/C?]
+    Difference from Others: [What's essentially different from other solutions?]
+
+    ┌─────────────────────────────────────────────────────┐
+    │  Eight-Facet Scrutable Scorecard                    │
+    ├───────┬──────────────────────────┬──────┬───────────┤
+    │ Facet │ Question                 │Score │ Evidence  │
+    ├───────┼──────────────────────────┼──────┼───────────┤
+    │  F1   │Is driving force reliable?？           │ 1-10 │ [依据]    │
+    │  F2   │Are foundation conditions met?？          │ 1-10 │ [依据]    │
+    │  F3   │Still valid if conditions change?？        │ 1-10 │ [依据]    │
+    │  F4   │Can effect truly land?？        │ 1-10 │ [依据]    │
+    │  F5   │Can worst case be tolerated?？        │ 1-10 │ [依据]    │
+    │  F6   │Are outputs and dependencies clear?？│ 1-10 │ [依据]    │
+    │  F7   │Does it cross red lines?？            │ 1-10 │ [依据]    │
+    │  F8   │Can all interests be balanced?？        │ 1-10 │ [依据]    │
+    ├───────┴──────────────────────────┼──────┼───────────┤
+    │ 综合可推敲性得分                │ Avg  │ [评估]    │
+    └──────────────────────────────────────┴───────────────┘
+
+  Score Guide:
+    8-10: 强（有明确依据）
+    5-7:  中（有依据但不充分）
+    1-4:  弱（依据不足或存在明显问题）
+    0:    无法评估
+
+  综合得分 < 4 的方案 → 直接淘汰（不可推敲）
+  综合得分 4-6 的方案 → 保留但标记"需重点关注"
+  综合得分 > 6 的方案 → 正常进入MCTS模拟
 ```
 
 ### 2.3 Converge Output

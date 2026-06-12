@@ -3,7 +3,7 @@ name: mcts-simulate
 description: MCTS-TD Decision Engine "Step 2" — Simulate Engine. True MCTS tree search: multi-round iteration, UCB node selection/expansion, backpropagation value update. Each solution's execution path is modeled as a tree, gradually converging to optimal decision through multiple simulations.
 ---
 
-# Step 2: MCTS Tree Search Simulation (Core Mechanism)
+# Step 2: MCTS Tree Search Simulation (Core Mechanism) — Multi-Layer Scrutable Reasoning
 
 > **🔒 COMPRESSION-SAFE RULES (Always apply, even if context is compressed):**
 > 1. **OUTPUT LANGUAGE**: User language already detected. Continue using that language.
@@ -17,6 +17,7 @@ description: MCTS-TD Decision Engine "Step 2" — Simulate Engine. True MCTS tre
 >    **NEVER jump to asking user without exhausting memory and web first. NEVER ask technical questions the user wouldn't know.**
 >    **⛔ VERIFY**: Run `node scripts/mcts_guard.js info-gap-guard --log '<JSON>'` to check acquisition order compliance.
 > 4. **CONVERGENCE**: Stop when best solution V stable for 3 rounds OR max iterations reached.
+> 5. **MULTI-LAYER REASONING (NEW)**: Each solution MUST be simulated at THREE reasoning layers (see §Multi-Layer Simulation). Single-pass simulation is DEPRECATED.
 
 > ⚠️ **OUTPUT LANGUAGE RULE (HIGHEST PRIORITY)**: All user-facing output MUST be in the user's detected language. Internal reasoning is English; user sees their language.
 
@@ -24,7 +25,35 @@ description: MCTS-TD Decision Engine "Step 2" — Simulate Engine. True MCTS tre
 
 ---
 
-## Core Concept
+## Multi-Layer Simulation (NEW)
+
+Each solution undergoes 3 layers of reasoning during MCTS simulation, not just one pass.
+
+```
+Layer 1 — Feasibility
+  "Given current conditions, is this solution viable?"
+  → Use 8-facet Scorecard F1/F2/F6/F7 as prior
+  → Simulate golden path
+  → Output: basic feasibility V_feasibility
+
+Layer 2 — Counterfactual
+  "If key assumptions fail, what happens?"
+  → Run if-then counterfactual for each key assumption
+  → Check at least 3 counterfactuals (from Scorecard F3/F5 low scores)
+  → Output: robustness V_robustness
+
+Layer 3 — Perspective Cross-Validation
+  "从不同的文化视角看这个方案，有什么新发现？"
+  → Select 2-3 perspective findings most relevant
+  → Re-examine through perspective questions
+  → Output: perspective cross-score V_perspective
+
+Final solution scoring:
+  V_final = α × V_feasibility + β × V_robustness + γ × V_perspective
+  Default weights: alpha=0.5, beta=0.3, gamma=0.2 (adjustable)
+```
+
+---## Core Concept
 
 ```
 Root

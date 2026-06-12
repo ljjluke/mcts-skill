@@ -9,7 +9,8 @@ description: MCTS-TD Decision Engine "Step 3~3.6" — Converge Engine. Aggregate
 > 1. **OUTPUT LANGUAGE**: User language already detected. Continue using that language.
 > 2. **CONVERGE PHASES**: Aggregate → Self-Check → Blindspot Audit → Decision Report.
 > 3. **FINAL OUTPUT**: In user's detected language. `node scripts/language_guard.js check` verifies consistency.
-> 4. **RANKING**: Rank solutions by V (value), show top 3 with n, σ², confidence.
+> 4. **RANKING**: Rank solutions by V (value), show ALL solutions (not just top 3) with n, σ², confidence, and multi-layer breakdown (V_feasibility, V_robustness, V_perspective).
+> 5. **MULTI-SOLUTION HANDLING**: With 5-8 solutions, ranking uses CLT-UCB. Solutions with σ² > 0.25 are shown with "high variance" warning.
 > 5. **⛔ SELF-CHECK MANDATORY**: Before executing, run `node scripts/mcts_guard.js self-check-guard` and answer ALL 9 questions in the checklist. Do NOT skip.
 > 6. **⛔ COMPLIANCE**: Before final decision, run `node scripts/mcts_guard.js compliance-report --state '<JSON>'` to audit the full pipeline.
 
@@ -66,6 +67,24 @@ Each solution output from Simulate Engine:
 Columns: Solution | n | V | σ² | Confidence | Best Path / Main Risk
 n=simulation count, V=average value, σ²=variance,
 Confidence=High(n≥5,σ²<0.05)/Medium/Low
+```
+
+### ⭐ Multi-Layer Ranking Display (NEW)
+
+```
+Solution Ranking (5 solutions):
+
+Rank │ Solution    │ V_final │ V_feas  │ V_robust│ V_persp │ σ²    │ n  │ Conf
+─────┼─────────────┼─────────┼─────────┼─────────┼─────────┼───────┼────┼──────
+  1  │ SolutionC   │ 0.85    │ 0.91    │ 0.82    │ 0.78    │ 0.03  │ 8  │ HIGH
+  2  │ SolutionA   │ 0.80    │ 0.88    │ 0.75    │ 0.72    │ 0.05  │ 6  │ HIGH
+  3  │ SolutionE   │ 0.72    │ 0.85    │ 0.60    │ 0.65    │ 0.09  │ 5  │ MED
+  4  │ SolutionB   │ 0.65    │ 0.70    │ 0.62    │ 0.58    │ 0.15  │ 4  │ LOW
+  5  │ SolutionD   │ 0.51    │ 0.80    │ 0.30    │ 0.25    │ 0.22  │ 3  │ LOW
+
+→ V_final = 0.5×V_feas + 0.3×V_robust + 0.2×V_persp
+→ SolutionC leads on all three layers. SolutionD has high V_feas but
+  low V_robust and V_persp — fragile under counterfactual.
 ```
 
 ### MCTS Ranking Rules
@@ -238,6 +257,37 @@ If only self-check without blindspot audit:
   → Waste!
 ```
 
+### NEW: Cultural Perspective Cross-Validation
+
+After the standard blindspot audit, **AND** after comparing with Step 0.5's cultural perspective matrix findings:
+
+```
+Step: Compare simulation outputs against Step 0.5 100-Schools Perspective findings
+
+  ① Extract all blindspots from Step 0.5
+  ② Check each blindspot against ranked solutions：
+     - Covered ✅ → mark "已覆盖"，记录由哪个方案覆盖
+     - Not covered ❌ → mark "Blindspot missed"
+
+  ③ Generate perspective coverage table:
+     ┌──────────────────┬──────────┬──────────┬──────────┬──────┐
+     │ Perspective blindspot          │ SolutionA│ SolutionB│ SolutionC│ ...  │
+     ├──────────────────┼──────────┼──────────┼──────────┼──────┤
+     │ Military:Qi-Zheng      │    ✓     │    -     │    ✓     │      │
+     │ Medical:Biao-Li      │    -     │    ✓     │    ✓     │      │
+     │ Daoist:inaction      │    ✗     │    ✗     │    ✗     │<- missed │
+     │ Historical:cycle phase      │    ✓     │    -     │    -     │      │
+     └──────────────────┴──────────┴──────────┴──────────┴──────┘
+
+  4. Missed blindspot handling:
+     If 3+Perspective blindspot未被任何方案覆盖
+       -> WARNING: coverage gap → Return to converge, generate solutions
+     若有1-2个Perspective blindspot未被覆盖
+       → 💡 在决策报告中标注"未覆盖盲点"，供用户参考
+     若无遗漏
+       → ✅ 视角覆盖完整，进入最终决策
+```
+
 ### Blindspot Audit Framework
 
 ```
@@ -369,6 +419,37 @@ Write path: ~/.claude/data/skills/mcts-td-planner/memory/mcts-td-value-archive.m
 ## Decision Conclusion Output Format
 
 Decision report format (core fields):
-  【MCTS-TD Decision Report】Task + Date + Total iterations
-  Solution ranking (V/n/σ²) + Self-check conclusion + Blindspot audit +
-  Execution plan + Knowledge update summary
+
+```
+════════════════════════════════════════════════════════
+ 【MCTS-TD Decision Report】
+ Task: [Task description]
+ Date: [Date]  |  Total iterations: [N]  |  Solutions evaluated: [5~8]
+════════════════════════════════════════════════════════
+
+ Solution Ranking (V_final = 0.5×V_feas + 0.3×V_robust + 0.2×V_persp)
+
+ Rank │ Solution    │ V_final │ V_feas│ V_robust│ V_persp│ σ²  │ n │ Conf
+ ─────┼─────────────┼─────────┼───────┼─────────┼────────┼─────┼───┼─────
+  1   │ [name]      │ [val]   │ [...] │ [...]   │ [...]  │ σ²  │ n │ HIGH
+  2   │ [name]      │ [val]   │ [...] │ [...]   │ [...]  │ σ²  │ n │ MED
+  ...
+
+ Self-Check Conclusion:
+   ✅ Pass / ⚠️ Has risk / ❌ Not passed
+   [Specific findings from self-check]
+
+ Perspective Blindspot Audit:
+   ✅ / ⚠️ / ❌ [Conclusion]
+   [View matrix showing cultural perspective coverage]
+   [Uncovered blindspots, if any]
+
+ Execution Plan:
+   [Optimal solution] → [Step 1] → [Step 2] → ... → [Step N]
+   [Key risks to watch] | [Fallback plan]
+
+ Knowledge Update Summary:
+   [New knowledge written to graph]
+   [TD error recorded: V_predicted → V_actual]
+────────────────────────────────────────────────────────
+```
