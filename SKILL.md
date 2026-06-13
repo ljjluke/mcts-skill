@@ -107,7 +107,13 @@ STEP 4: Output [Decision Report] — MCTS ranking + self-check + blindspot audit
 > ⚠️ Behaviors ①②③⑤ run SILENTLY. Only ④ may interrupt the user.
 
 > **🔒 COMPRESSION-SAFE CORE (Frontmatter + this block = survives any compression):**
-> **ALWAYS DECOMPOSE FIRST** | **OUTPUT IN USER LANGUAGE** | **PHASED OUTPUT (0→1→2→3→4)** | **GRILL THE USER** | **3 SOLUTIONS → MCTS**
+> **ALWAYS DECOMPOSE FIRST** | **OUTPUT IN USER LANGUAGE** | **PHASED OUTPUT (0→1→1.5→2→3→3.5→4)** | **GRILL THE USER** | **3 SOLUTIONS → MCTS**
+> **⛔ MANDATORY PER-PHASE OUTPUTS (not optional, not skippable):**
+> - MCTS simulation: output EVERY iteration round with 4-phase detail (Selection→Expansion→Simulation→Backprop). Collapsing rounds = VIOLATION.
+> - Memory Agent: execute all 5 checkpoints. Output verification block after Decision Report. Skipping = INCOMPLETE.
+> - Language Guard: call `language_guard.js check` after each major output block.
+> - Phase 3.5: call `mcts_compute.js should-ask-user` after simulation. Not optional.
+> - TD Closed Loop: V_actual vs V_predicted comparison after execution. Not optional.
 >
 > Full rules: engine/mcts-constraint.md | engine/mcts-diverge.md | engine/mcts-simulate.md | engine/mcts-converge.md | engine/td-learner.md
 >
@@ -133,7 +139,30 @@ STEP 4: Output [Decision Report] — MCTS ranking + self-check + blindspot audit
 > STEP 2: Output [Reconnaissance Report] — per-facet recon findings + cross-validation.
 > STEP 3: Output [Solutions] — 2~8 solutions, each with: approach + basis + complexity + difference from others + facet coverage matrix.
 >   → THEN auto-enter MCTS simulate. Do NOT pause for confirmation.
+>   ⛔ MCTS SIMULATION: Output EVERY iteration round with full 4-phase detail:
+>     ① Selection: path chosen + UCB values + why
+>     ② Expansion: new node + type + potential
+>     ③ Simulation: roll-out path + V_leaf + knowledge acquired + assumptions
+>     ④ Backpropagation: node-by-node update (n, V changes)
+>     Collapsing rounds or outputting only final numbers = VIOLATION.
+> 
+> STEP 3.5: After simulation, check if user input needed:
+>   node scripts/mcts_compute.js should-ask-user --ranked '<JSON>'
+>   If should_ask=true → ask user. If clear winner → proceed.
+> 
 > STEP 4: Output [Decision Report] — MCTS ranking (V/n/σ²/confidence) + self-check (flaw find + reverse think + risk assess) + blindspot audit.
+> 
+> ⛔ POST-DECISION MANDATORY (not optional, not skippable):
+>   1. Memory Agent Checkpoint Verification (output this block):
+>      ☐ ① pre_engine: deqi — [DONE/FAILED(why)]
+>      ☐ ② during_diverge: emotion — [DONE/FAILED(why)]
+>      ☐ ③ post_simulate: ashi — [DONE/FAILED(why)]
+>      ☐ ④ pre_converge: conflict — [DONE/ALERT(what)]
+>      ☐ ⑤ post_execution: TD update — [DONE/FAILED(why)]
+>      Any FAILED without valid reason → decision INCOMPLETE.
+>   2. TD Closed Loop: V_actual - V_predicted. Without this, skill cannot learn.
+>   3. Language Guard: node scripts/language_guard.js check --user-lang <lang>
+>      Verify output is in correct language. If FAIL → re-translate.
 >
 > INFO ACQUISITION (5-level, NEVER skip ①→②→③):
 >   ① Memory graph query  ② Self-learn (web/code/docs)  ③ Diverge handoff  ④ Ask user (constraints ONLY)  ⑤ Assume (+0.1 variance)
@@ -240,15 +269,30 @@ Phase 3 — Output then auto-proceed: [Converged Solution List]
   → The user can see the solutions. If they want to intervene, they will speak up.
   → Do not ask "shall I continue?" — just show the solutions and start MCTS.
 
-Phase 3.5 — Only ask user when truly needed (after simulation):
+⛔ Phase 3 MCTS — Output EVERY iteration round:
+  For EACH round, output 4-phase detail:
+    ① Selection: path chosen + UCB values considered + why this path
+    ② Expansion: new node created + type + expansion_potential
+    ③ Simulation: roll-out path + V_leaf + knowledge acquired (from which source) + assumptions made
+    ④ Backpropagation: node-by-node n and V updates
+  Then: tree state + convergence check
+  ⛔ FORBIDDEN: outputting only final V/n/σ² without per-round detail
+  ⛔ FORBIDDEN: collapsing multiple rounds into "after N iterations..."
+
+Phase 3.5 — Check if user input needed (after simulation):
   After MCTS simulation completes, if two solutions are nearly tied:
     node scripts/mcts_compute.js should-ask-user --ranked '<JSON>'
     If should_ask=true → ask user about their specific usage needs
     (not technical details — ask about usage scenarios, frequency, priorities)
   If there is a clear winner → proceed to decision report directly.
+  ⚠️ This step is NOT optional. Even if clear winner, output: "Phase 3.5: Clear winner, no user input needed."
 
 Phase 4 — Output after simulation completes: [Decision Report]
   Content: MCTS ranking + self-check verdict + blindspot audit + execution plan
+  ⛔ POST-DECISION BLOCK (mandatory, not skippable):
+    1. Memory Agent Checkpoint Verification (output the checklist)
+    2. TD Closed Loop: V_actual - V_predicted comparison
+    3. Language Guard: call language_guard.js check
 ```
 
 **Forbidden behaviors**:
@@ -256,6 +300,11 @@ Phase 4 — Output after simulation completes: [Decision Report]
 - ❌ Skipping the solution list and jumping straight to simulation
 - ❌ Collapsing the review map, recon report, and solution list into "one summary paragraph"
 - ❌ Pausing after Phase 3 asking "shall I continue?" — just auto-proceed to simulation
+- ❌ Outputting MCTS simulation results as only final V/n/σ² numbers without per-round 4-phase detail
+- ❌ Skipping Memory Agent checkpoints without a valid reason
+- ❌ Skipping Phase 3.5 (should-ask-user check) after simulation
+- ❌ Skipping TD closed loop (V_actual vs V_predicted) after execution
+- ❌ Skipping language_guard.js check after major output blocks
 
 **If only 1 feasible option exists**: Still output Phases 1~3, then at Phase 3 state: "Only 1 feasible option. Execute directly?" (in user's language).
 

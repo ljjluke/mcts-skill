@@ -9,6 +9,7 @@ description: MCTS-TD Decision Engine "Step 1" — Diverge Engine. Diverge (Eight
 > 1. **OUTPUT LANGUAGE**: User language already detected. Continue using that language.
 > 2. **PHASE ORDER**: Review Map → Recon Report → Solution List. Each MUST be output before proceeding.
 > 3. **LANGUAGE GUARD**: `node scripts/language_guard.js check --user-lang <lang> --output "..."` verifies output language.
+>    **⛔ MUST call after each major output block** (Review Map, Recon Report, Solution List). Not optional.
 > 4. **NO SKIP**: Do not skip any phase. Do not collapse phases into one summary.
 > 5. **⛔ ANTI-SINGLE-SOLUTION**: Before claiming "only one solution", run `node scripts/mcts_guard.js decomposition-guard --claim '<JSON>'`. If BLOCKED, expand facets and list alternatives.
 > 6. **⛔ DIVERSITY CHECK**: If <3 solutions generated, run `node scripts/mcts_guard.js diversity-challenge --solutions '<JSON>'`. If BLOCKED, generate more angles.

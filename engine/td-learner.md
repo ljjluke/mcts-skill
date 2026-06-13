@@ -10,6 +10,7 @@ description: TDL (Temporal Difference Learning) Engine's core inference rules. B
 > 2. **GATE BEFORE STORE**: New knowledge MUST pass gate-check (reusability + density + novelty + reliability). Discard if score < 0.4.
 > 3. **RECALL HIERARCHY**: ①Associative recall (most relevant first) → ②Fragment completion (fill gaps from memory) → ③External verification (web/user). Don't trust recalled knowledge blindly — verify when uncertain.
 > 4. **⛔ MEMORY AGENT**: 5 checkpoints MUST execute (silently): pre_engine → during_diverge → post_simulate → pre_converge → post_execution. Run `node scripts/mcts_guard.js memory-agent-guard` to verify.
+>    **⛔ ENFORCEMENT**: After Decision Report, MUST output checkpoint verification block (see mcts-converge.md). If any checkpoint not executed → Decision is INCOMPLETE. Memory Agent is NOT optional — it is how the skill learns. Skipping it = future decisions degrade.
 
 ## Overview
 

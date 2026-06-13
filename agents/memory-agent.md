@@ -124,7 +124,19 @@ node scripts/meridian_memory.js session-end '<session_json>'
 
 1. **SILENT MODE**: Behaviors 1,2,3,5,6 run silently. Do NOT output their results to the user.
 2. **ALERT ONLY**: Only behavior 4 (conflict detection) may interrupt. Max 2 alerts/session.
-3. **ALWAYS CALL**: Every behavior point MUST be executed. Skipping = memory not recorded = skill doesn't learn.
+3. **⛔ ALWAYS CALL — NO EXCEPTIONS**: Every behavior point MUST be executed. Skipping = memory not recorded = skill doesn't learn. After the Decision Report, you MUST output the checkpoint verification block:
+   ```
+   ⛔ Memory Agent Checkpoint Verification:
+     ☐ ① pre_engine: deqi recall — [DONE/FAILED(why)]
+     ☐ ② during_diverge: emotion observed — [DONE/FAILED(why)]
+     ☐ ③ post_simulate: ashi insert — [DONE/FAILED(why)]
+     ☐ ③.5 complete: knowledge fill — [DONE/FAILED(why)]
+     ☐ ④ pre_converge: conflict check — [DONE/ALERT(what)]
+     ☐ ⑤ post_execution: TD update — [DONE/FAILED(why)]
+   ```
+   If any checkpoint shows FAILED without a valid reason → the entire decision is INCOMPLETE.
+   Valid failure reasons: "MMA engine not available" / "cold start, nothing to recall" / "no conflict detected" (for ④).
+   Invalid failure reasons: "forgot" / "too long" / "not needed" / "skipped for brevity".
 4. **ALWAYS COMPLETE**: After behavior 1 (deqi recall), check each recalled acupoint for `_needs_completion`. If found, execute behavior 3.5 to fill missing dimensions before injecting into context.
 5. **KNOWLEDGE CAN BE INCOMPLETE AT STORAGE TIME**: The quality gate in ashi.js only rejects true noise. Many useful acupoints will have missing dimensions — that's normal. Completion improves them over time.
 6. **TD CLOSED LOOP**: V_predicted (from pre-engine recall) MUST be compared with V_actual (from post-execution result). Update makes the skill "smarter."

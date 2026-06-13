@@ -558,6 +558,9 @@ Time Budget:
 
 ### Iteration Progress Display
 
+**⛔ MANDATORY OUTPUT — Skipping iteration progress = VIOLATION.**
+**Each iteration round MUST output the full 4-phase detail. Collapsing rounds = VIOLATION.**
+
 After each iteration, output current tree state summary:
 
 ```
@@ -566,19 +569,28 @@ After each iteration, output current tree state summary:
 ═══════════════════════════════════════
 
  This Round:
-   Selection: SolutionB → Step1-Success → Step2-RiskPoint
-   Expansion: Expanded "Risk Occurred" branch
-   Simulation: After risk occurred, fallback activated, final V=0.45
-   Backpropagation: Updated 3 nodes
+   ① Selection: Root → SolutionB → Step1-Success → Step2-RiskPoint
+      UCB values considered: [node: UCB value, ...]
+      Why this path: [explanation]
+   ② Expansion: Expanded "Risk Occurred" branch at Step2-RiskPoint
+      New node: Step2-RiskOccur (type=RISK, expansion_potential=MED)
+   ③ Simulation: Quick roll-out from Step2-RiskOccur
+      Roll-out path: RiskOccur → FallbackActivated → PartialRecovery → V=0.45
+      Knowledge acquired: [what, from which source]
+      Assumptions made: [if any]
+   ④ Backpropagation: Updated 3 ancestor nodes
+      Step2-RiskOccur: n=1, V=0.45 (new)
+      Step2-RiskPoint: n: 2→3, V: 0.70→0.62
+      SolutionB-Root: n: 4→5, V: 0.76→0.73
 
  Current Tree State:
   Root (N=12)
   ├── SolutionA (n=5, V=0.84, σ²=0.03) ← Currently best
   │    ├── Step1-Success (n=3, V=0.91)
   │    └── Step1-Failure (n=2, V=0.30)  
-  ├── SolutionB (n=4, V=0.76, σ²=0.08)
-  │    ├── Step1-Success (n=2, V=0.82)
-  │    └── Step1-Failure (n=2, V=0.52)
+  ├── SolutionB (n=5, V=0.73, σ²=0.08)
+  │    ├── Step1-Success (n=3, V=0.82)
+  │    └── Step2-RiskOccur (n=1, V=0.45) ← New
   └── SolutionC (n=3, V=0.62, σ²=0.15)
 
  Convergence Check:
@@ -586,6 +598,12 @@ After each iteration, output current tree state summary:
   → ✅ SolutionA V estimate stabilized
 ═══════════════════════════════════════
 ```
+
+**⛔ FORBIDDEN:**
+- Outputting only final V/n/σ² without per-round detail
+- Collapsing multiple rounds into "after N iterations..."
+- Skipping Selection path explanation
+- Skipping Backpropagation node updates
 
 ### Final Output at Convergence
 

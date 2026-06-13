@@ -110,6 +110,8 @@ Still not converged → Mark "not fully converged"
 
 ## ASK_USER_CONFIRMATION — Display Search Results and Ask
 
+**⛔ MANDATORY — This step MUST be output before self-check. Skipping = VIOLATION.**
+
 Before entering self-check and blindspot audit, **first display MCTS tree search conclusion to user**:
 
 ```
@@ -398,6 +400,9 @@ Each time encountering unexpected:
 
 ## TD Update and Knowledge Write-back (After Execution)
 
+**⛔ MANDATORY — This step MUST be output after Decision Report. Skipping = VIOLATION.**
+**Without TD update, the skill CANNOT learn. Every decision without TD update = wasted experience.**
+
 > This is where "TD" in MCTS-TD materializes — after execution completes,
 > compare actual results with simulation, update knowledge graph.
 
@@ -448,8 +453,26 @@ Decision report format (core fields):
    [Optimal solution] → [Step 1] → [Step 2] → ... → [Step N]
    [Key risks to watch] | [Fallback plan]
 
+ Phase 3.5 User Check:
+   [If two solutions nearly tied → ask user about usage priorities]
+   [If clear winner → "No user input needed, clear winner"]
+   Command: node scripts/mcts_compute.js should-ask-user --ranked '<JSON>'
+
  Knowledge Update Summary:
    [New knowledge written to graph]
    [TD error recorded: V_predicted → V_actual]
+
+ ⛔ Memory Agent Checkpoint Verification:
+   ☐ pre_engine: deqi recall — [DONE/SKIPPED(why)]
+   ☐ during_diverge: emotion observed — [DONE/SKIPPED(why)]
+   ☐ post_simulate: ashi insert — [DONE/SKIPPED(why)]
+   ☐ pre_converge: conflict check — [DONE/ALERT(what)]
+   ☐ post_execution: TD update — [DONE/SKIPPED(why)]
+   If any checkpoint SKIPPED without valid reason → VIOLATION
+   Verify: node scripts/mcts_guard.js memory-agent-guard --executed '[1,2,3,4,5]'
+
+ ⛔ Language Guard Verification:
+   node scripts/language_guard.js check --user-lang <lang> --output "<last output lines>"
+   [Result: PASS/FAIL + details]
 ────────────────────────────────────────────────────────
 ```
