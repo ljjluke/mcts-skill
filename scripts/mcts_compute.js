@@ -424,17 +424,17 @@ function main() {
                 output({ passed, low_facet_count: lowCount, reason: passed ? "all facets ≥7" : `${lowCount} facets below 7, return to recon completion` });
                 break;
             }
-            // --- Five-Diagnosis Portrait (五诊需求画像) ---
+            // --- Five-Diagnosis Portrait (五诊需求画像) — domain-agnostic ---
             case "five-diagnosis": {
                 const DIAGNOSES = [
                     { id: 'tian', name: 'Tian · Timing & Context', cjk: '天·时势', quotes: '"天者，阴阳、寒暑、时制也" — Sunzi',
                       questions: ['current_stage', 'deadline_pressure', 'env_stability', 'window_period'] },
                     { id: 'di', name: 'Di · Resources & Constraints', cjk: '地·资源', quotes: '"地者，远近、险易、广狭、死生也" — Sunzi',
-                      questions: ['team_size', 'budget', 'infra', 'dependency_limits'] },
+                      questions: ['people_available', 'budget', 'materials_available', 'external_constraints'] },
                     { id: 'ren', name: 'Ren · People & Culture', cjk: '人·人心', quotes: '"上下同欲者胜" — Sunzi',
-                      questions: ['end_users', 'team_culture', 'stakeholders', 'maintainers'] },
+                      questions: ['who_affected', 'preferences_habits', 'stakeholders', 'who_lives_with_outcome'] },
                     { id: 'fa', name: 'Fa · Rules & Governance', cjk: '法·规矩', quotes: '"法者，曲制、官道、主用也" — Sunzi',
-                      questions: ['compliance', 'code_standards', 'process', 'architecture'] },
+                      questions: ['regulations', 'what_forbidden', 'required_process', 'structural_constraints'] },
                     { id: 'wu', name: 'Wu · Essence & Purpose', cjk: '物·本质', quotes: '"大道至简" — Laozi',
                       questions: ['core_purpose', 'success_criteria', 'deal_breakers', 'priority', 'expected_impact'] },
                 ];
@@ -449,8 +449,8 @@ function main() {
                     results.push({ ...d, score, gap, questions_to_ask: askCount });
                 }
                 const crossChecks = [
-                    { pair: 'tian↔ren', desc: 'Does window period match team readiness?' },
-                    { pair: 'di↔fa', desc: 'Are resources sufficient for governance standards?' },
+                    { pair: 'tian↔ren', desc: 'Does timing window match people readiness?' },
+                    { pair: 'di↔fa', desc: 'Are resources sufficient for rule requirements?' },
                     { pair: 'wu↔tian', desc: 'Is core goal achievable within current timing?' },
                 ];
                 output({ diagnoses: results, total_questions: Math.min(totalQuestions, 5), cross_checks: crossChecks, max_questions_per_round: 5 });

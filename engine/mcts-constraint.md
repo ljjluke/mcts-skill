@@ -203,6 +203,11 @@ Code-enforced: `node scripts/mcts_compute.js five-diagnosis --scores '{"tian":8,
 
 ### Five Diagnosis Dimensions
 
+> **DESIGN PRINCIPLE: These 5 dimensions are DOMAIN-AGNOSTIC.**
+> They apply to software, medicine, education, driving, cooking — any field.
+> The "concrete questions" under each dimension are EXAMPLES — LLM must
+> adapt them to the user's specific domain. Never assume "software project".
+
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
 │  五诊 (Wuzhen) Requirement Portrait — "望闻问切" + "五事七计"        │
@@ -211,49 +216,89 @@ Code-enforced: `node scripts/mcts_compute.js five-diagnosis --scores '{"tian":8,
 │  ① 天 (Tian) · Timing & Context                                    │
 │     "天者，阴阳、寒暑、时制也" — Sunzi Bingfa                       │
 │                                                                     │
-│     - Current stage: (0→1 / 1→10 / 10→100)                         │
+│     ABSTRACT: When is this happening? What's the temporal context?  │
+│     Generic probes (adapt to ANY domain):                           │
+│     - What stage is this? (starting / growing / mature / scaling)   │
 │     - Time pressure: hard deadline or flexible?                     │
-│     - External stability: expansion / contraction / steady?         │
-│     - Window of opportunity: market timing / tech红利 / policy?     │
+│     - External environment: stable / changing / turbulent?          │
+│     - Window of opportunity: is there one? closing soon?            │
+│                                                                     │
+│     Domain examples:                                                │
+│     · Software: sprint deadline? tech stack maturity?               │
+│     · Medicine: acute/chronic? treatment window? comorbidity stage? │
+│     · Education: semester start/mid/end? student readiness?         │
+│     · Driving: weather? road conditions? time of day?               │
 │     ⚠️ If not asked → solution may miss window or mismatch pace    │
 │                                                                     │
 │  ② 地 (Di) · Resources & Constraints                               │
 │     "地者，远近、险易、广狭、死生也" — Sunzi Bingfa                  │
 │                                                                     │
-│     - People: who builds? how many? skill level? overtime viable?   │
-│     - Budget: limits? paid tools/services allowed?                  │
-│     - Infrastructure: existing environment? can modify?             │
-│     - Dependencies: can add new ones? version locked?               │
+│     ABSTRACT: What do you have to work with? What are the limits?   │
+│     Generic probes:                                                 │
+│     - People: who's involved? how many? skill/experience level?     │
+│     - Budget/money: any financial limits?                           │
+│     - Physical/material: what's available? can acquire more?        │
+│     - Dependencies: any locked-in choices? external constraints?    │
+│                                                                     │
+│     Domain examples:                                                │
+│     · Software: team size? infra? can add dependencies?             │
+│     · Medicine: available drugs? equipment? hospital capacity?      │
+│     · Education: class size? materials? classroom setup?            │
+│     · Driving: vehicle condition? fuel? route alternatives?         │
 │     ⚠️ If not asked → solution may exceed actual execution capacity│
 │                                                                     │
 │  ③ 人 (Ren) · People & Culture                                     │
 │     "上下同欲者胜" — Sunzi Bingfa                                   │
 │     "人和不如地利，地利不如天时" — Mengzi                            │
 │                                                                     │
-│     - End users: who are they? what habits?                         │
-│     - Team culture: prefer stability or innovation?                 │
-│     - Stakeholders: who benefits? who resists? who decides?         │
-│     - Maintainers: who maintains? their skill level?                │
-│     ⚠️ If not asked → technically optimal but team rejects it      │
+│     ABSTRACT: Who is affected? What do they want? Will they accept? │
+│     Generic probes:                                                 │
+│     - Who is impacted by this decision? (directly & indirectly)     │
+│     - What do they want/need? What habits/preferences?              │
+│     - Who benefits? Who might resist? Who has final say?            │
+│     - Who will live with the outcome long-term?                     │
+│                                                                     │
+│     Domain examples:                                                │
+│     · Software: end users? stakeholders? team culture?              │
+│     · Medicine: patient preferences? family? care team dynamics?    │
+│     · Education: student learning styles? parent expectations?      │
+│     · Driving: passengers? other drivers? traffic culture?          │
+│     ⚠️ If not asked → optimal on paper but rejected in practice    │
 │                                                                     │
 │  ④ 法 (Fa) · Rules & Governance                                    │
 │     "法者，曲制、官道、主用也" — Sunzi Bingfa                        │
 │                                                                     │
-│     - Compliance: data privacy / security / audit?                  │
-│     - Code standards: language / framework / version limits?        │
-│     - Process: CI/CD requirements? code review flow?                │
-│     - Architecture: microservices / monolith / serverless?          │
+│     ABSTRACT: What rules must be followed? What's forbidden?        │
+│     Generic probes:                                                 │
+│     - What regulations/standards apply? (formal or informal)        │
+│     - What is explicitly forbidden?                                 │
+│     - What process must be followed? (approval, review, etc.)       │
+│     - What constraints come from the structure/framework?           │
+│                                                                     │
+│     Domain examples:                                                │
+│     · Software: compliance? CI/CD? architecture constraints?        │
+│     · Medicine: clinical guidelines? consent? licensing?             │
+│     · Education: curriculum standards? school policy? accreditation? │
+│     · Driving: traffic laws? company fleet policy? insurance?       │
 │     ⚠️ If not asked → solution may violate hard constraints        │
 │                                                                     │
 │  ⑤ 物 (Wu) · Essence & Purpose                                     │
 │     "大道至简" — Laozi                                              │
 │     "知止而后有定，定而后能静" — Daxue                               │
 │                                                                     │
+│     ABSTRACT: What is this REALLY about? What matters most?         │
+│     Generic probes:                                                 │
 │     - Core purpose: what is the real goal (strip the packaging)?    │
 │     - Success criteria: how to judge "done"?                        │
 │     - Deal-breakers: what is absolutely unacceptable?               │
 │     - Priority: if only one thing can be done, what?                │
 │     - Expected impact: what change after completion?                │
+│                                                                     │
+│     Domain examples:                                                │
+│     · Software: what problem does this feature actually solve?      │
+│     · Medicine: what's the treatment goal? palliative vs curative?  │
+│     · Education: what should students actually learn?               │
+│     · Driving: what's the real destination? shortest vs safest?     │
 │     ⚠️ If not asked → solution may miss the real target            │
 │                                                                     │
 └─────────────────────────────────────────────────────────────────────┘
@@ -271,12 +316,17 @@ When executing 五诊 portrait, follow these rules:
 
 ② Follow-up principles:
    - Don't re-ask what user already answered
-   - Don't ask what can be inferred from code/project (check yourself)
+   - Don't ask what can be inferred from available info (check yourself)
    - Only ask what "only the user would know"
    - Max 3-5 questions per round
+   - ADAPT questions to user's domain — never assume software
 
 ③ Good vs bad follow-up examples:
-   ✅ "Who maintains this? Team size and skill level?"
+   ✅ "Who's most affected by this decision? What do they want?"
+   ✅ "Any deadline? Hard or flexible?"
+   ✅ "What's the real goal here? What does success look like?"
+   ❌ "Who maintains the system?" (assumes software — what if user is a doctor?)
+   ❌ "What's your tech stack?" (domain-specific — should infer or ask generically)
    ✅ "Any deadline? Hard or flexible?"
    ✅ "What are end users accustomed to? Can they handle big changes?"
    ❌ "What's your tech stack?" (should read package.json/go.mod yourself)
