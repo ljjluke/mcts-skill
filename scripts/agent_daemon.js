@@ -39,12 +39,16 @@ let fingerprintCache = []; // LRU指纹缓存
 // ═══════════════════════════════════════════════════════════════
 
 function findMMAScripts() {
-    const base = path.join(os.homedir(), '.claude', 'plugins', 'cache', 'mcts-td-planner', 'mcts-td-planner');
-    if (!fs.existsSync(base)) return null;
-    const versions = fs.readdirSync(base).filter(d => /^\d+\.\d+\.\d+$/.test(d)).sort();
-    for (const v of versions.reverse()) {
-        const d = path.join(base, v, 'scripts');
-        if (fs.existsSync(d)) return d;
+    const cacheBase = path.join(os.homedir(), '.claude', 'plugins', 'cache');
+    const candidates = ['mcts', 'mcts-td-planner'];
+    for (const name of candidates) {
+        const base = path.join(cacheBase, name, name);
+        if (!fs.existsSync(base)) continue;
+        const versions = fs.readdirSync(base).filter(d => /^\d+\.\d+\.\d+$/.test(d)).sort();
+        for (const v of versions.reverse()) {
+            const d = path.join(base, v, 'scripts');
+            if (fs.existsSync(d)) return d;
+        }
     }
     return null;
 }

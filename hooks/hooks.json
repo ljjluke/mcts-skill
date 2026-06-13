@@ -1,5 +1,5 @@
 {
-  "description": "MCTS-TD Memory hooks — 全程跟随 Agent: Setup 启动后台监控, SessionStart 清理旧版+加载记忆, SessionEnd 巩固",
+  "description": "MCTS-TD Memory hooks — Setup daemon, SessionStart load memory, SessionEnd consolidate",
   "hooks": {
     "Setup": [
       {
@@ -7,7 +7,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const p=require('path').join(require('os').homedir(),'.claude/plugins/cache/mcts-td-planner/mcts-td-planner');const d=require('fs').readdirSync(p).filter(x=>/^\\d/.test(x)).sort();const s=require('path').join(p,d[d.length-1],'scripts/agent_daemon.js');if(require('fs').existsSync(s)){require('child_process').execSync('node \\\"'+s+'\\\" start > /dev/null 2>&1 \\u0026');console.log('[MCTS-TD] Agent daemon started')}else{console.log('[MCTS-TD] Agent daemon starting...')}\"",
+            "command": "node -e \"const fs=require('fs');const path=require('path');const os=require('os');const base=os.homedir()+'/.claude/plugins/cache';const names=['mcts','mcts-td-planner'];let p=null;for(const n of names){const d=path.join(base,n,n);if(fs.existsSync(d)){p=d;break}}if(!p){console.log('[MCTS-TD] Plugin cache not found');process.exit(0)}const vers=fs.readdirSync(p).filter(x=>/^\\d/.test(x)).sort();const s=path.join(p,vers[vers.length-1],'scripts/agent_daemon.js');if(fs.existsSync(s)){require('child_process').execSync('node \\\"'+s+'\\\" start > /dev/null 2>&1 \\u0026');console.log('[MCTS-TD] Agent daemon started')}else{console.log('[MCTS-TD] Agent daemon starting...')}\"",
             "timeout": 5
           }
         ]
@@ -19,7 +19,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const fs=require('fs');const path=require('path');const os=require('os');const cache=path.join(os.homedir(),'.claude/plugins/cache/mcts-td-planner/mcts-td-planner');if(!fs.existsSync(cache))process.exit(0);const dirs=fs.readdirSync(cache).filter(d=>/^\\d+\\.\\d+\\.\\d+$/.test(d)).sort((a,b)=>{const[a1,a2,a3]=a.split('.').map(Number);const[b1,b2,b3]=b.split('.').map(Number);return b1-a1||b2-a2||b3-a3});const latest=dirs[0];for(const d of dirs.slice(1)){fs.rmSync(path.join(cache,d),{recursive:true,force:true})};console.log('[MCTS-TD] Ready v'+latest);(function(){try{const io=require(path.join(cache,latest,'scripts/mma/io'));const kg=io.loadMMA();if(kg.meta.total_points>0){console.log('[MCTS-TD] Memory loaded: '+kg.meta.total_points+' points across '+(Object.keys(kg.meridians).filter(k=>kg.meridians[k].points.length>0).length)+' meridians')}else{console.log('[MCTS-TD] Cold start')}}catch(e){}})()\"",
+            "command": "node -e \"const fs=require('fs');const path=require('path');const os=require('os');const base=os.homedir()+'/.claude/plugins/cache';const names=['mcts','mcts-td-planner'];let cache=null;for(const n of names){const d=path.join(base,n,n);if(fs.existsSync(d)){cache=d;break}}if(!cache){process.exit(0)}const dirs=fs.readdirSync(cache).filter(d=>/^\\d+\\.\\d+\\.\\d+$/.test(d)).sort((a,b)=>{const[a1,a2,a3]=a.split('.').map(Number);const[b1,b2,b3]=b.split('.').map(Number);return b1-a1||b2-a2||b3-a3});const latest=dirs[0];for(const d of dirs.slice(1)){fs.rmSync(path.join(cache,d),{recursive:true,force:true})};console.log('[MCTS-TD] Ready v'+latest);(function(){try{const io=require(path.join(cache,latest,'scripts/mma/io'));const kg=io.loadMMA();if(kg.meta.total_points>0){console.log('[MCTS-TD] Memory loaded: '+kg.meta.total_points+' points across '+(Object.keys(kg.meridians).filter(k=>kg.meridians[k].points.length>0).length)+' meridians')}else{console.log('[MCTS-TD] Cold start')}}catch(e){}})()\"",
             "timeout": 15
           }
         ]
@@ -31,7 +31,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const fs=require('fs');const path=require('path');const os=require('os');const mem=path.join(os.homedir(),'.claude/data/skills/mcts-td-planner/memory');const bf=path.join(mem,'agent_buffer.json');let buf={pending:[]};if(fs.existsSync(bf)){try{buf=JSON.parse(fs.readFileSync(bf,'utf-8'))}catch(e){}};buf.pending.push({type:'deqi',data:{auto:true},timestamp:new Date().toISOString()});if(buf.pending.length>50)buf.pending=buf.pending.slice(-50);fs.writeFileSync(bf,JSON.stringify(buf))\"",
+            "command": "node -e \"const fs=require('fs');const path=require('path');const os=require('os');const mem=path.join(os.homedir(),'.claude/data/skills/mcts-td-planner/memory');if(!fs.existsSync(mem))fs.mkdirSync(mem,{recursive:true});const bf=path.join(mem,'agent_buffer.json');let buf={pending:[]};if(fs.existsSync(bf)){try{buf=JSON.parse(fs.readFileSync(bf,'utf-8'))}catch(e){}};buf.pending.push({type:'deqi',data:{auto:true},timestamp:new Date().toISOString()});if(buf.pending.length>50)buf.pending=buf.pending.slice(-50);fs.writeFileSync(bf,JSON.stringify(buf))\"",
             "timeout": 3
           }
         ]
@@ -43,7 +43,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const fs=require('fs');const path=require('path');const os=require('os');const mem=path.join(os.homedir(),'.claude/data/skills/mcts-td-planner/memory');const bf=path.join(mem,'agent_buffer.json');let buf={pending:[]};if(fs.existsSync(bf)){try{buf=JSON.parse(fs.readFileSync(bf,'utf-8'))}catch(e){}};const ts=new Date().toISOString();buf.pending.push({type:'deqi',data:{auto:true},timestamp:ts});if(buf.pending.length>200)buf.pending=buf.pending.slice(-200);fs.writeFileSync(bf,JSON.stringify(buf))\"",
+            "command": "node -e \"const fs=require('fs');const path=require('path');const os=require('os');const mem=path.join(os.homedir(),'.claude/data/skills/mcts-td-planner/memory');if(!fs.existsSync(mem))fs.mkdirSync(mem,{recursive:true});const bf=path.join(mem,'agent_buffer.json');let buf={pending:[]};if(fs.existsSync(bf)){try{buf=JSON.parse(fs.readFileSync(bf,'utf-8'))}catch(e){}};const ts=new Date().toISOString();buf.pending.push({type:'deqi',data:{auto:true},timestamp:ts});if(buf.pending.length>200)buf.pending=buf.pending.slice(-200);fs.writeFileSync(bf,JSON.stringify(buf))\"",
             "timeout": 2
           }
         ]
@@ -55,7 +55,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const fs=require('fs');const path=require('path');const os=require('os');const mem=path.join(os.homedir(),'.claude/data/skills/mcts-td-planner/memory');const bf=path.join(mem,'agent_buffer.json');let buf={pending:[]};if(fs.existsSync(bf)){try{buf=JSON.parse(fs.readFileSync(bf,'utf-8'))}catch(e){}};buf.pending.push({type:'session_end',data:{},timestamp:new Date().toISOString()});fs.writeFileSync(bf,JSON.stringify(buf))\"",
+            "command": "node -e \"const fs=require('fs');const path=require('path');const os=require('os');const mem=path.join(os.homedir(),'.claude/data/skills/mcts-td-planner/memory');if(!fs.existsSync(mem))fs.mkdirSync(mem,{recursive:true});const bf=path.join(mem,'agent_buffer.json');let buf={pending:[]};if(fs.existsSync(bf)){try{buf=JSON.parse(fs.readFileSync(bf,'utf-8'))}catch(e){}};buf.pending.push({type:'session_end',data:{},timestamp:new Date().toISOString()});fs.writeFileSync(bf,JSON.stringify(buf))\"",
             "timeout": 3
           }
         ]
