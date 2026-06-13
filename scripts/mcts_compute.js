@@ -424,6 +424,43 @@ function main() {
                 output({ passed, low_facet_count: lowCount, reason: passed ? "all facets ≥7" : `${lowCount} facets below 7, return to recon completion` });
                 break;
             }
+            // --- 64 Hexagram Interaction Lookup ---
+            case "hexagram-lookup": {
+                const HEXAGRAMS = {
+                    '1-2': { name: '泰(Tai)·Peace', question: 'Force pushes foundation — balanced growth or overextension?' },
+                    '2-1': { name: '否(Pi)·Stagnation', question: 'Foundation blocks force — stagnation or necessary consolidation?' },
+                    '3-5': { name: '解(Jie)·Deliverance', question: 'Change resolves risk — disruption as liberation?' },
+                    '5-3': { name: '蹇(Jian)·Obstruction', question: 'Risk blocks change — obstacle requiring patience?' },
+                    '1-7': { name: '讼(Song)·Conflict', question: 'Force hits boundary — conflict or negotiation?' },
+                    '7-1': { name: '蒙(Meng)·Youthful Folly', question: 'Boundary constrains force — learning through limitation?' },
+                    '4-6': { name: '家人(JiaRen)·Family', question: 'Penetration serves visibility — alignment of inside and outside?' },
+                    '8-5': { name: '比(Bi)·Holding Together', question: 'Convergence amid risk — allies or dependency?' },
+                    '5-8': { name: '坎(Kan)·Abysmal Water', question: 'Risk through convergence — collective danger or shared survival?' },
+                    '6-2': { name: '贲(Bi)·Grace', question: 'Surface over foundation — form vs substance?' },
+                    '3-1': { name: '益(Yi)·Increase', question: 'Change amplifies force — acceleration or recklessness?' },
+                    '1-3': { name: '损(Sun)·Decrease', question: 'Force diminished by change — necessary sacrifice or erosion?' },
+                    '4-7': { name: '观(Guan)·Contemplation', question: 'Penetration meets boundary — insight through restriction?' },
+                    '7-4': { name: '颐(Yi)·Nourishment', question: 'Boundary feeds penetration — constraint as resource?' },
+                    '8-2': { name: '升(Sheng)·Pushing Upward', question: 'Convergence builds foundation — organic growth?' },
+                    '2-8': { name: '萃(Cui)·Gathering', question: 'Foundation attracts convergence — magnet or trap?' },
+                    '6-5': { name: '鼎(Ding)·Cauldron', question: 'Visible transforms risk — innovation from danger?' },
+                    '5-6': { name: '旅(Lv)·Wanderer', question: 'Risk on the surface — transient exposure or travel caution?' },
+                };
+                const upper = o.upper || '0';
+                const lower = o.lower || '0';
+                const key = `${upper}-${lower}`;
+                const hex = HEXAGRAMS[key];
+                if (hex) {
+                    output({ key, ...hex });
+                } else {
+                    // Generate generic interaction question for unknown pairs
+                    const facetNames = { 1:'Force',2:'Foundation',3:'Change',4:'Penetration',5:'Risk',6:'Visible',7:'Boundary',8:'Convergence' };
+                    const uName = facetNames[upper] || `F${upper}`;
+                    const lName = facetNames[lower] || `F${lower}`;
+                    output({ key, name: `${uName}×${lName}`, question: `How does ${uName} interact with ${lName}? What dynamic emerges when ${uName} meets ${lName}?` });
+                }
+                break;
+            }
             // --- Five-Diagnosis Portrait (五诊需求画像) — domain-agnostic ---
             case "five-diagnosis": {
                 const DIAGNOSES = [

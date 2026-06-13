@@ -31,7 +31,7 @@ const ENGINES = {
                    'cull','coverage-matrix','adaptive-c','shi-maturity','info-gap-scan',
                    'needs-sub-diverge','synthesize-sim','should-write-kg','check-write-safety',
                    'check-final-convergence','re-simulation-decide','identify-domain','check-learning-depth',
-                   'five-diagnosis'],
+                   'five-diagnosis','hexagram-lookup'],
     },
     guard: {
         script: 'mcts_guard.js',

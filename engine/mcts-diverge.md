@@ -324,7 +324,110 @@ Facet8: Convergence & Mutual Benefit
 ═══════════════════════════════════════════════════════════════
 ```
 
-### 1.2 Divergence Method: Iterative Review + Cross-Association
+### 1.2 Three-Layer Yijing Decision Framework (八卦→64卦→384爻)
+
+> "易有三义：简易、变易、不易" — Yi Xue tradition
+>
+> The Eight-Facet Mirror is Layer 1 (经卦/Jing Gua). But real decisions have
+> deeper structure: facets INTERACT (64 hexagrams), and each interaction has
+> CHANGING CONDITIONS (384 yao/lines). This three-layer framework captures
+> decision depth that single-facet review misses.
+
+```
+Layer 1 — 八卦 (8 Jing Gua): Eight Facets (already exists)
+  8 independent dimensions, each reviewed individually.
+  Output: 8 facet scores + blindspots.
+
+Layer 2 — 64卦 (64 Bie Gua): Facet Interactions (NEW)
+  Every pair of facets forms a hexagram (上卦 + 下卦).
+  8×8 = 64 interaction patterns, each revealing a unique dynamic.
+  Not all 64 are needed every time — select relevant ones.
+
+Layer 3 — 384爻 (384 Yao): Changing Conditions (NEW)
+  Each hexagram has 6 lines (爻). Each line can be stable (yin/yang)
+  or changing (老阴→阳 / 老阳→阴). A changing line means:
+  "This factor is about to shift — what happens when it does?"
+  64 × 6 = 384 possible transitions. Only examine critical ones.
+```
+
+#### Layer 2: 64 Hexagram Matrix — Facet Interaction Patterns
+
+```
+When Facet A (upper trigram) meets Facet B (lower trigram),
+their interaction reveals a specific dynamic:
+
+Key interaction patterns (selected, not exhaustive):
+
+═══════════════════════════════════════════════════════════════
+  Upper    Lower    Hexagram    Dynamic Question
+═══════════════════════════════════════════════════════════════
+  F1 Force  F2 Found  11 泰(Tai)  "Force pushes foundation — 
+           balanced growth or overextension?"
+  F2 Found  F1 Force  12 否(Pi)   "Foundation blocks force — 
+           stagnation or necessary consolidation?"
+  F3 Change F5 Risk   40 解(Jie)  "Change resolves risk — 
+           disruption as liberation?"
+  F5 Risk   F3 Change  39 蹇(Jian) "Risk blocks change — 
+           obstacle requiring patience?"
+  F1 Force  F7 Bound  6  讼(Song)  "Force hits boundary — 
+           conflict or negotiation?"
+  F7 Bound  F1 Force  4  蒙(Meng)  "Boundary constrains force — 
+           learning through limitation?"
+  F4 Penet  F6 Visible 37 家人(JiaRen) "Penetration serves 
+           visibility — alignment of inside and outside?"
+  F8 Conv   F5 Risk   8  比(Bi)    "Convergence amid risk — 
+           allies or dependency?"
+  F5 Risk   F8 Conv   29 坎(Kan)   "Risk through convergence — 
+           collective danger or shared survival?"
+  F6 Visible F2 Found 22 贲(Bi)    "Surface over foundation — 
+           form vs substance?"
+═══════════════════════════════════════════════════════════════
+
+Selection rule: NOT all 64. After Round 1 scores, select:
+  - Top 2 highest-scored facets → their intersection
+  - Top 2 lowest-scored facets → their intersection (blindspot pair)
+  - Any pair where scores diverge by >4 → tension pair
+  → Typically 4-8 hexagrams per decision
+```
+
+#### Layer 3: 384 Yao — Changing Condition Analysis
+
+```
+Each selected hexagram from Layer 2 has 6 yao (lines).
+Each yao represents a factor that can be STABLE or CHANGING.
+
+A CHANGING yao (爻变) means: "This factor is about to shift.
+What does the decision look like when it does?"
+
+Yao position meaning:
+  Line 6 (top):    Long-term / ultimate outcome
+  Line 5:          Leadership / decision-maker position  
+  Line 4:          Execution / operational layer
+  Line 3:          Transition / crossing point
+  Line 2:          Internal / hidden structure
+  Line 1 (bottom): Foundation / starting condition
+
+How to identify changing yao:
+  - Any factor with HIGH UNCERTAINTY (score variance > 0.3)
+  - Any factor flagged as "about to change" during divergence
+  - Any assumption that could be invalidated
+  - Any dependency on external conditions
+
+Changing yao analysis:
+  For each changing yao, ask:
+    "If [factor at this position] changes from [current] to [opposite],
+     how does the hexagram transform? What new pattern emerges?"
+
+  Example: 
+    Hexagram 泰(Tai) — F1 force pushing F2 foundation
+    Line 3 changing → "Transition point shifts" → becomes...
+    This reveals SECOND-ORDER effects that stable analysis misses.
+
+  Max 2-3 changing yao per hexagram (otherwise too uncertain).
+  If >3 changing → decision is in高混沌 state, reduce scope first.
+```
+
+### 1.3 Divergence Method: Iterative Review + Cross-Association
 
 ```
 Divergence is not "Facet1→Facet2→Facet3...→Facet8, done after one pass".
@@ -332,24 +435,27 @@ Divergence is "reflect repeatedly" — each reflection may discover something ne
 
 Divergence Process (multi-round iteration, until each facet is thought through):
 
-  Round 1: Initial exploration of each facet
+  Round 1: Initial exploration of each facet (Layer 1 — 八卦)
     Facet1→Facet2→Facet3→...→Facet8, for each facet:
       - Based on user need, determine what concrete dimension this facet corresponds to
       - Self-rate (0-10): How much do I know about this dimension?
       - Blindspot identification: What info is missing?
       - Record initial ideas: From this facet's perspective, what feasible directions exist?
   
-  Round 2: Cross-association
-    Re-examine associations between facets:
-      - Does Facet5's finding affect Facet2's judgment? If Facet5 discovered high-risk pits,
-        should Facet2 adjust "what foundation to use"?
-      - Are all stakeholder demands from Facet8 covered in Facet1~7?
-      - Are Facet3's change factors already considered in Facet5's risks?
-      - Is Facet4's penetration strategy limited by Facet7's boundaries?
-    
-    Cross-association triggers re-review:
-      FacetA's discovery → triggers FacetB re-thinking → FacetB correction → triggers FacetC re-thinking
-      → until all cross-associations are processed, no more new corrections
+  Round 2: Cross-association (Layer 2 — 64卦)
+    Re-examine associations between facets using hexagram dynamics:
+      - Select 4-8 key hexagrams based on Round 1 scores
+      - For each hexagram, ask its dynamic question
+      - Example: F1(force) over F2(foundation) = 泰 → "Is force pushing 
+        foundation toward balanced growth or overextension?"
+      - Cross-association triggers re-review:
+        FacetA's discovery → triggers FacetB re-thinking → correction
+      
+  Round 3: Changing condition analysis (Layer 3 — 384爻)
+    For each selected hexagram, identify changing yao:
+      - Which factors are unstable / about to shift?
+      - What happens when they do? (second-order effects)
+      - This prevents "plan works in current state but breaks when X changes"
 
   Round 3: Blindspot completion
     For facets with rating <7, execute knowledge acquisition (by priority):
