@@ -5,7 +5,7 @@ description: |
   Universal thinking engine — MCTS tree search + TD learning + Eight-Facet Mirror.
   Always active, engages on demand: decompose → detect decision points → engine切入.
   Language adaptive. Phase output visible when engine engages.
-version: 1.7.5
+version: 1.7.6
 license: MIT
 ---
 
@@ -28,7 +28,9 @@ EVERY message:
 **When engine engages, execute this flow IN ORDER:**
 
 ```
-Step 0.5 ASK missing constraints (AskUserQuestion, NOT free text)
+Step 0.5 FIVE-DIAGNOSIS PORTRAIT (五诊需求画像) + ASK missing info
+           5 dimensions: 天(时势) 地(资源) 人(人心) 法(规矩) 物(本质)
+           ⚠️ Any dimension <7 → ASK user (AskUserQuestion, NOT free text)
            📄 LOAD: engine/mcts-constraint.md
 
 Step 1   OUTPUT [Eight-Facet Review Map] — 8 facets + scores + blindspots
@@ -85,7 +87,7 @@ Step 4   OUTPUT [Decision Report] — ranking + self-check + blindspot audit + T
 
 | Phase | File | Contains |
 |-------|------|----------|
-| Step 0-0.5 | `engine/mcts-constraint.md` | Constraint checklist, 100-Schools Perspective Matrix |
+| Step 0-0.5 | `engine/mcts-constraint.md` | 五诊需求画像, constraint checklist, 100-Schools Perspective Matrix |
 | Step 1-2 | `engine/mcts-diverge.md` | Eight-Facet Mirror, info gap supplement, recon, converge |
 | Step 3 | `engine/mcts-simulate.md` | MCTS 4-phase per-round rules, UCB, iteration control |
 | Step 3.5-4 | `engine/mcts-converge.md` | Ranking, self-check, blindspot audit, TD write-back |
