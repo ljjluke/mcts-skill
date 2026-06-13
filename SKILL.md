@@ -28,10 +28,23 @@ EVERY message:
 **When engine engages, execute this flow IN ORDER:**
 
 ```
+Step 0   DECOMPOSE → 动静(Dong-Jing) MODE CHECK
+           ⚡ BEFORE engine starts: determine mode (动=simplified / 静=full)
+           Signal: urgency markers → 动, depth markers → 静, default → 静
+           Code: `node scripts/mcts_compute.js dong-jing --message '<msg>' --decision-count <N>`
+
 Step 0.5 FIVE-DIAGNOSIS PORTRAIT (五诊需求画像) + ASK missing info
            5 dimensions: 天(时势) 地(资源) 人(人心) 法(规矩) 物(本质)
            ⚠️ Any dimension <7 → ASK user (AskUserQuestion, NOT free text)
            📄 LOAD: engine/mcts-constraint.md
+
+Step 0.5b XUANXUE ENHANCEMENTS (AFTER 五诊, MANDATORY)
+           本末: root dimension → its constraints are super-hard
+           有无: missing constraint scan → abnormal absences → ask user
+           张力: dimension-pair tension → HOTSPOT → diverge priority
+           ⚠️ Output MUST include Root/Absence/Tension in portrait
+           Code: root-branch + absence-detect + tension-scan
+           📄 LOAD: engine/mcts-constraint.md (0.1b)
 
 Step 1   OUTPUT [Eight-Facet Review Map] — 8 facets + scores + blindspots
            📄 LOAD: engine/mcts-diverge.md
@@ -53,6 +66,12 @@ Step 3   MCTS SIMULATION — output EVERY round with 4-phase detail
 Step 3.5 CHECK if user input needed
            📄 LOAD: engine/mcts-converge.md
 
+Step 3.6 OUTPUT [Blindspot Audit + 言意 Gap Check]
+           Sub-lens coverage table + 言意(Word-Meaning) gap detection
+           ⚠️ 言意: check if user statements were taken literally vs metaphorically
+           Code: `node scripts/mcts_compute.js yan-yi-check`
+           📄 LOAD: engine/mcts-converge.md
+
 Step 4   OUTPUT [Decision Report] — ranking + self-check + blindspot audit + TD write-back
            📄 LOAD: engine/mcts-converge.md
 ```
@@ -70,7 +89,7 @@ Step 4   OUTPUT [Decision Report] — ranking + self-check + blindspot audit + T
 
 ## 🔒 COMPRESSION-SAFE CORE
 
-**ALWAYS ACTIVE** | **DECOMPOSE FIRST** | **OUTPUT IN USER LANGUAGE** | **DECISION POINT → ENGINE ENGAGES** | **PHASED OUTPUT (0.5→1→1.5→2→3→3.5→4)**
+**ALWAYS ACTIVE** | **DECOMPOSE FIRST** | **OUTPUT IN USER LANGUAGE** | **DECISION POINT → ENGINE ENGAGES** | **PHASED OUTPUT (0→0.5→0.5b→1→1.5→2→3→3.5→4)** | **动静 CHECK BEFORE ENGINE** | **本末/有无/张力 CHECK AFTER 五诊**
 
 ---
 
@@ -87,10 +106,11 @@ Step 4   OUTPUT [Decision Report] — ranking + self-check + blindspot audit + T
 
 | Phase | File | Contains |
 |-------|------|----------|
-| Step 0-0.5 | `engine/mcts-constraint.md` | 五诊需求画像, constraint checklist, 本末/有无/张力检测 |
-| Step 1-2 | `engine/mcts-diverge.md` | Eight-Facet Mirror, info gap supplement, recon, converge |
-| Step 3 | `engine/mcts-simulate.md` | MCTS 4-phase per-round rules, UCB, iteration control |
-| Step 3.5-4 | `engine/mcts-converge.md` | Ranking, self-check, blindspot audit, TD write-back |
+| Step 0 | `engine/mcts-constraint.md` | 动静模式判断, decompose |
+| Step 0-0.5b | `engine/mcts-constraint.md` | 五诊需求画像, 本末/有无/张力检测, constraint checklist |
+| Step 1-2 | `engine/mcts-diverge.md` | Eight-Facet Mirror(+体用+理事), info gap supplement, recon, converge(+一多) |
+| Step 3 | `engine/mcts-simulate.md` | MCTS 4-phase per-round, UCB, mutation vector, body-use score |
+| Step 3.5-4 | `engine/mcts-converge.md` | Ranking(+body-use), self-check(+本末+动静), blindspot audit(+言意), TD write-back(+理事) |
 | Post-4 | `engine/td-learner.md` | TD error, value update, knowledge graph lifecycle |
 | Always | `agents/memory-agent.md` | Memory Agent 5 checkpoints |
 

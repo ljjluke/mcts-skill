@@ -492,6 +492,8 @@ Diverge phase does not produce "solutions", it produces "idea fragments":
   ├─────────────────────────────────────────────────────┤
   │                                                     │
   │  Facet1 [Concrete Dimension Name] Score X/10        │
+  │    体(substance): [what this facet IS universally]  │
+  │    用(function):  [what it MANIFESTS AS in this case]│
   │    Known: [...known info]                           │
   │    Blindspot: [...missing info]                     │
   │    Ideas: [...feasible directions, inspirations,    │
@@ -503,14 +505,15 @@ Diverge phase does not produce "solutions", it produces "idea fragments":
   │  Facet8 [Concrete Dimension Name] ...               │
   │                                                     │
   │  Cross-Association Records:                         │
-  │    Facet5→Facet2: [Facet5 found dependency risk,    │
-  │                    Facet2 needs to consider         │
-  │                    redundancy]                      │
-  │    Facet8→Facet4: [Stakeholder A prefers channel B, │
-  │                    affects Facet4's spread          │
-  │                    strategy]                        │
-  │    Facet3+Facet5→: [Change factor X also affects    │
-  │                     risk Y, need joint consideration]│
+  │    Facet5→Facet2:                                   │
+  │      理(Li): [universal pattern from this interaction]│
+  │      事(Shi): [concrete manifestation in THIS case] │
+  │    Facet8→Facet4:                                   │
+  │      理(Li): [...]                                  │
+  │      事(Shi): [...]                                 │
+  │    Facet3+Facet5→:                                  │
+  │      理(Li): [...]                                  │
+  │      事(Shi): [...]                                 │
   │                                                     │
   │  Explicit Assumption List:                          │
   │    "Assume user uses Chrome browser" ← Confirmed?   │

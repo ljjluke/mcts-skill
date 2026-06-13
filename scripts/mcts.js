@@ -38,7 +38,7 @@ const ENGINES = {
     },
     guard: {
         script: 'mcts_guard.js',
-        desc: '合规守护 — 反唯一方案/阶段强制/信息优先级/方案多样性/自检/MemoryAgent/合规审计/约束/模式',
+        desc: '合规守护 — 反唯一方案/阶段强制/信息优先级/方案多样性/自检/MemoryAgent/合规审计/约束/模式/玄学占卜增强',
         commands: ['decomposition-guard','phase-enforce','info-gap-guard','diversity-challenge',
                    'self-check-guard','memory-agent-guard','compliance-report',
                    'constraint-checklist','engine-mode','phase-15-guard','all-guards'],

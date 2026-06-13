@@ -909,6 +909,18 @@ function main() {
                     blindspot_coverage: blindspotCoverageGuard({}),
                     force_search: forceSearchGuard({}),
                     solution_count: solutionCountGuard({}),
+                    xuanxue_checklist: {
+                        dong_jing: "✅ Step 0: 动静 mode determined BEFORE engine starts? Code: mcts_compute.js dong-jing",
+                        root_branch: "✅ Step 0.5b: 本末 root dimension identified? Code: mcts_compute.js root-branch",
+                        absence: "✅ Step 0.5b: 有无 missing constraint scan done? Code: mcts_compute.js absence-detect",
+                        tension: "✅ Step 0.5b: 张力 dimension-pair tension computed? Code: mcts_compute.js tension-scan",
+                        ti_yong: "✅ Step 1: Each facet has 体(substance) + 用(function)? Code: mcts_compute.js ti-yong-check",
+                        li_shi: "✅ Step 1 Round 2: Each cross-association has 理(principle) + 事(phenomenon)? Code: mcts_compute.js li-shi-split",
+                        one_many: "✅ Step 2: Each cluster has 1 core(一) + 2-4 mechanisms(多)? Code: mcts_compute.js one-many-check",
+                        yan_yi: "✅ Step 3.6: 言意 gap scan — literal vs metaphorical checked? Code: mcts_compute.js yan-yi-check",
+                        body_use: "✅ Step 4: Body-Use compatibility score applied? Code: mcts_compute.js body-use-score",
+                        mutation: "✅ Step 3: Each MCTS node has mutation vector [5-bit]? Code: mcts_compute.js mutation-vector",
+                    },
                 });
                 break;
             default:

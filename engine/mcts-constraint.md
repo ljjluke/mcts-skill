@@ -190,11 +190,14 @@ When executing 五诊 portrait, follow these rules:
    ❌ "What's your tech stack?" (should read package.json/go.mod yourself)
    ❌ "Any requirements?" (too vague, user doesn't know where to start)
 
-④ Cross-dimension validation:
+④ Cross-dimension validation (5 pairs from tension scan):
    Tian (timing) ↔ Ren (people): does window match team readiness?
    Di (resources) ↔ Fa (rules): are resources sufficient for governance standards?
    Wu (essence) ↔ Tian (timing): is core goal achievable within current timing?
+   Ren (people) ↔ Wu (essence): do stakeholder needs align with core purpose?
+   Wu (essence) ↔ Fa (rules): does regulation block the core goal?
    → Cross-dimension contradiction found → ask user to clarify
+   → High-contrast pair (|score_diff|≥4) → mark as TENSION HOTSPOT for diverge
 ```
 
 ### Portrait Output Format

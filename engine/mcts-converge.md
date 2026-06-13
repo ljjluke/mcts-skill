@@ -362,14 +362,14 @@ Step 1: List perspectives of all generated solutions
   │        │                     │  coverage)                  │
   └───────┴────────────────────┴─────────────────────────────┘
 
-Step 2: Compare with Six-Dimension Domain Map, identify missing dimensions
-  Six-Dimension Map:
-    [√] Tech stack     — Covered (SolutionA, SolutionB)
-    [√] Architecture   — Covered (SolutionA, SolutionC)
-    [×] Business flow  — Not covered! ← Blindspot
-    [√] Security       — Covered (SolutionB)
-    [√] Ops deployment — Covered (SolutionC)
-    [×] User experience — Not covered! ← Blindspot
+Step 2: Compare with Eight-Facet + Cultural Sub-Lens coverage, identify missing dimensions
+  Facet Coverage Map:
+    [√] F1 Source of Force  — Covered (SolutionA, SolutionB)
+    [√] F2 Foundation       — Covered (SolutionA, SolutionC)
+    [×] F3 Change/Disruption — Not covered! ← Blindspot
+    [√] F4 Penetration      — Covered (SolutionB)
+    [√] F5 Risk/Abyss       — Covered (SolutionC)
+    [×] F6 Visible/Dependent — Not covered! ← Blindspot
 
   Blindspot dimensions: Business flow, User experience
 
