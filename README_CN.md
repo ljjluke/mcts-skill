@@ -212,11 +212,11 @@ AI: ⚡ 这事有好几种做法，先让我想清楚
 ```bash
 # 国际 (GitHub)
 /plugin marketplace add https://github.com/ljjluke/mcts-skill
-/plugin install mcts
+/plugin install luke
 
 # 国内 (Gitee)
 /plugin marketplace add https://gitee.com/luke2438107466/mcts-skill
-/plugin install mcts
+/plugin install luke
 ```
 
 装好后自动生效，每条消息都会经过 MCTS-TD 引擎处理。
@@ -224,8 +224,8 @@ AI: ⚡ 这事有好几种做法，先让我想清楚
 ## 🔄 升级
 
 ```bash
-/plugin marketplace update mcts
-/plugin install mcts
+/plugin marketplace update luke
+/plugin install luke
 /reload-plugins
 ```
 
