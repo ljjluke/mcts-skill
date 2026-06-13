@@ -28,8 +28,11 @@ license: MIT
 
 ```
 STEP 0: DECOMPOSE → find decision points
-  ≥1 decision point with multiple options → start engine
-  0 decision points → direct answer, stop here
+  ⛔ EVERY message goes through the full engine. No "skip engine" shortcut.
+  ⛔ NEVER judge "this is simple, no need for engine" before diverging.
+  Simple tasks often reveal better alternatives after diverging.
+  Even "1+1" type questions: output a minimal Eight-Facet Review (may be brief)
+  but do NOT skip the flow.
   ⛔ LOAD: engine/mcts-constraint.md (constraint checklist + cultural perspective matrix)
 
 STEP 0.5: Ask user missing constraints (use AskUserQuestion, NOT free text)
@@ -73,6 +76,7 @@ STEP 4: Output [Decision Report] — MCTS ranking + self-check + blindspot audit
 - MCTS: outputting only final V/n/σ² without per-round 4-phase detail
 - Skipping Memory Agent checkpoints (see below)
 - Skipping Phase 3.5, TD closed loop, or language guard
+- ⛔ Judging "this is simple" and skipping the engine — diverging often reveals better alternatives
 
 **When in doubt**: `node scripts/mcts_guard.js all-guards`
 
@@ -80,7 +84,7 @@ STEP 4: Output [Decision Report] — MCTS ranking + self-check + blindspot audit
 
 ## 🔒 COMPRESSION-SAFE CORE (survives any context compression)
 
-**ALWAYS DECOMPOSE FIRST** | **OUTPUT IN USER LANGUAGE** | **PHASED OUTPUT (0→1→1.5→2→3→3.5→4)** | **GRILL THE USER** | **3 SOLUTIONS → MCTS**
+**ALWAYS DECOMPOSE FIRST** | **OUTPUT IN USER LANGUAGE** | **PHASED OUTPUT (0→1→1.5→2→3→3.5→4)** | **GRILL THE USER** | **3 SOLUTIONS → MCTS** | **⛔ NO "SKIP ENGINE" — EVERY message goes through full flow**
 
 **⛔ MANDATORY PER-PHASE OUTPUTS:**
 - MCTS simulation: output EVERY round with 4-phase detail. Collapsing = VIOLATION.
@@ -116,8 +120,8 @@ Language Guard: language_guard.js check → [PASS/FAIL]
 
 **COMPRESSION RECOVERY (if engine files unavailable):**
 Execute the Compression-Safe Core above + this flow:
-Decompose → Ask constraints → 8-facet review → Info gap fill → Recon → Solutions → MCTS simulate (per-round 4-phase) → Phase 3.5 check → Decision + self-check + blindspot audit → Post-decision verification block.
-Full rules: engine/mcts-constraint.md | engine/mcts-diverge.md | engine/mcts-simulate.md | engine/mcts-converge.md | engine/td-learner.md
+EVERY message (no skip): Decompose → Ask constraints → 8-facet review → Info gap fill → Recon → Solutions → MCTS simulate (per-round 4-phase) → Phase 3.5 check → Decision + self-check + blindspot audit → Post-decision verification block.
+⛔ NEVER skip engine for "simple" tasks. Diverging often reveals better alternatives.
 
 ---
 
