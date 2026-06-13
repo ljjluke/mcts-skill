@@ -10,7 +10,7 @@ description: MCTS-TD Decision Engine "Step 2" — Simulate Engine. True MCTS tre
 > 2. **MCTS PHASES**: Selection → Expansion → Simulation → Backpropagation. Each round visible to user.
 > 3. **KNOWLEDGE ACQUISITION (3-SOURCE PROTOCOL)**: When simulation roll-out hits an information gap:
 >    ① DIVERGE HANDOFF: Check info passed from diverge engine (8-facet recon, user grill, detail check). Use it first — don't re-ask what's already known.
->    ② MEMORY ENGINE: Query knowledge graph (knowledge_lifecycle.js) → any past similar patterns? User preferences? Success/failure history?
+>    ② MEMORY ENGINE: Query knowledge graph (meridian_memory.js deqi) → any past similar patterns? User preferences? Success/failure history?
 >    ③ WEB SEARCH: Quick web search — industry standard? known pitfalls? deprecated?
 >    ④ ASK USER: Only if ①②③ all fail AND the question is about user constraints/preferences/context (not technical trivia).
 >    ⑤ ASSUME: Last resort. Mark as assumption, +0.1 variance penalty.
@@ -516,7 +516,7 @@ After each Backpropagation completes, **optionally** write this round's experien
 ### Pre-write Gate
 
 Before writing, pass L-GCMS gate:
-`node scripts/knowledge_lifecycle.js gate-check --experience '<JSON>' --kg '<JSON>'`
+`node scripts/meridian_memory.js ashi '<JSON>'` (gate-check built-in)
 Four filters: Reusability + Information Density + Novelty + Reliability
   → store/observe/discard/merge
 Gate score <0.4→discard | 0.4~0.59→temporary observe (15-day verification window)
@@ -532,7 +532,7 @@ Write safety check: `node scripts/mcts_compute.js check-write-safety`
 ### Memory Lifecycle Maintenance
 
 Auto-execute after each task:
-`node scripts/knowledge_lifecycle.js full-maintenance --kg '<JSON>' --recent-tasks '<JSON>' --context '<JSON>'`
+`node scripts/meridian_memory.js session-end` (auto decay + cluster + reinforce)
 → GC Roots tracking → Tier re-judgment → Minor/Major GC → Archive recall →
   Error detection → Memory compaction
 

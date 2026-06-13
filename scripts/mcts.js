@@ -28,7 +28,9 @@ const ENGINES = {
                    'get-fuse-mode','handle-self-check','get-lambda','get-status-weight',
                    'trigger-check','get-dimensions','enter-simulation','begin-sub-diverge',
                    'end-sub-diverge','reset-depth','diverge-depth','should-ask-user',
-                   'cull','coverage-matrix','adaptive-c','shi-maturity','info-gap-scan'],
+                   'cull','coverage-matrix','adaptive-c','shi-maturity','info-gap-scan',
+                   'needs-sub-diverge','synthesize-sim','should-write-kg','check-write-safety',
+                   'check-final-convergence','re-simulation-decide','identify-domain','check-learning-depth'],
     },
     guard: {
         script: 'mcts_guard.js',

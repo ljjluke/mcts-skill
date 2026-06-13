@@ -129,7 +129,7 @@ User Need
 │                                                                          │
 │  Action:                                                                   │
 │  ① Check each item in constraint-checklist                                         │
-│     → node mcts_guard.js constraint-checklist                             │
+│     → node scripts/mcts_guard.js constraint-checklist                             │
 │  ② Hard violated -> eliminate                                               │
 │  ③ Soft not met -> downgrade                                              │
 │  Output: Constraint satisfaction matrix                                                     │
@@ -244,7 +244,7 @@ User Need
 │  ⚠️ Upper limit raised from 3 to 8 to allow richer           │
 │     cross-validation during simulation.                      │
 │                                                              │
-│  SOURCE 1 — MEMORY (knowledge_lifecycle.js):             │
+│  SOURCE 1 — MEMORY (meridian_memory.js deqi):             │
 │    Query: past similar tasks? user preference patterns?  │
 │    Which approaches succeeded/failed before?             │
 │                                                         │

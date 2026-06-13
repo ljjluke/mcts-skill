@@ -40,7 +40,7 @@ let fingerprintCache = []; // LRU指纹缓存
 
 function findMMAScripts() {
     const cacheBase = path.join(os.homedir(), '.claude', 'plugins', 'cache');
-    const candidates = ['mcts', 'mcts-td-planner'];
+    const candidates = ['luke', 'mcts', 'mcts-td-planner'];
     for (const name of candidates) {
         const base = path.join(cacheBase, name, name);
         if (!fs.existsSync(base)) continue;

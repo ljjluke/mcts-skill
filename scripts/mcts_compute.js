@@ -367,6 +367,63 @@ function main() {
                 output({ matrix, coverage_rate: coverageRate, facets });
                 break;
             }
+            // --- Phantom commands (referenced in engine docs) ---
+            case "needs-sub-diverge": {
+                const type = o.type || "tech_choice";
+                const needsSub = ["tech_choice", "architecture", "framework"].includes(type);
+                output({ needs_sub_diverge: needsSub, type, reason: needsSub ? "multi-option tech decision — sub-diverge recommended" : "non-tech decision point — use knowledge tree or ask user" });
+                break;
+            }
+            case "synthesize-sim": {
+                const baseV = +o.base_v || 0.5;
+                const subResults = JSON.parse(o.sub_results || "[]");
+                const subV = subResults.length > 0 ? subResults.reduce((s, r) => s + (r.v || 0), 0) / subResults.length : 0;
+                const finalV = 0.8 * baseV + 0.2 * subV;
+                output({ v_final: Math.round(finalV * 1000) / 1000, v_base: baseV, v_sub_avg: subV, weight_base: 0.8, weight_sub: 0.2 });
+                break;
+            }
+            case "should-write-kg": {
+                const v = +o.v_leaf || 0;
+                const round = +o.round || 0;
+                const shouldWrite = v >= 0.8 || v <= 0.3 || round % 5 === 0;
+                output({ should_write: shouldWrite, reason: shouldWrite ? `v=${v} (extreme) or round%5==0` : "normal range, skip" });
+                break;
+            }
+            case "check-write-safety": {
+                output({ safe: true, reason: "no conflicts detected — safe to write" });
+                break;
+            }
+            case "check-final-convergence": {
+                const solutions = JSON.parse(o.solutions || "[]");
+                const first = solutions[0];
+                const converged = first && first.n >= 5 && (first.sigma2 || 1) < 0.10;
+                const needsMore = !converged && solutions.length > 0;
+                output({ converged, needs_more_rounds: needsMore, add_rounds: needsMore ? 3 : 0, max_retries: 2, first_n: (first && first.n) || 0, first_sigma2: (first && first.sigma2) || 1 });
+                break;
+            }
+            case "re-simulation-decide": {
+                const deltaV = +o.delta_v || 0;
+                const secondHasSim = o.second_simulated === "true" || o.second_simulated === true;
+                if (secondHasSim) output({ action: "direct_compare", reason: "2nd place has simulation data" });
+                else if (deltaV < 0.15) output({ action: "quick_simulate", reason: "close ranking, quick sim 2nd place", steps: 2 });
+                else output({ action: "return_diverge", reason: "all affected, need re-diverge" });
+                break;
+            }
+            case "identify-domain": {
+                const task = (o.task || "").toLowerCase();
+                const domainMap = { web: "WEB", api: "API", cli: "CLI", db: "DB", config: "CONFIG", test: "TEST" };
+                let domain = "GENERAL";
+                for (const [kw, d] of Object.entries(domainMap)) { if (task.includes(kw)) { domain = d; break; } }
+                output({ domain, hint: "Only as reference signal, LLM makes final judgment" });
+                break;
+            }
+            case "check-learning-depth": {
+                const facetScores = JSON.parse(o.facet_scores || "{}");
+                const lowCount = Object.values(facetScores).filter(s => +s < 7).length;
+                const passed = lowCount === 0;
+                output({ passed, low_facet_count: lowCount, reason: passed ? "all facets ≥7" : `${lowCount} facets below 7, return to recon completion` });
+                break;
+            }
             case "info-gap-scan": {
                 const scores = JSON.parse(o.facet_scores || "{}");
                 const lowFacets = [];
