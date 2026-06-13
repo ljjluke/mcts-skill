@@ -18,6 +18,8 @@ description: MCTS-TD Decision Engine "Step 2" — Simulate Engine. True MCTS tre
 >    **⛔ VERIFY**: Run `node scripts/mcts_guard.js info-gap-guard --log '<JSON>'` to check acquisition order compliance.
 > 4. **CONVERGENCE**: Stop when best solution V stable for 3 rounds OR max iterations reached.
 > 5. **MULTI-LAYER REASONING (NEW)**: Each solution MUST be simulated at THREE reasoning layers (see §Multi-Layer Simulation). Single-pass simulation is DEPRECATED.
+> 6. **MUTATION VECTOR**: Each MCTS node carries a 5-bit mask (from 五诊 dimensions) indicating which dimensions are STABLE vs VOLATILE. Volatile dimensions get higher exploration priority during Selection. Source: Zhanbu·易经占法 (changing lines concept).
+> 7. **BODY-USE COMPATIBILITY**: In final ranking, each option gets a "体用兼容分" — does the option ALIGN with (生) or FIGHT against (克) the current context? Source: Zhanbu·梅花易数 (体用生克).
 
 > ⚠️ **OUTPUT LANGUAGE RULE (HIGHEST PRIORITY)**: All user-facing output MUST be in the user's detected language. Internal reasoning is English; user sees their language.
 
@@ -124,6 +126,12 @@ Node = {
     is_terminal: false,                 // Is termination node (execution complete)
     expansion_potential: "HIGH",        // How many more directions can be expanded
                                         // HIGH | MED | LOW | NONE
+
+    // Mutation Vector (from Zhanbu·易经 changing lines concept)
+    mutation: [0,0,0,0,0],              // 5-bit mask: [天,地,人,法,物]
+                                        // 0=stable, 1=volatile in this branch
+                                        // High mutation count → more child expansions
+                                        // during Selection (explore volatile areas)
 }
 ```
 
@@ -185,6 +193,13 @@ Step 2: While current is not a leaf node and has children:
 Step 3: When reaching an expandable node:
   → Output selection_path: [Root, Node_a, Node_b, ..., current]
   → Enter Expansion
+
+Mutation Vector Influence (Zhanbu·易经):
+  When two nodes have similar UCB, prefer the one with higher
+  mutation count (more volatile dimensions → richer exploration).
+  Formally: if UCB_a - UCB_b < 0.05 AND mutation_a > mutation_b,
+  select node_a (explore the more uncertain path).
+  Code-enforced: `node scripts/mcts_compute.js mutation-vector --nodes '<JSON>'`
 ```
 
 > UCB numerical calculation: `node scripts/mcts_compute.js ucb --v 0.8 --n 3 --parent-n 10`

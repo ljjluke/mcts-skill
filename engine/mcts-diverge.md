@@ -324,177 +324,159 @@ Facet8: Convergence & Mutual Benefit
 ═══════════════════════════════════════════════════════════════
 ```
 
-### 1.2 Three-Layer Yijing Decision Framework (八卦→64卦→384爻)
+### 1.2 Eight-Facet Mirror + Embedded Cultural Sub-Lenses + 体用 Decomposition
 
-> "易有三义：简易、变易、不易" — Yi Xue tradition
+> The 8 facets are domain-agnostic abstract questions. But each facet can be
+> examined more deeply through cultural thought paradigms (诸子百家).
+> These sub-lenses are NOT separate steps — they are EMBEDDED into each facet
+> as additional probing angles. This eliminates the redundant Step 0.5 matrix.
 >
-> The Eight-Facet Mirror is Layer 1 (经卦/Jing Gua). But real decisions have
-> deeper structure: facets INTERACT (64 hexagrams), and each interaction has
-> CHANGING CONDITIONS (384 yao/lines). This three-layer framework captures
-> decision depth that single-facet review misses.
+> **NEW: 体用 (Ti-Yong) Decomposition** — Source: Wei-Jin Xuanxue.
+> Each facet now distinguishes its **体** (substance: what it IS universally)
+> from its **用** (function: what it MANIFESTS AS in this specific domain).
+> This prevents conflating the abstract question with its domain-specific form.
 
 ```
-Layer 1 — 八卦 (8 Jing Gua): Eight Facets (already exists)
-  8 independent dimensions, each reviewed individually.
-  Output: 8 facet scores + blindspots.
-
-Layer 2 — 64卦 (64 Bie Gua): Facet Interactions (NEW)
-  Every pair of facets forms a hexagram (上卦 + 下卦).
-  8×8 = 64 interaction patterns, each revealing a unique dynamic.
-  Not all 64 are needed every time — select relevant ones.
-
-Layer 3 — 384爻 (384 Yao): Changing Conditions (NEW)
-  Each hexagram has 6 lines (爻). Each line can be stable (yin/yang)
-  or changing (老阴→阳 / 老阳→阴). A changing line means:
-  "This factor is about to shift — what happens when it does?"
-  64 × 6 = 384 possible transitions. Only examine critical ones.
-```
-
-#### Layer 2: 64 Hexagram Matrix — Facet Interaction Patterns
-
-```
-When Facet A (upper trigram) meets Facet B (lower trigram),
-their interaction reveals a specific dynamic:
-
-Key interaction patterns (selected, not exhaustive):
-
 ═══════════════════════════════════════════════════════════════
-  Upper    Lower    Hexagram    Dynamic Question
-═══════════════════════════════════════════════════════════════
-  F1 Force  F2 Found  11 泰(Tai)  "Force pushes foundation — 
-           balanced growth or overextension?"
-  F2 Found  F1 Force  12 否(Pi)   "Foundation blocks force — 
-           stagnation or necessary consolidation?"
-  F3 Change F5 Risk   40 解(Jie)  "Change resolves risk — 
-           disruption as liberation?"
-  F5 Risk   F3 Change  39 蹇(Jian) "Risk blocks change — 
-           obstacle requiring patience?"
-  F1 Force  F7 Bound  6  讼(Song)  "Force hits boundary — 
-           conflict or negotiation?"
-  F7 Bound  F1 Force  4  蒙(Meng)  "Boundary constrains force — 
-           learning through limitation?"
-  F4 Penet  F6 Visible 37 家人(JiaRen) "Penetration serves 
-           visibility — alignment of inside and outside?"
-  F8 Conv   F5 Risk   8  比(Bi)    "Convergence amid risk — 
-           allies or dependency?"
-  F5 Risk   F8 Conv   29 坎(Kan)   "Risk through convergence — 
-           collective danger or shared survival?"
-  F6 Visible F2 Found 22 贲(Bi)    "Surface over foundation — 
-           form vs substance?"
+         Eight-Facet Decision Mirror with Cultural Sub-Lenses
+         + 体用 Decomposition (Xuanxue·体用)
 ═══════════════════════════════════════════════════════════════
 
-Selection rule: NOT all 64. After Round 1 scores, select:
-  - Top 2 highest-scored facets → their intersection
-  - Top 2 lowest-scored facets → their intersection (blindspot pair)
-  - Any pair where scores diverge by >4 → tension pair
-  → Typically 4-8 hexagrams per decision
+Facet1: Source of Force (☰ 乾 Qian)
+  Ask: "Where does the driving force for this come from?"
+  体(substance): EXTERNAL IMPETUS — what pushes this forward?
+  用(function): varies — tech stack / team experience / creative style / ...
+  Sub-lenses: 兵家(Military) — who has strategic advantage?
+              纵横家(Strategist) — whose interests align?
+
+Facet2: Foundation & Capacity (☷ 坤 Kun)
+  Ask: "What is the foundation this rests on?"
+  体(substance): BASE CAPACITY — what supports this?
+  用(function): varies — budget / architecture / infrastructure / ...
+  Sub-lenses: 农家(Agricultural) — what are the fundamental resources & cycles?
+              水利家(Hydraulic) — where do resources flow? where blocked?
+
+Facet3: Change & Disruption (☳ 震 Zhen)
+  Ask: "Where might unexpected changes occur?"
+  体(substance): UNCERTAINTY — what is inherently unstable?
+  用(function): varies — requirement changes / market shifts / sudden risks / ...
+  Sub-lenses: 医家(Medical) — what is the system's diagnosis: surface or root?
+              阴阳家(Yin-Yang) — which opposing forces? balance point?
+
+Facet4: Penetration & Diffusion (☴ 巽 Xun)
+  Ask: "How to make the effect truly penetrate and spread?"
+  体(substance): PROPAGATION MECHANISM — how does impact travel?
+  用(function): varies — user experience / distribution / teaching / ...
+  Sub-lenses: 工匠(Artisan) — what are the core tools/methods to replicate?
+              禅家(Zen) — strip assumptions, what is the real mechanism?
+
+Facet5: Risk & Abyss (☵ 坎 Kan)
+  Ask: "Where is the deepest pit? What's the worst case?"
+  体(substance): VULNERABILITY — where is the system exposed?
+  用(function): varies — security flaws / compliance risk / creative block / ...
+  Sub-lenses: 史家(Historical) — what happened before in similar situations?
+              道家(Daoist) — what is the reverse risk of over-intervention?
+
+Facet6: Visible & Dependent (☲ 离 Li)
+  Ask: "What is the surface? What does it depend on underneath?"
+  体(substance): DEPENDENCY STRUCTURE — surface vs foundation
+  用(function): varies — core features vs infra / highlight vs evidence / ...
+  Sub-lenses: 工匠(Artisan) — what makes this visible/usable?
+              儒家(Confucian) — does surface serve human values?
+
+Facet7: Boundary & Limit (☶ 艮 Gen)
+  Ask: "What lines must never be crossed?"
+  体(substance): CONSTRAINT BOUNDARY — what is non-negotiable?
+  用(function): varies — laws / ethics / resource limits / physical limits / ...
+  Sub-lenses: 法家(Legalist) — what rules enforce compliance? incentives?
+              道家(Daoist) — what should we NOT do? knowing when to stop?
+
+Facet8: Convergence & Mutual Benefit (☱ 兑 Dui)
+  Ask: "How to balance all interests?"
+  体(substance): STAKEHOLDER EQUILIBRIUM — whose interests must align?
+  用(function): varies — users & team / creators & audience / ...
+  Sub-lenses: 儒家(Confucian) — ethical foundation? human value?
+              纵横家(Strategist) — who can be allied? common ground?
+═══════════════════════════════════════════════════════════════
+
+USAGE:
+  1. Sub-lenses are INTERNAL — the agent interrogates its own assumptions.
+     Do NOT re-ask the user questions already answered in 五诊 (Step 0.5).
+  2. 体用 decomposition prevents conflating universal facet questions with
+     domain-specific manifestations. When framing each facet, state BOTH:
+     体: [what this facet IS universally]
+     用: [what it MANIFESTS AS in this specific case]
+  3. 体用 in Converge: two solutions sharing the same 体 but different 用
+     → MERGE (false diversity). Same 用 but different 体 → KEEP (genuinely different).
+  4. 体用 in MCTS: same-体 branches → merge nodes (prevent tree bloat).
 ```
 
-#### Layer 3: 384 Yao — Changing Condition Analysis
+### 1.3 Divergence Method: Iterative Review + Cross-Association + Changing-Condition Analysis
 
 ```
-Each selected hexagram from Layer 2 has 6 yao (lines).
-Each yao represents a factor that can be STABLE or CHANGING.
+Divergence is not "Facet1→Facet2→...→Facet8, done after one pass".
+Divergence is "reflect repeatedly" — each round goes deeper.
 
-A CHANGING yao (爻变) means: "This factor is about to shift.
-What does the decision look like when it does?"
+Divergence Process (4 rounds):
 
-Yao position meaning:
-  Line 6 (top):    Long-term / ultimate outcome
-  Line 5:          Leadership / decision-maker position  
-  Line 4:          Execution / operational layer
-  Line 3:          Transition / crossing point
-  Line 2:          Internal / hidden structure
-  Line 1 (bottom): Foundation / starting condition
+  Round 1: Individual facet exploration
+    Facet1→Facet2→...→Facet8, for each facet:
+      - Determine concrete dimension based on user need
+      - Apply cultural sub-lenses for deeper probing
+      - Self-rate (0-10): How much do I know?
+      - Identify blindspots + record initial ideas
 
-How to identify changing yao:
-  - Any factor with HIGH UNCERTAINTY (score variance > 0.3)
-  - Any factor flagged as "about to change" during divergence
-  - Any assumption that could be invalidated
-  - Any dependency on external conditions
+  Round 2: Cross-association between facets
+    Not all 8×8=64 pairs matter. Select key pairs based on Round 1 scores:
+      - Top 2 highest-scored facets → their intersection (strength pair)
+      - Top 2 lowest-scored facets → their intersection (blindspot pair)
+      - Any pair where scores diverge by >4 → tension pair
+      - HOTSPOT pairs from constraint tension scan (0.1b) → priority
+    For each selected pair, ask:
+      "How does Facet A interact with Facet B? What dynamic emerges?"
+    Code-enforced: `node scripts/mcts_compute.js hexagram-lookup --upper <A> --lower <B>`
+    Cross-association triggers re-review where new insights emerge.
 
-Changing yao analysis:
-  For each changing yao, ask:
-    "If [factor at this position] changes from [current] to [opposite],
-     how does the hexagram transform? What new pattern emerges?"
+    ⭐ 理事 (Li-Shi) Separation — Source: Xuanxue·理事:
+      For EACH cross-association, separate the interaction into two layers:
+        理(Li·Principle): the universal pattern this interaction reveals
+        事(Shi·Phenomenon): the concrete manifestation in THIS case
+      Example:
+        Facet3(Change) ∩ Facet5(Risk):
+          理: "Change introduces uncertainty; uncertainty is the substance of risk"
+          事: "API change may introduce security vulnerability"
+      Why: Li-level insights transfer across domains; Shi-level is immediately
+      actionable. Both are needed, but conflating them causes over-generalization
+      (treating a specific risk as universal) or over-contextualization
+      (missing the pattern that could warn about future risks).
+      Code-enforced: `node scripts/mcts_compute.js li-shi-split --facets '<JSON>'`
 
-  Example: 
-    Hexagram 泰(Tai) — F1 force pushing F2 foundation
-    Line 3 changing → "Transition point shifts" → becomes...
-    This reveals SECOND-ORDER effects that stable analysis misses.
+  Round 3: Changing-condition analysis (second-order thinking)
+    For each key interaction pair from Round 2:
+      - Which factors are STABLE vs CHANGING?
+      - If a changing factor shifts, what second-order effects emerge?
+      - This prevents "plan works now but breaks when X changes"
+    Position layers for analysis:
+      Top:    Long-term / ultimate outcome
+      Mid:    Execution / operational layer
+      Bottom: Foundation / starting condition
+    Max 2-3 unstable factors per pair. If >3 → reduce scope first.
 
-  Max 2-3 changing yao per hexagram (otherwise too uncertain).
-  If >3 changing → decision is in高混沌 state, reduce scope first.
-```
-
-### 1.3 Divergence Method: Iterative Review + Cross-Association
-
-```
-Divergence is not "Facet1→Facet2→Facet3...→Facet8, done after one pass".
-Divergence is "reflect repeatedly" — each reflection may discover something new.
-
-Divergence Process (multi-round iteration, until each facet is thought through):
-
-  Round 1: Initial exploration of each facet (Layer 1 — 八卦)
-    Facet1→Facet2→Facet3→...→Facet8, for each facet:
-      - Based on user need, determine what concrete dimension this facet corresponds to
-      - Self-rate (0-10): How much do I know about this dimension?
-      - Blindspot identification: What info is missing?
-      - Record initial ideas: From this facet's perspective, what feasible directions exist?
-  
-  Round 2: Cross-association (Layer 2 — 64卦)
-    Re-examine associations between facets using hexagram dynamics:
-      - Select 4-8 key hexagrams based on Round 1 scores
-      - For each hexagram, ask its dynamic question
-      - Example: F1(force) over F2(foundation) = 泰 → "Is force pushing 
-        foundation toward balanced growth or overextension?"
-      - Cross-association triggers re-review:
-        FacetA's discovery → triggers FacetB re-thinking → correction
-      
-  Round 3: Changing condition analysis (Layer 3 — 384爻)
-    For each selected hexagram, identify changing yao:
-      - Which factors are unstable / about to shift?
-      - What happens when they do? (second-order effects)
-      - This prevents "plan works in current state but breaks when X changes"
-
-  Round 3: Blindspot completion
+  Round 4: Blindspot completion
     For facets with rating <7, execute knowledge acquisition (by priority):
       ① Check if knowledge graph has relevant experience
       ② Check external resources/search
       ③ Ask user (info that truly cannot be self-acquired)
     After completion, re-self-rate until all blindspots are marked "completed" or "user confirmed skip"
     
-    **⛔ FORCE-SEARCH (if any facet scores ≤3)**:
-    If any facet gets a rating ≤3, this means you KNOW VERY LITTLE about that dimension.
-    You MUST execute WebSearch before proceeding. Do NOT continue to solutions without first
-    acquiring external information about the low-scoring facets.
-    
-    Examples of what this prevents:
-      - "I can't do that" instead of "Let me search how"
-      - Scoring a facet low and continuing without acquiring info
-      - Relying entirely on internal knowledge when external info is needed
-      - Outputting "templates" or "empty tables" as solutions
-      - Claiming capability limits without verifying what's actually possible
-    
-    After search, re-rate the facet. If still ≤3, you may proceed but ALL output
-    from that facet must cite its information source or be marked [pending verification].
-    
-    **NEVER produce a "template" or "empty table" as a solution when you could have searched for real data.**
+    ⛔ FORCE-SEARCH (if any facet scores ≤3):
+    You MUST execute WebSearch before proceeding.
+    NEVER produce "templates" or "empty tables" as solutions.
+    Code-enforced: `node scripts/mcts_guard.js force-search-guard`
 
-    ⛔ CODE-ENFORCED: `node scripts/mcts_guard.js force-search-guard --state '{facets:[{name,score,has_web_search_evidence}]}`
-       Any facet score <=3 without search evidence = BLOCK.
-    
-    **⛔ ADDITIONAL RULE: If ALL facets score ≤3 in the "can I do this" dimension,**
-    **you MUST ask the user for specific data sources / API endpoints / reference links**
-    **before proceeding. Do NOT decide "this is impossible" on behalf of the user.**
-    
-    **⛔ "user chose the plan" is NOT a valid reason to skip delivering real value.**
-    **If you offered the user a choice between "empty template" and "real data with search",**
-    **and they chose the template, that is YOUR fault for not offering the right choices.**
-
-  Round 4: Divergence-convergence self-check
+  Round 5: Divergence-convergence self-check
     Ask yourself:
-      - Is any facet completely without ideas? → Go back to that facet for more divergence
+      - Is any facet completely without ideas? → Go back
       - Was any idea rejected too early? → Re-evaluate
       - Are there "assumptions everyone knows but nobody stated"? → List explicitly
       - Do ideas from all 8 facets form a complete picture?
@@ -571,6 +553,24 @@ Converge ≠ Cut ideas. Converge = Cluster → Complete → Cull → Crystallize
        different cost/effect)
     - If two directions only differ in "parameters" not "strategy"
       → Merge
+
+  ⭐ 一多 (One-Many) Coherence Check — Source: Xuanxue·一多:
+    After clustering, validate each cluster's coherence:
+      - Each cluster MUST have: 1 core identity (一) + 2-4 concrete mechanisms (多)
+      - Too loose (all "多", no "一"): ideas share a keyword but are actually
+        different directions → flag "incoherent" → re-split
+      - Too tight (all "一", no "多"): same idea restated N ways → flag
+        "false diversity" → merge with nearest genuine cluster
+    This prevents the #1 Converge failure: 5 "different" solutions that
+    collapse to 2-3 actual approaches when you strip the rewording.
+
+  ⭐ 体用 (Ti-Yong) False Diversity Elimination — Source: Xuanxue·体用:
+    After clustering, for each pair of solutions, check:
+      - Same 体(substance), different 用(function) → MERGE (they are the same
+        fundamental approach with different implementations)
+      - Different 体, same 用 → KEEP but FLAG (fundamentally different approaches
+        that happen to achieve similar results — important distinction to preserve)
+    Code-enforced: `node scripts/mcts_compute.js one-many-check --solutions '<JSON>'`
 
 ② Complete: Is key info missing for each direction?
 

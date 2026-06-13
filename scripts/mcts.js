@@ -31,7 +31,10 @@ const ENGINES = {
                    'cull','coverage-matrix','adaptive-c','shi-maturity','info-gap-scan',
                    'needs-sub-diverge','synthesize-sim','should-write-kg','check-write-safety',
                    'check-final-convergence','re-simulation-decide','identify-domain','check-learning-depth',
-                   'five-diagnosis','hexagram-lookup'],
+                   'five-diagnosis','hexagram-lookup',
+                   'root-branch','absence-detect','tension-scan','dong-jing',
+                   'mutation-vector','body-use-score','li-shi-split','yan-yi-check',
+                   'one-many-check','ti-yong-check'],
     },
     guard: {
         script: 'mcts_guard.js',

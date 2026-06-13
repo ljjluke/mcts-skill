@@ -513,6 +513,176 @@ function main() {
                 });
                 break;
             }
+            // ── Xuanxue/Zhanbu Enhancements ──
+            case "root-branch": {
+                const scores = JSON.parse(o.scores || "{}");
+                const dims = Object.entries(scores);
+                const sorted = dims.sort((a, b) => b[1] - a[1]);
+                const root = sorted[0]; // highest-scored dimension = root (most constrained = most foundational)
+                const rootName = root ? root[0] : 'wu';
+                const levels = dims.map(([d, s]) => {
+                    const diff = Math.abs(s - (root ? root[1] : 0));
+                    return { dim: d, score: s, level: diff === 0 ? 'root' : diff <= 2 ? 'adjacent' : 'peripheral' };
+                });
+                output({ root: rootName, dependency_map: levels });
+                break;
+            }
+            case "absence-detect": {
+                const domain = o.domain || 'general';
+                const constraints = JSON.parse(o.constraints || "{}");
+                const expectedPatterns = {
+                    tian: ['deadline', 'schedule', 'urgency'],
+                    di: ['budget', 'headcount', 'infrastructure'],
+                    ren: ['stakeholders', 'opposition', 'end_users'],
+                    fa: ['compliance', 'audit', 'standards'],
+                    wu: ['success_criteria', 'deal_breakers', 'kpi'],
+                };
+                const absences = {};
+                for (const [dim, expected] of Object.entries(expectedPatterns)) {
+                    const stated = (constraints[dim] || []).map(k => k.toLowerCase());
+                    const missing = expected.filter(e => !stated.some(s => s.includes(e)));
+                    absences[dim] = { missing, severity: missing.length >= 2 ? 'abnormal' : missing.length === 1 ? 'note' : 'ok' };
+                }
+                const abnormalDims = Object.entries(absences).filter(([, v]) => v.severity === 'abnormal').map(([k]) => k);
+                output({ absences, abnormal_absences: abnormalDims, recommendation: abnormalDims.length > 0 ? `Ask user about missing constraints in: ${abnormalDims.join(', ')}` : 'No abnormal absences detected' });
+                break;
+            }
+            case "tension-scan": {
+                const scores = JSON.parse(o.scores || "{}");
+                const pairs = [
+                    { a: 'tian', b: 'di', label: 'timing vs resources' },
+                    { a: 'ren', b: 'wu', label: 'people vs purpose' },
+                    { a: 'fa', b: 'di', label: 'rules vs resources' },
+                    { a: 'tian', b: 'ren', label: 'timing vs people' },
+                    { a: 'wu', b: 'fa', label: 'purpose vs rules' },
+                ];
+                const results = pairs.map(p => {
+                    const sA = scores[p.a] || 5;
+                    const sB = scores[p.b] || 5;
+                    const tension = Math.abs(sA - sB);
+                    return { ...p, score_a: sA, score_b: sB, tension, level: tension >= 4 ? 'HOTSPOT' : tension >= 2 ? 'NORMAL' : 'STABLE' };
+                });
+                const hotspots = results.filter(r => r.level === 'HOTSPOT');
+                output({ pairs: results, hotspots, recommendation: hotspots.length > 0 ? `Prioritize diverge exploration for: ${hotspots.map(h => h.label).join(', ')}` : 'No high-tension areas, standard treatment' });
+                break;
+            }
+            case "dong-jing": {
+                const msg = (o.message || '').toLowerCase();
+                const decisionCount = +o.decision_count || 1;
+                const urgencySignals = ['紧急', '马上', '尽快', 'asap', 'now', 'quick', 'urgent', '马上', '快'];
+                const depthSignals = ['重要', '慎重', '全面', '长期', 'careful', 'important', 'critical', 'thorough', '慎重', '认真'];
+                const hasUrgency = urgencySignals.some(s => msg.includes(s));
+                const hasDepth = depthSignals.some(s => msg.includes(s));
+                let mode = 'jing'; // default: full analysis
+                let reason = 'default: full analysis';
+                if (hasUrgency && !hasDepth) { mode = 'dong'; reason = 'urgency signal detected'; }
+                else if (hasDepth && !hasUrgency) { mode = 'jing'; reason = 'depth signal detected'; }
+                else if (decisionCount <= 1) { mode = 'dong'; reason = 'only 1 viable option → quick confirm'; }
+                else if (decisionCount >= 3) { mode = 'jing'; reason = '3+ viable options with uncertainty → deep analysis'; }
+                output({
+                    mode,
+                    reason,
+                    mcts_iterations: mode === 'dong' ? '3-5' : '8-10',
+                    cross_assoc_pairs: mode === 'dong' ? 2 : 'all-significant',
+                    skip_changing_condition: mode === 'dong',
+                    simplified_self_check: mode === 'dong',
+                });
+                break;
+            }
+            case "mutation-vector": {
+                const nodes = JSON.parse(o.nodes || "[]");
+                const results = nodes.map(n => ({
+                    id: n.id || 'unknown',
+                    mutation: n.mutation || [0, 0, 0, 0, 0],
+                    mutation_count: (n.mutation || [0, 0, 0, 0, 0]).filter(m => m === 1).length,
+                    exploration_priority: (n.mutation || [0, 0, 0, 0, 0]).filter(m => m === 1).length >= 3 ? 'HIGH' : 'NORMAL',
+                }));
+                const highPriority = results.filter(r => r.exploration_priority === 'HIGH');
+                output({ nodes: results, volatile_nodes: highPriority.length, recommendation: highPriority.length > 0 ? `Prioritize exploration for ${highPriority.length} volatile nodes` : 'No highly volatile nodes' });
+                break;
+            }
+            case "body-use-score": {
+                const options = JSON.parse(o.options || "[]");
+                const context = o.context || 'neutral';
+                const results = options.map(opt => {
+                    let score = 0;
+                    const alignment = (opt.alignment || 'neutral').toLowerCase();
+                    if (alignment === 'generates' || alignment === 'sheng' || alignment === '顺势') score = +0.05;
+                    else if (alignment === 'controls' || alignment === 'ke' || alignment === '逆势') score = -0.03;
+                    else if (alignment === 'neutral') score = 0;
+                    else score = 0;
+                    return { name: opt.name, alignment, body_use_bonus: score, adjusted_v: (opt.v || 0.5) + score };
+                });
+                output({ options: results, context });
+                break;
+            }
+            case "li-shi-split": {
+                const insight = JSON.parse(o.insight || "{}");
+                const li = insight.principle || insight.li || '';
+                const shi = insight.phenomenon || insight.shi || '';
+                output({
+                    li: { content: li, layer: 'principle', tag: 'layer:principle', reusability: 'cross-domain', confirm_threshold: '3+ different contexts' },
+                    shi: { content: shi, layer: 'phenomenon', tag: 'layer:phenomenon', reusability: 'same-domain', confirm_threshold: 'standard confidence rules' },
+                    warning: (!li || !shi) ? 'Missing layer — ensure BOTH principle and phenomenon are captured' : 'Both layers captured',
+                });
+                break;
+            }
+            case "yan-yi-check": {
+                const statements = JSON.parse(o.statements || "[]");
+                const interpretations = JSON.parse(o.interpretations || "[]");
+                const gaps = [];
+                for (let i = 0; i < statements.length; i++) {
+                    const s = statements[i] || '';
+                    const interp = interpretations[i] || '';
+                    const ambiguousWords = ['fast', 'quick', 'bulletproof', 'simple', 'robust', '快', '简单', '稳', '强', '好', '大'];
+                    const hasAmbiguity = ambiguousWords.some(w => s.toLowerCase().includes(w));
+                    if (hasAmbiguity) {
+                        gaps.push({ statement: s, interpretation: interp, risk: 'Possible 言意 gap — literal vs metaphorical meaning unclear', verify_needed: true });
+                    }
+                }
+                output({ gaps_found: gaps.length, gaps, recommendation: gaps.length > 0 ? `Verify ${gaps.length} potential word-meaning mismatches with user` : 'No 言意 gaps detected' });
+                break;
+            }
+            case "one-many-check": {
+                const solutions = JSON.parse(o.solutions || "[]");
+                const results = solutions.map(s => {
+                    const mechanisms = s.mechanisms || [];
+                    const core = s.core_identity || '';
+                    const has_one = core && core.length > 0;
+                    const has_many = mechanisms.length >= 2;
+                    let coherence = 'ok';
+                    if (!has_one && has_many) coherence = 'incoherent'; // all 多, no 一
+                    else if (has_one && !has_many) coherence = 'tight'; // all 一, no 多
+                    else if (!has_one && !has_many) coherence = 'empty';
+                    return { name: s.name, coherence, core_identity: has_one, mechanism_count: mechanisms.length };
+                });
+                const incoherent = results.filter(r => r.coherence === 'incoherent');
+                const tight = results.filter(r => r.coherence === 'tight');
+                output({
+                    solutions: results,
+                    incoherent_count: incoherent.length,
+                    false_diversity_count: tight.length,
+                    recommendation: [
+                        incoherent.length > 0 ? `${incoherent.length} incoherent clusters — may need re-splitting` : '',
+                        tight.length > 0 ? `${tight.length} tight clusters — possible false diversity, consider merging` : '',
+                    ].filter(Boolean).join('; ') || 'All clusters have good 一多 coherence',
+                });
+                break;
+            }
+            case "ti-yong-check": {
+                const solutions = JSON.parse(o.solutions || "[]");
+                const merges = [];
+                for (let i = 0; i < solutions.length; i++) {
+                    for (let j = i + 1; j < solutions.length; j++) {
+                        const a = solutions[i], b = solutions[j];
+                        if (a.ti && b.ti && a.ti === b.ti && a.yong !== b.yong) {
+                            merges.push({ a: a.name, b: b.name, reason: 'same 体 different 用 → merge (false diversity)', ti: a.ti });
+                        }
+                    }
+                }
+                output({ merge_suggestions: merges, false_diversity_found: merges.length > 0, recommendation: merges.length > 0 ? `${merges.length} pairs share same 体 — consider merging` : 'No false diversity detected' });
+                break;
+            }
             default: log(`Unknown: ${cmd}`); process.exit(1);
         }
     } catch (e) { log(`Error: ${e.message}`); process.exit(1); }

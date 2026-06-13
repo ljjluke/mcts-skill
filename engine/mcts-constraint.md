@@ -1,9 +1,9 @@
 ---
 name: mcts-constraint
-description: MCTS-TD Decision Engine "Step 0" — Requirement Constraint Collection System + Cultural Perspective Matrix. Systematically collect all constraints before solution generation to prevent "finished then realized wrong".
+description: MCTS-TD Decision Engine "Step 0" — Requirement Constraint Collection System + Xuanxue/Zhanbu Enhancements. Systematically collect all constraints before solution generation to prevent "finished then realized wrong".
 ---
 
-# Step 0: Requirement Constraint Collection + Cultural Perspective Matrix
+# Step 0: Requirement Constraint Collection
 
 > **🔒 COMPRESSION-SAFE RULES (Always apply, even if context is compressed):**
 > 1. **OUTPUT LANGUAGE**: User language already detected. Continue using that language.
@@ -12,9 +12,10 @@ description: MCTS-TD Decision Engine "Step 0" — Requirement Constraint Collect
 > 4. **HARD vs SOFT**: Hard constraints → eliminate violating solutions. Soft constraints → lower match score.
 > 5. **SOURCE TRACKING**: Mark each constraint's origin: user-explicit / code-inferred / knowledge-graph / assumed.
 > 6. **⛔ DECOMPOSITION CHECK**: Before concluding constraint collection is done, run `node scripts/mcts_guard.js decomposition-guard` to verify no premature "single solution" judgment.
-> 7. **STEP 0.5 — 100-Schools Perspective Matrix**: After constraint collection, MUST execute cultural perspective matrix before entering diverge. This is NOT optional.
-> 8. **PERSPECTIVE OUTPUT**: All perspectives output simultaneously in a matrix table. Each perspective outputs 2-3 probing QUESTIONS, not assertions/conclusions.
-> 9. **PERSPECTIVE SOURCE**: Knowledge must be acquired from memory first; only if memory misses, acquire externally. Sub-agents must check if knowledge source is "memory" to avoid duplicate processing and infinite loops.
+> 7. **ROOT-BRANCH**: After five-diagnosis, identify the root dimension (ben) — its constraints are "super-hard" (non-negotiable).
+> 8. **ABSENCE DETECTION**: For each dimension, check not just what constraints exist but what constraints are MISSING (that should normally be present).
+> 9. **RELATIONAL TENSION**: Compute tension between dimension pairs; high-tension pairs drive diverge priority.
+> 10. **动静 (MOVEMENT-STILLNESS)**: Before engine engages, determine mode: user needs fast action (动 → simplified engine) or deep analysis (静 → full engine). Signal from user message + decision complexity.
 
 > ⚠️ **OUTPUT LANGUAGE RULE (HIGHEST PRIORITY)**: All user-facing output MUST be in the user's detected language. If user writes in Chinese → output Chinese. If Japanese → output Japanese. This is NON-NEGOTIABLE. Internal reasoning is English; user sees their language.
 
@@ -23,149 +24,6 @@ description: MCTS-TD Decision Engine "Step 0" — Requirement Constraint Collect
 
 ---
 
-## Step 0.5: 100-Schools Perspective Matrix ★NEW★
-
-### Core Position
-
-After constraint collection, before 8-facet mirror, insert a cultural perspective switcher.Use 12 Chinese thought paradigms to examine from diverse dimensions，Output blindspot list for 8-facet mirror to carry。
-
-**Matrix does NOT replace nor analyzed by the 8-facet mirror** — it provides lenses for it — Let mirror examine with perspective-derived blindspots。
-
-### Perspective Output Rules
-
-Each perspective output must be probing questions, not assertions/conclusions:
-
-```
-✅ CORRECT: Military perspective asks:"Who is surprise force? Host-guest dynamics?"
-❌ WRONG: Military perspective asserts:"You should win fast"
-```
-
-### 12 Cultural Thought Paradigms
-
-Each paradigm = a way of seeing problems:
-
-| # | Perspective | Core Question | Origin |
-|---|------|---------|---------|
-| 1 | **Military** | 这是谁和谁的博弈？最优的战略位置在哪？奇正关系如何？主客方谁更有利？ | 孙子/孙膑《孙子兵法》 |
-| 2 | **Medical** | 这个系统的症结在哪？气血（资源/信息）怎么流通？表里寒热虚实怎么判断？ | 《黄帝内经》/张仲景 |
-| 3 | **Agricultural** | 根本的生存资料是什么？周期性规律是什么？什么才是"根本"而不只是"表面"？ | 氾胜之/贾思勰《齐民要术》 |
-| 4 | **Artisan** | 这件事做成需要什么条件？核心工艺/手艺在哪？怎么从0到1？有什么现成工具复用？ | 鲁班/《天工开物》 |
-| 5 | **Strategist** | 各方的利益诉求是什么？最大的公约数在哪？合纵还是连横？谁是可以争取的盟友？ | 鬼谷子/苏秦张仪 |
-| 6 | **Daoist** | 这件事的反向是什么？不做什么比做什么更重要？强行干预还是顺势而为？ | 老子/庄子 |
-| 7 | **Legalist** | 规则是什么？激励和惩罚怎么设置？制度保障在哪？怎么执行才能落地？ | 韩非子/商鞅 |
-| 8 | **Confucian** | 这件事的伦理根基是什么？人的价值在哪？秩序和人情如何平衡？ | 孔子/孟子 |
-| 9 | **Historical** | 历史上类似的事发展结果如何？这件事处在什么"周期"阶段？兴衰规律的启示？ | 司马迁/《资治通鉴》 |
-| 10 | **Yin-Yang** | 哪些力量在对抗？怎么达到平衡？相生相克关系如何？变化趋势是什么？ | 邹衍/阴阳五行 |
-| 11 | **Zen** | 放下所有预设再来看，这件事的本质是什么？哪些是概念/标签/执念？ | 慧能/《坛经》 |
-| 12 | **Hydraulic** | 资源怎么流动？通路在哪断在哪？堵和疏哪个更有效？疏导的渠道是什么？ | 李冰/潘季驯 |
-
-### 5-Element Perspective Selector
-
-Not random selection，而是Through 5-element relations, ensures structural diversity：
-
-```
-① Problem 5-element classification：
-   木 = 生长/创造/创新（新产品、创意方案、新业务）
-   火 = 扩张/转化/能量（市场扩张、组织变革、产能提升）
-   土 = 稳定/承载/存储（系统架构、数据治理、合规风控）
-   金 = 收敛/切割/精炼（成本控制、流程优化、精简团队）
-   水 = 流动/沟通/适应（团队协作、客户关系、谈判、供应链）
-
-② 生克关系展开生成5个维度：
-   Generating me -> upstream/resources
-   I generate -> output/impact destination
-   Controlling me -> constraints/risks
-   I control -> what I can control
-   Same element -> how peers do it
-
-③ Each dimension matches 1-2 specific perspectives：
-   ├── 木（创造）匹配：工匠视角 + 纵横家视角
-   ├── 火（扩张）匹配：兵家视角 + 医家视角
-   ├── 土（稳定）匹配：农家视角 + 儒家视角 + 水利家视角
-   ├── 金（收敛）匹配：道家视角 + 史家视角 + 法家视角
-   └── 水（流动）匹配：禅家视角 + 阴阳家视角 + 纵横家视角
-```
-
-### Perspective Matrix Output Format
-
-All perspectives output simultaneously in a matrix：
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│  【Cultural Perspective Matrix】                                           │
-│                                                             │
-│  ╔═══════════════════════════════════════════════════════╗  │
-│  ║ 木 · 创造/生长                                        ║  │
-│  ║   ├ 工匠视角：做成这件事的核心工艺/条件是什么？        ║  │
-│  ║   │            有无现成工具可以复用？                   ║  │
-│  ║   └ 纵横家视角：各方的利益诉求交点在哪？                ║  │
-│  ╠═══════════════════════════════════════════════════════╣  │
-│  ║ 火 · 扩张/转化                                        ║  │
-│  ║   ├ 兵家视角：当前态势主客关系？奇兵在哪？              ║  │
-│  ║   └ 医家视角：系统的症结在表还是在里？通还是不足？      ║  │
-│  ╠═══════════════════════════════════════════════════════╣  │
-│  ║ 土 · 稳定/承载                                        ║  │
-│  ║   ├ 农家视角：根本的资源周期是什么？什么才是根本？      ║  │
-│  ║   ├ 儒家视角：这件事的伦理根基在哪？人的价值如何？      ║  │
-│  ║   └ 水利家视角：资源的通路在哪？堵还是疏？              ║  │
-│  ╠═══════════════════════════════════════════════════════╣  │
-│  ║ 金 · 收敛/精炼                                        ║  │
-│  ║   ├ 道家视角：不做什么比做什么更重要？反向是什么？      ║  │
-│  ║   ├ 法家视角：激励和惩罚机制怎么设置才能落地？          ║  │
-│  ║   └ 史家视角：历史上类似情况怎么发展的？周期阶段？      ║  │
-│  ╠═══════════════════════════════════════════════════════╣  │
-│  ║ 水 · 流动/适应                                        ║  │
-│  ║   ├ 禅家视角：放下预设，这件事的本质是什么？            ║  │
-│  ║   └ 阴阳家视角：哪些力量在对抗？平衡点在哪？            ║  │
-│  ╚═══════════════════════════════════════════════════════╝  │
-│                                                             │
-│  视角发现→盲点清单：[从上述视角中合并的关键盲点]            │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### Integration with Eight-Facet Mirror
-
-```
-视角矩阵（Step 0.5）
-    ↓ 产出：盲点清单 = "从这些视角发现了一些之前没想过的问题"
-    ↓
-八面镜审视（Step 1）
-    ↓ 带着盲点清单，用八面镜的8个维度重新审视问题
-    ↓ 交叉关联：视角发现 ↔ Facet发现
-    ↓ 产出：每个Facet的评分 + 修正后的发现
-    ↓
-Diverge Engine → Converge → MCTS Simulate → Decision (normal flow)
-```
-
-**Key: The Eight-Facet Mirror does NOT analyze each perspective.** The Mirror analyzes the problem itself, simply wearing "glasses" borrowed from the perspective matrix. The perspective matrix's role is to provide input to the Mirror's blindspot detection layer.
-
-### Perspective Knowledge Rules (anti-deadlock)
-
-```
-When sub-agents/main flow acquire perspective knowledge, they MUST follow:
-
-① 记忆系统查询（mcts-td-value-archive.md + 技能记忆）
-   命中 → 直接使用，标记 source:memory → 不再触发再次查询
-   未命中 → 继续
-
-② 当前会话上下文（对话已有信息）
-   命中 → 使用，标记 source:context
-   未命中 → 继续
-
-③ 外部获取（WebSearch / WebFetch）
-   获取到 → 经gate-check过滤后写入记忆，标记 source:external
-   未获取到 → 标注【暂无公开数据】
-
-Sub-agent decision rules:
-   if source == "memory":
-       Use directly, do not re-query, do not write duplicate records
-   if source == "external" or source == "context":
-       Process normally, write back to memory via gate-check after processing
-
-Anti-duplicate: check memory for same key before writing back; if exists, compare timestamps and keep the latest
-```
-
----
 
 ## Why Separate Constraint Collection is Needed
 
@@ -378,7 +236,137 @@ When executing 五诊 portrait, follow these rules:
 
  Cross-dimension findings:
    Tian↔Ren: 2-week deadline but only 1 person → may need scope reduction
+
+ Root (Ben): 物(Wu) — core goal drives all other dimensions
+ Absence alerts:
+   人(Ren): no opposition stated — suspicious? → ask
+   物(Wu): no success criteria — critical gap → ask
+ Tension hotspots:
+   天↔地: |7-4|=3 NORMAL, 人↔物: |3-5|=2 NORMAL, 法↔地: |8-4|=4 HOTSPOT
  ────────────────────────────
+```
+
+---
+
+## 0.1b Xuanxue Enhancements — 本末·有无·张力
+
+> Three structural rules embedded AFTER five-diagnosis, BEFORE constraint checklist.
+> Source: Wei-Jin Xuanxue (玄学) + Zhanbu (占卜·六壬).
+> Design principle: domain-agnostic, zero new steps, all are CHECKs on existing output.
+
+### 本末 (Root-Branch) — Root Dimension Identification
+
+After five-diagnosis scores are collected, identify which dimension is the **root** (ben)
+that other dimensions depend on. 物(Wu·Essence) finds "what is the core"; 本末 finds
+"which dimension sustains the others."
+
+```
+Rule:
+  After 五诊 output, add:
+
+  Root (Ben): [which dimension other dimensions depend on]
+  Dependency map:
+    物(Wu) ←root→ [primary dependency — usually 天 or 物 itself]
+    天(Tian) ←supports→ 物(Wu)
+    地(Di) ←enables→ 人(Ren), 法(Fa)
+    法(Fa) ←guards→ 物(Wu)
+
+  Constraint severity by root distance:
+    Root dimension constraint violated → SUPER-HARD (non-negotiable)
+    Adjacent dimension constraint violated → HARD (need replacement)
+    Peripheral dimension constraint violated → SOFT (downgrade only)
+
+Code-enforced: `node scripts/mcts_compute.js root-branch --scores '<JSON>'`
+```
+
+### 有无 (Absence Detection) — Missing Constraint Scan
+
+For each five-diagnosis dimension, check not just "what constraints exist" but
+"what constraints are ABSENT that should normally be present." The absence of a
+constraint is itself critical information — it defines the free space, and unusual
+absences often signal overlooked requirements.
+
+```
+Rule:
+  After listing constraints per dimension, add:
+
+  Absence Scan:
+    天(Tian): missing=[what time constraints are NOT specified? unusual?]
+    地(Di):   missing=[what resource limits are NOT stated? budget? headcount?]
+    人(Ren):  missing=[who is NOT represented? no opposition = suspicious?]
+    法(Fa):   missing=[what governance is NOT mentioned? audit? compliance?]
+    物(Wu):   missing=[what success criteria are NOT defined? deal-breakers?]
+
+  "Abnormal absence" = a constraint that normally exists in this domain
+  but was not mentioned → mark as blindspot → Info Gap phase asks about it.
+
+  Example:
+    A medical decision with no consent constraints mentioned → abnormal absence
+    A software project with no budget mentioned → abnormal absence
+    A driving decision with no safety rules mentioned → abnormal absence
+
+Code-enforced: `node scripts/mcts_compute.js absence-detect --domain '<str>' --constraints '<JSON>'`
+```
+
+### Relational Tension — Dimension-Pair Friction (六壬 Method)
+
+After five-diagnosis, compute tension between key dimension pairs.
+High tension = those pairs need MORE exploration in diverge phase.
+Low tension = routine handling.
+
+```
+Rule:
+  Compute tension for these 3 key pairs (from 六壬 四课 relational method):
+
+    天↔地: timing pressure vs resource sufficiency → tension = |tian_score - di_score|
+    人↔物: stakeholder needs vs core purpose → tension = |ren_score - wu_score|
+    法↔地: governance requirements vs resource limits → tension = |fa_score - di_score|
+
+  Also check:
+    天↔人: timing vs people readiness
+    物↔法: core goal vs rules (does regulation block the goal?)
+
+  Tension ≥4: HOTSPOT → diverge engine prioritizes this intersection
+  Tension 2-3: NORMAL → standard treatment
+  Tension ≤1: STABLE → quick pass
+
+Code-enforced: `node scripts/mcts_compute.js tension-scan --scores '<JSON>'`
+```
+
+### 动静 (Movement-Stillness) — Engine Mode Meta-Control
+
+Source: Xuanxue·动静. "Stillness is not the opposite of movement —
+stillness is the root of movement." Before the engine engages, determine
+whether the user needs fast action (动) or deep analysis (静).
+
+```
+Rule:
+  During Step 0 DECOMPOSE, after detecting decision points, determine mode:
+
+  Signal detection:
+    - User message contains urgency markers: "紧急/马上/尽快/ASAP/now/quick"
+      → 动(Dong) mode → simplified engine
+    - User message contains depth markers: "重要/慎重/全面/长期/careful/important"
+      → 静(Jing) mode → full engine
+    - No explicit signal → judge from decision complexity:
+      Only 1 viable option after decompose → 动 mode (quick confirm & execute)
+      3+ viable options with high uncertainty → 静 mode (deep analysis)
+
+  Mode effects:
+    静 (Full): all phases, 8-10 MCTS iterations, complete cross-association
+    动 (Simplified): all phases but compressed — 3-5 MCTS iterations,
+      skip Round 3 (changing-condition analysis), reduce cross-association
+      to top-2 pairs only, simplified self-check
+
+  Mode switch: if during 动 mode execution, unexpected complexity emerges
+    (e.g. a solution reveals hidden dependencies), upgrade to 静 mode.
+
+  Self-check addition (Phase 3.5): "Have we been in deep analysis so long
+    that a simpler action would have been more effective?" (静→动 bias check)
+    "Have we acted so quickly that we missed structural considerations?"
+    (动→静 bias check)
+
+Code-enforced: `node scripts/mcts_compute.js dong-jing --message '<str>' --decision-count <N>`
 ```
 
 ---
@@ -398,7 +386,7 @@ Technical constraints are a SUBSET of 五诊画像 — not a replacement.
 
 ---
 
-## 0.2 Constraint Sources
+## 0.3 Constraint Sources
 
 ```
 Constraint info obtained from following channels (by priority):
@@ -422,7 +410,7 @@ Constraint info obtained from following channels (by priority):
 
 ---
 
-## 0.3 Handling Missing Constraints
+## 0.4 Handling Missing Constraints
 
 ```
 When discovering constraint info is incomplete:
@@ -451,7 +439,7 @@ case User's "restriction" is being misinterpreted as "I shouldn't do anything":
   ⛔ "I am an AI" ≠ "I cannot do anything". Correct: search → find APIs → organize existing public data → give usable data to user
 ```
 
-## 0.4 Dealing with Low Facet Scores in the Eight-Facet Mirror
+## 0.5 Dealing with Low Facet Scores in the Eight-Facet Mirror
 
 ```
 When any facet in the Eight-Facet Mirror scores ≤3 (meaning "I know very little about this"):
@@ -467,7 +455,7 @@ When any facet in the Eight-Facet Mirror scores ≤3 (meaning "I know very littl
 
 ---
 
-## 0.4 Constraint Impact on Solutions
+## 0.6 Constraint Impact on Solutions
 
 ```
 Collected constraints directly affect solution generation:
@@ -491,7 +479,7 @@ Soft Constraints (optional, but affects match score):
 
 ---
 
-## 0.5 Handling Constraint Changes
+## 0.7 Handling Constraint Changes
 
 ```
 If discovering new constraint during simulation (didn't know before):

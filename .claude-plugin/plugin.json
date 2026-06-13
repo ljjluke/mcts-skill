@@ -1,7 +1,7 @@
 {
   "name": "luke",
-  "version": "1.7.9",
-  "description": "Universal decision engine — MCTS tree search × TD temporal learning × Eight-Facet Mirror (Taoist Bagua). Think first, execute once. Multi-language (zh/ja/ko/en).",
+  "version": "1.8.0",
+  "description": "Universal decision engine — MCTS × TD × Eight-Facet Mirror × Xuanxue/Zhanbu. Think first, execute once. Multi-language (zh/ja/ko/en).",
   "author": {
     "name": "ljjluke",
     "url": "https://github.com/ljjluke/mcts-skill"

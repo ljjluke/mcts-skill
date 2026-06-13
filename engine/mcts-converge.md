@@ -181,6 +181,19 @@ things:
   "If chose wrong, what's the worst outcome? Can we bear it?"
   → If can bear → Execute
   → If cannot bear → Enter "re-simulate" mode, or suggest user manual confirm
+
+④ Root-Shift Check (Xuanxue·本末):
+  "If 1st place succeeds on all branch dimensions but violates the ROOT
+   dimension (ben), is it still valid?"
+  → If root dimension violated → DOWNGRADE to "conditional pass" (execute
+     only if root constraint can be relaxed)
+  → If root dimension satisfied → normal pass
+
+⑤ 动静 Mode Appropriateness Check (Xuanxue·动静):
+  "Have we been in deep analysis mode (静) so long that a simpler action
+   would have been more effective?" → If yes, note "analysis overhead"
+  "Have we been in fast-action mode (动) so quickly that we missed
+   structural considerations?" → If yes, upgrade self-check severity
 ```
 
 ### Self-Check Report Format
@@ -210,6 +223,14 @@ things:
     Worst outcome of choosing 1st place [SolutionA]: [Description]
     Worst outcome impact level: [Minor/Moderate/Severe]
     Can we bear it? → [Can/Cannot]
+
+  ④ Root-Shift Check:
+    Root dimension [name] satisfied by 1st place? → [Yes/No]
+    If No: → Conditional pass (root constraint relaxation needed)
+
+  ⑤ 动静 Mode Check:
+    Current mode: [动/静]
+    Mode appropriate for this decision? → [Yes/Over-analyzing/Under-analyzing]
 
   Self-Check Conclusion:
     ✅ Pass — Simulation reliable, can execute
@@ -259,14 +280,16 @@ If only self-check without blindspot audit:
   → Waste!
 ```
 
-### NEW: Cultural Perspective Cross-Validation
+### NEW: Cultural Sub-Lens Coverage Check + 言意 Gap Detection
 
-After the standard blindspot audit, **AND** after comparing with Step 0.5's cultural perspective matrix findings:
+After the standard blindspot audit, check cultural sub-lens coverage
+(these are now embedded in the 8 facets, not a separate matrix),
+then run 言意 (Word-Meaning) gap detection.
 
 ```
-Step: Compare simulation outputs against Step 0.5 100-Schools Perspective findings
+Step: Compare simulation outputs against diverge phase's cultural sub-lens findings
 
-  1. Extract all blindspots from Step 0.5
+  1. Extract all blindspots from diverge phase's sub-lenses
   2. Check each blindspot against ranked solutions：
      - Covered -> mark covered, note which solution
      - Not covered -> mark blindspot missed
@@ -288,6 +311,36 @@ Step: Compare simulation outputs against Step 0.5 100-Schools Perspective findin
        -> NOTE: annotate uncovered blindspots in decision report
      If none missed
        -> Full coverage, proceed to final decision
+```
+
+### 言意 (Word-Meaning) Gap Detection — Source: Xuanxue·言意
+
+After perspective coverage check, scan for word-meaning mismatches
+between user statements and our interpretations. Wang Bi: "Forget the
+words once the meaning is grasped" — but if we grasped the WRONG
+meaning from the words, the entire decision is misdirected.
+
+```
+Rule:
+  After blindspot audit, add this check:
+
+  言意 Gap Scan:
+    □ Did we take any user statement LITERALLY (言) when it was METAPHORICAL (意)?
+      "This should be fast" → literal 50ms? or metaphorical "don't drag"?
+      "Must be bulletproof" → literal military-grade? or "reliable enough"?
+    □ Did we interpret any user concern as METAPHORICAL when it was LITERAL?
+      "Must support IE" → really IE? or "legacy browsers"?
+      "No vendor lock-in" → really no vendor? or "portable exit strategy"?
+    □ In solution descriptions, do 言(what it does) and 意(what it achieves) align?
+      Same 意 different 言 → merge solutions (false diversity)
+      Same 言 different 意 → flag as fundamental disagreement (preserve both)
+
+  When 言意 gap detected:
+    → Annotate in decision report: "User said X, interpreted as Y — verify"
+    → If interpretation affects ranking → re-simulate affected options
+    → Do NOT assume — mark for user confirmation at Phase 3.5
+
+Code-enforced: `node scripts/mcts_compute.js yan-yi-check --statements '<JSON>' --interpretations '<JSON>'`
 ```
 
 ### Blindspot Audit Framework
@@ -422,6 +475,32 @@ TD update orchestrated by `node scripts/mcts_compute.js` td_update_workflow:
 Write path: ~/.claude/data/skills/mcts-td-planner/memory/mcts-td-value-archive.md
 ```
 
+### 理事 (Li-Shi) Dual-Layer Write-back — Source: Xuanxue·理事
+
+When writing back to knowledge graph, separate each insight into two layers:
+
+```
+Rule:
+  For each knowledge entry written after execution:
+
+  理(Li·Principle): the universal pattern validated or refuted
+    → Written to knowledge graph with tag: layer:principle
+    → Cross-domain reusable (e.g., "tight timing + limited resources = scope reduction needed")
+    → Only promoted to CONFIRMED after validation in 3+ different contexts
+
+  事(Shi·Phenomenon): the concrete manifestation in THIS case
+    → Written to knowledge graph with tag: layer:phenomenon
+    → Same-domain reference (e.g., "Go+gin JWT: V=0.84, n=5, worked")
+    → Promoted based on standard confidence rules
+
+  Prevents:
+    - Over-generalization: treating a specific failure as a universal principle
+    - Over-contextualization: treating a universal pattern as only relevant to one case
+    - The knowledge graph learns both WHAT happened (事) and WHY it matters (理)
+
+Code-enforced: `node scripts/mcts_compute.js li-shi-split --insight '<JSON>'`
+```
+
 ---
 
 ## Decision Conclusion Output Format
@@ -435,13 +514,14 @@ Decision report format (core fields):
  Date: [Date]  |  Total iterations: [N]  |  Solutions evaluated: [5~8]
 ════════════════════════════════════════════════════════
 
- Solution Ranking (V_final = 0.5×V_feas + 0.3×V_robust + 0.2×V_persp)
+ Solution Ranking (V_final = 0.5×V_feas + 0.3×V_robust + 0.2×V_persp + Body-Use bonus)
 
- Rank │ Solution    │ V_final │ V_feas│ V_robust│ V_persp│ σ²  │ n │ Conf
- ─────┼─────────────┼─────────┼───────┼─────────┼────────┼─────┼───┼─────
-  1   │ [name]      │ [val]   │ [...] │ [...]   │ [...]  │ σ²  │ n │ HIGH
-  2   │ [name]      │ [val]   │ [...] │ [...]   │ [...]  │ σ²  │ n │ MED
+ Rank │ Solution    │ V_final │ V_feas│ V_robust│ V_persp│Body-Use│ σ²  │ n │ Conf
+ ─────┼─────────────┼─────────┼───────┼─────────┼────────┼────────┼─────┼───┼─────
+  1   │ [name]      │ [val]   │ [...] │ [...]   │ [...]  │ +0.05  │ σ²  │ n │ HIGH
+  2   │ [name]      │ [val]   │ [...] │ [...]   │ [...]  │ -0.03  │ σ²  │ n │ MED
   ...
+ Body-Use: + means option "generates" context (顺势), - means "controls" context (逆势)
 
  Self-Check Conclusion:
    ✅ Pass / ⚠️ Has risk / ❌ Not passed
@@ -449,8 +529,12 @@ Decision report format (core fields):
 
  Perspective Blindspot Audit:
    ✅ / ⚠️ / ❌ [Conclusion]
-   [View matrix showing cultural perspective coverage]
+   [Sub-lens coverage table]
    [Uncovered blindspots, if any]
+
+ 言意 (Word-Meaning) Gap Check:
+   ✅ No mismatches / ⚠️ [specific gaps found]
+   [User said X, interpreted as Y — verify?]
 
  Execution Plan:
    [Optimal solution] → [Step 1] → [Step 2] → ... → [Step N]
