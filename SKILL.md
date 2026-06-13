@@ -5,7 +5,7 @@ description: |
   Universal thinking engine — MCTS tree search + TD learning + Eight-Facet Mirror.
   Always active, engages on demand: decompose → detect decision points → engine切入.
   Language adaptive. Phase output visible when engine engages.
-version: 1.7.6
+version: 1.7.7
 license: MIT
 ---
 

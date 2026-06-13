@@ -1,6 +1,6 @@
 {
   "name": "luke",
-  "version": "1.7.6",
+  "version": "1.7.7",
   "description": "Universal decision engine — MCTS tree search × TD temporal learning × Eight-Facet Mirror. Brainstorm all approaches, simulate each one, pick the best, execute once.",
   "owner": {
     "name": "ljjluke"
@@ -10,7 +10,7 @@
       "name": "luke",
       "description": "MCTS-TD decision engine: Eight-Facet Mirror brainstorming → MCTS tree search simulation → converge & execute. Multi-language (zh/ja/ko/en).",
       "source": "./",
-      "version": "1.7.6",
+      "version": "1.7.7",
       "author": {
         "name": "ljjluke"
       },

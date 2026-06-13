@@ -1,6 +1,6 @@
 {
   "name": "luke",
-  "version": "1.7.6",
+  "version": "1.7.7",
   "description": "Universal decision engine — MCTS tree search × TD temporal learning × Eight-Facet Mirror (Taoist Bagua). Think first, execute once. Multi-language (zh/ja/ko/en).",
   "author": {
     "name": "ljjluke",

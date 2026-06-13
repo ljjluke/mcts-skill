@@ -188,142 +188,146 @@ Constraint Collection = First step to doing right thing
 
 ---
 
-## 0.1 Requirement Portrait — 五诊需求画像
+## 0.1 Requirement Portrait — 五诊 (Wuzhen) Diagnosis
 
-> "知彼知己，胜乃不殆；知天知地，胜乃可全" —《孙子兵法·地形》
+> "知彼知己，胜乃不殆；知天知地，胜乃可全" — Sunzi Bingfa · Dixing
 >
-> 约束收集不能只看技术。人、组织、文化、时间 — 这些维度缺失会导致
-> 方案技术上可行却实际落不了地。五诊画像确保每个维度都被审视。
+> Constraint collection must go beyond tech. People, organization, culture,
+> timing — missing these dimensions leads to technically viable but
+> practically unlandable solutions. 五诊 ensures every dimension is scrutinized.
 
-在传统9项技术约束之前，先用五诊画像扫描需求全貌。**每个维度如果信息不足，必须追问用户。**
+Before the 9-item technical checklist, scan requirements with 五诊 portrait.
+**If any dimension has insufficient info, MUST ask the user.**
 
-### 五诊维度
+Code-enforced: `node scripts/mcts_compute.js five-diagnosis --scores '{"tian":8,"di":4,"ren":2,"fa":7,"wu":5}'`
+
+### Five Diagnosis Dimensions
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│  五诊需求画像 — "望闻问切四诊合参" + "五事七计"                       │
+│  五诊 (Wuzhen) Requirement Portrait — "望闻问切" + "五事七计"        │
 ├─────────────────────────────────────────────────────────────────────┤
 │                                                                     │
-│  ① 天 · 时势 (Timing & Context)                                     │
-│     "天者，阴阳、寒暑、时制也" —《孙子兵法》                          │
+│  ① 天 (Tian) · Timing & Context                                    │
+│     "天者，阴阳、寒暑、时制也" — Sunzi Bingfa                       │
 │                                                                     │
-│     - 当前处于什么阶段？(从0→1 / 1→10 / 10→100)                    │
-│     - 有没有时间压力？deadline 是硬性还是弹性？                       │
-│     - 外部环境是否稳定？(团队扩张期/收缩期/稳定期)                    │
-│     - 是否有窗口期？(市场时机/技术红利期/政策窗口)                    │
-│     ⚠️ 如果不问 → 方案可能错过窗口或节奏不匹配                       │
+│     - Current stage: (0→1 / 1→10 / 10→100)                         │
+│     - Time pressure: hard deadline or flexible?                     │
+│     - External stability: expansion / contraction / steady?         │
+│     - Window of opportunity: market timing / tech红利 / policy?     │
+│     ⚠️ If not asked → solution may miss window or mismatch pace    │
 │                                                                     │
-│  ② 地 · 资源 (Resources & Constraints)                              │
-│     "地者，远近、险易、广狭、死生也" —《孙子兵法》                    │
+│  ② 地 (Di) · Resources & Constraints                               │
+│     "地者，远近、险易、广狭、死生也" — Sunzi Bingfa                  │
 │                                                                     │
-│     - 人力：谁来做？几人？什么水平？能否加班？                        │
-│     - 预算：有无预算限制？付费工具/svc 能不能用？                     │
-│     - 基础设施：现有环境是什么？能改吗？                              │
-│     - 依赖：能否引入新依赖？版本锁定？                                │
-│     ⚠️ 如果不问 → 方案可能超出实际执行力                             │
+│     - People: who builds? how many? skill level? overtime viable?   │
+│     - Budget: limits? paid tools/services allowed?                  │
+│     - Infrastructure: existing environment? can modify?             │
+│     - Dependencies: can add new ones? version locked?               │
+│     ⚠️ If not asked → solution may exceed actual execution capacity│
 │                                                                     │
-│  ③ 人 · 人心 (People & Culture)                                     │
-│     "上下同欲者胜" —《孙子兵法》                                      │
-│     "人和不如地利，地利不如天时" —《孟子》                            │
+│  ③ 人 (Ren) · People & Culture                                     │
+│     "上下同欲者胜" — Sunzi Bingfa                                   │
+│     "人和不如地利，地利不如天时" — Mengzi                            │
 │                                                                     │
-│     - 谁是最终用户？他们习惯什么？                                    │
-│     - 团队文化：偏好稳还是偏好新？                                    │
-│     - 利益相关方：谁会受益？谁会抵触？谁拍板？                        │
-│     - 谁维护这个系统？他们的水平如何？                                │
-│     ⚠️ 如果不问 → 方案可能技术上最优但团队不接受/维护不了              │
+│     - End users: who are they? what habits?                         │
+│     - Team culture: prefer stability or innovation?                 │
+│     - Stakeholders: who benefits? who resists? who decides?         │
+│     - Maintainers: who maintains? their skill level?                │
+│     ⚠️ If not asked → technically optimal but team rejects it      │
 │                                                                     │
-│  ④ 法 · 规矩 (Rules & Governance)                                   │
-│     "法者，曲制、官道、主用也" —《孙子兵法》                          │
+│  ④ 法 (Fa) · Rules & Governance                                    │
+│     "法者，曲制、官道、主用也" — Sunzi Bingfa                        │
 │                                                                     │
-│     - 合规要求：数据隐私/安全/审计？                                  │
-│     - 代码规范：语言/框架/版本限制？                                  │
-│     - 流程约束：CI/CD 要求？代码审查流程？                           │
-│     - 架构约束：微服务/单体/Serverless？                              │
-│     ⚠️ 如果不问 → 方案可能违反硬约束直接作废                          │
+│     - Compliance: data privacy / security / audit?                  │
+│     - Code standards: language / framework / version limits?        │
+│     - Process: CI/CD requirements? code review flow?                │
+│     - Architecture: microservices / monolith / serverless?          │
+│     ⚠️ If not asked → solution may violate hard constraints        │
 │                                                                     │
-│  ⑤ 物 · 本质 (Essence & Purpose)                                    │
-│     "大道至简" — 老子                                                │
-│     "知止而后有定，定而后能静" —《大学》                              │
+│  ⑤ 物 (Wu) · Essence & Purpose                                     │
+│     "大道至简" — Laozi                                              │
+│     "知止而后有定，定而后能静" — Daxue                               │
 │                                                                     │
-│     - 这件事的本质目的是什么？(去掉包装后核心诉求)                     │
-│     - 成功标准是什么？怎么判断"做成了"？                              │
-│     - 最不能接受什么？(底线)                                          │
-│     - 如果只能做一件事，做什么？(优先级)                              │
-│     - 做完之后希望产生什么变化？(预期影响)                             │
-│     ⚠️ 如果不问 → 方案可能偏离真正目标，做了一堆无关的                  │
+│     - Core purpose: what is the real goal (strip the packaging)?    │
+│     - Success criteria: how to judge "done"?                        │
+│     - Deal-breakers: what is absolutely unacceptable?               │
+│     - Priority: if only one thing can be done, what?                │
+│     - Expected impact: what change after completion?                │
+│     ⚠️ If not asked → solution may miss the real target            │
 │                                                                     │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
-### 五诊追问策略
+### Follow-up Question Strategy
 
 ```
-执行五诊画像时，按以下规则追问：
+When executing 五诊 portrait, follow these rules:
 
-① 扫描5个维度，标记每个维度信息是否充足：
-   充足(≥7分) → 记录，不追问
-   部分缺失(4-6分) → 追问1-2个关键问题
-   严重缺失(≤3分) → 必须追问，且提供选项引导(AskUserQuestion)
+① Scan 5 dimensions, mark info sufficiency per dimension:
+   sufficient (≥7) → record, no follow-up
+   partial (4-6) → ask 1-2 key questions
+   severe (≤3) → MUST ask, provide guided options (AskUserQuestion)
 
-② 追问原则：
-   - 不问用户已经回答过的
-   - 不问能从代码/项目推断的(自己去查)
-   - 只问"用户才知道"的信息
-   - 每轮最多3-5个问题，不要一次问太多
+② Follow-up principles:
+   - Don't re-ask what user already answered
+   - Don't ask what can be inferred from code/project (check yourself)
+   - Only ask what "only the user would know"
+   - Max 3-5 questions per round
 
-③ 追问示例：
-   ✅ "这个功能谁来维护？团队几个人？"
-   ✅ "有没有 deadline？是硬性还是弹性的？"
-   ✅ "最终用户习惯什么技术？他们能接受新东西吗？"
-   ❌ "你的技术栈是什么？" (应该自己去读 package.json/go.mod)
-   ❌ "你有什么要求？" (太宽泛，用户不知从何说起)
+③ Good vs bad follow-up examples:
+   ✅ "Who maintains this? Team size and skill level?"
+   ✅ "Any deadline? Hard or flexible?"
+   ✅ "What are end users accustomed to? Can they handle big changes?"
+   ❌ "What's your tech stack?" (should read package.json/go.mod yourself)
+   ❌ "Any requirements?" (too vague, user doesn't know where to start)
 
-④ 维度交叉检验：
-   天(时势) ↔ 人(人心)：窗口期匹配团队状态吗？
-   地(资源) ↔ 法(规矩)：资源够执行规矩要求的标准吗？
-   物(本质) ↔ 天(时势)：核心目标在当前时机下合理吗？
-   → 交叉发现矛盾 → 追问用户澄清
+④ Cross-dimension validation:
+   Tian (timing) ↔ Ren (people): does window match team readiness?
+   Di (resources) ↔ Fa (rules): are resources sufficient for governance standards?
+   Wu (essence) ↔ Tian (timing): is core goal achievable within current timing?
+   → Cross-dimension contradiction found → ask user to clarify
 ```
 
-### 五诊画像输出格式
+### Portrait Output Format
 
 ```
 ────────────────────────────
- 【需求画像 · 五诊合参】
- 任务: [xxx]
+ 【Requirement Portrait · 五诊合参】
+ Task: [xxx]
 
- ① 天·时势  [7/10] 充足
-   - 阶段：1→10成长期
-   - 时间：2周内，弹性
-   - 环境：团队稳定期
+ ① 天 (Tian) · Timing  [7/10] sufficient
+   - Stage: 1→10 growth
+   - Time: 2 weeks, flexible
+   - Environment: team steady phase
 
- ② 地·资源  [4/10] 部分缺失 ← 追问
-   - 人力：? (需追问)
-   - 预算：? (需追问)
-   - 已知：可用现有K8s集群
+ ② 地 (Di) · Resources  [4/10] partial ← ask
+   - Team: ? (needs asking)
+   - Budget: ? (needs asking)
+   - Known: existing K8s cluster available
 
- ③ 人·人心  [3/10] 严重缺失 ← 必须追问
-   - 最终用户：? (需追问)
-   - 维护团队：? (需追问)
-   - 利益相关方：? (需追问)
+ ③ 人 (Ren) · People  [3/10] severe ← MUST ask
+   - End users: ? (needs asking)
+   - Maintainers: ? (needs asking)
+   - Stakeholders: ? (needs asking)
 
- ④ 法·规矩  [8/10] 充足
-   - 合规：GDPR适用
-   - 技术栈：Go 1.21 + gin (代码推断)
-   - 架构：微服务
+ ④ 法 (Fa) · Rules  [8/10] sufficient
+   - Compliance: GDPR applies
+   - Tech stack: Go 1.21 + gin (code-inferred)
+   - Architecture: microservices
 
- ⑤ 物·本质  [5/10] 部分缺失 ← 追问
-   - 核心目的：提升API响应速度
-   - 成功标准：? (需追问)
-   - 底线：? (需追问)
+ ⑤ 物 (Wu) · Essence  [5/10] partial ← ask
+   - Core purpose: improve API response speed
+   - Success criteria: ? (needs asking)
+   - Deal-breakers: ? (needs asking)
 
- 需追问的问题（3个）：
-   Q1: 这个功能谁维护？团队几个人什么水平？
-   Q2: 最终用户是谁？他们能接受多大变更？
-   Q3: 成功标准是什么？P99延迟降到多少算成功？
+ Questions to ask (3):
+   Q1: Who maintains this? Team size and skill level?
+   Q2: Who are end users? How much change can they accept?
+   Q3: Success criteria? What P99 latency counts as "success"?
 
- 维度交叉发现：
-   天↔人：2周内完成但团队只有1人 → 可能需要砍范围
+ Cross-dimension findings:
+   Tian↔Ren: 2-week deadline but only 1 person → may need scope reduction
  ────────────────────────────
 ```
 

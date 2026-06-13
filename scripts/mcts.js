@@ -30,7 +30,8 @@ const ENGINES = {
                    'end-sub-diverge','reset-depth','diverge-depth','should-ask-user',
                    'cull','coverage-matrix','adaptive-c','shi-maturity','info-gap-scan',
                    'needs-sub-diverge','synthesize-sim','should-write-kg','check-write-safety',
-                   'check-final-convergence','re-simulation-decide','identify-domain','check-learning-depth'],
+                   'check-final-convergence','re-simulation-decide','identify-domain','check-learning-depth',
+                   'five-diagnosis'],
     },
     guard: {
         script: 'mcts_guard.js',
