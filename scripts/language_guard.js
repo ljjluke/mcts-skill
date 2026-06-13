@@ -83,7 +83,11 @@ function getScriptName(char) {
  * Maps Unicode script names to ISO 639-1 language codes where applicable.
  */
 function detectLanguage(text) {
-    const { script, confidence, note } = detectScript(text);
+    const { script, confidence, note, breakdown } = detectScript(text);
+    // Japanese uses Han + Hiragana/Katakana. If any kana present, it's ja not zh.
+    if (script === 'Han' && breakdown && (breakdown.Hiragana > 0 || breakdown.Katakana > 0)) {
+        return { lang: 'ja', script: 'Han', confidence, note: note || "kana detected → ja" };
+    }
     // Map Unicode script names to standard language codes
     const scriptToLang = {
         Han: 'zh', Latin: 'en', Arabic: 'ar', Cyrillic: 'ru',

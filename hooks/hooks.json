@@ -31,8 +31,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const fs=require('fs');const path=require('path');const os=require('os');const mem=path.join(os.homedir(),'.claude/data/skills/mcts-td-planner/memory');if(!fs.existsSync(mem))fs.mkdirSync(mem,{recursive:true});const bf=path.join(mem,'agent_buffer.json');let buf={pending:[]};if(fs.existsSync(bf)){try{buf=JSON.parse(fs.readFileSync(bf,'utf-8'))}catch(e){}};buf.pending.push({type:'session_end',data:{},timestamp:new Date().toISOString()});fs.writeFileSync(bf,JSON.stringify(buf))\"",
-            "timeout": 3
+            "command": "node -e \"const fs=require('fs');const path=require('path');const os=require('os');const mem=path.join(os.homedir(),'.claude/data/skills/mcts-td-planner/memory');if(!fs.existsSync(mem))fs.mkdirSync(mem,{recursive:true});const bf=path.join(mem,'agent_buffer.json');let buf={pending:[]};if(fs.existsSync(bf)){try{buf=JSON.parse(fs.readFileSync(bf,'utf-8'))}catch(e){}};buf.pending.push({type:'session_end',data:{},timestamp:new Date().toISOString()});fs.writeFileSync(bf,JSON.stringify(buf));(function(){try{const base=os.homedir()+'/.claude/plugins/cache';const names=['luke','mcts','mcts-td-planner'];let cache=null;for(const n of names){const d=path.join(base,n,n);if(fs.existsSync(d)){cache=d;break}}if(!cache)return;const dirs=fs.readdirSync(cache).filter(d=>/^\\d+\\.\\d+\\.\\d+$/.test(d)).sort((a,b)=>{const[a1,a2,a3]=a.split('.').map(Number);const[b1,b2,b3]=b.split('.').map(Number);return b1-a1||b2-a2||b3-a3});if(dirs.length===0)return;const mma=path.join(cache,dirs[0],'scripts/meridian_memory.js');if(fs.existsSync(mma)){const r=require('child_process').spawnSync('node',[mma,'session-end'],{timeout:8000});console.log('[MCTS-TD] Session consolidated')}else{console.log('[MCTS-TD] Session buffer saved (daemon will consolidate)')}}catch(e){console.log('[MCTS-TD] Session buffer saved')}})()\"",
+            "timeout": 10
           }
         ]
       }
