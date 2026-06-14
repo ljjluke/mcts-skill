@@ -228,7 +228,7 @@ AI: ⚡ 这事有好几种做法，先让我想清楚
 /plugin update luke
 ```
 
-> 重启 Claude Code 生效。旧版本自动清理。
+> 重启 Claude Code 生效（无 /reload-plugins 命令，必须重启）。旧版本自动清理。
 
 ### ⚡ 记忆安全
 

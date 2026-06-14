@@ -187,7 +187,7 @@ User intent → Constraint Collection
 /plugin update luke
 ```
 
-> Restart Claude Code to apply. Old versions auto-cleaned.
+> Restart Claude Code to apply. (No /reload-plugins — restart is required.) Old versions auto-cleaned.
 
 Type any task. When you see the ⚡, it's working.
 
