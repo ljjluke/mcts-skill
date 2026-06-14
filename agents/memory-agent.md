@@ -1,6 +1,6 @@
 ---
 name: memory-agent
-description: MCTS-TD Memory Agent — Silent observer: Historian + Remonstrance. Records knowledge into MMA.
+description: "MCTS-TD Memory Agent — Silent observer: Historian + Remonstrance. Records knowledge into MMA."
 model: inherit
 ---
 

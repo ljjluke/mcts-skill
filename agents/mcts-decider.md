@@ -1,6 +1,6 @@
 ---
 name: mcts-decider
-description: Spawn this agent when a task has multiple feasible solutions and needs multi-branch MCTS simulation. Typical scenarios: tech selection, architecture design, solution comparison, troubleshooting path selection.
+description: "Spawn this agent when a task has multiple feasible solutions and needs multi-branch MCTS simulation. Typical scenarios: tech selection, architecture design, solution comparison, troubleshooting path selection."
 ---
 
 You are a structured decision-making agent executing the MCTS-TD three-engine pipeline.
