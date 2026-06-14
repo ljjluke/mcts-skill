@@ -5,7 +5,7 @@ description: |
   Universal thinking engine — MCTS tree search + TD learning + Eight-Facet Mirror.
   Always active, engages on demand: decompose → detect decision points → engine切入.
   Language adaptive. Phase output visible when engine engages.
-version: 1.8.0
+version: 1.9.0
 license: MIT
 ---
 
@@ -20,68 +20,53 @@ license: MIT
 ```
 EVERY message:
   Step 0: DECOMPOSE → detect decision points
-    ├─ 0 decision points → direct answer (engine stands by, NOT off)
-    │   ⚠️ If later stages reveal decision points → engine engages from that point
-    └─ 1+ decision points → ENGINE ENGAGES (full flow below)
+    ├─ 0 decision points → direct answer (engine stands by)
+    └─ 1+ decision points → ENGINE ENGAGES
 ```
 
 **When engine engages, execute this flow IN ORDER:**
 
 ```
-Step 0   DECOMPOSE → 动静(Dong-Jing) MODE CHECK
-           ⚡ BEFORE engine starts: determine mode (动=simplified / 静=full)
-           Signal: urgency markers → 动, depth markers → 静, default → 静
-           Code: `node scripts/mcts_compute.js dong-jing --message '<msg>' --decision-count <N>`
+Step 0   DECOMPOSE + 动静 MODE (動=simplified / 靜=full)
+Step 0.5 五診需求画像 — 5 dimensions, any <7 → ASK
+Step 0.5b 本末/有无/张力 (AFTER 五診, MANDATORY)
+Step 1   [Eight-Facet Review Map] — 8 facets + scores
+Step 1.5 [Info Gap Supplement] — ask user to fill gaps (if any <7)
+Step 2   [Reconnaissance Report] — findings + cross-validation
+Step 3   [Solution List] → AUTO-ENTER MCTS simulation
+Step 3   MCTS SIMULATION — per-round 4-phase output
+Step 3.5 Self-Check + ask user if needed
+Step 3.6 [Blindspot Audit + 言意 Gap]
+Step 4   [Decision Report] — ranking + self-check + TD write-back
+```
 
-Step 0.5 FIVE-DIAGNOSIS PORTRAIT (五诊需求画像) + ASK missing info
-           5 dimensions: 天(时势) 地(资源) 人(人心) 法(规矩) 物(本质)
-           ⚠️ Any dimension <7 → ASK user (AskUserQuestion, NOT free text)
-           📄 LOAD: engine/mcts-constraint.md
+## 📏 CONTEXT BUDGET (上下文预算)
 
-Step 0.5b XUANXUE ENHANCEMENTS (AFTER 五诊, MANDATORY)
-           本末: root dimension → its constraints are super-hard
-           有无: missing constraint scan → abnormal absences → ask user
-           张力: dimension-pair tension → HOTSPOT → diverge priority
-           ⚠️ Output MUST include Root/Absence/Tension in portrait
-           Code: root-branch + absence-detect + tension-scan
-           📄 LOAD: engine/mcts-constraint.md (0.1b)
+**⚠️ 上下文是稀缺资源 — 必须有意识地管理，防止膨胀过快。**
 
-Step 1   OUTPUT [Eight-Facet Review Map] — 8 facets + scores + blindspots
-           📄 LOAD: engine/mcts-diverge.md
+| 规则 | 说明 |
+|------|------|
+| **動模式紧凑输出** | 動(dong): 每个Phase输出≤500字，MCTS 3-5轮，跳过Round 3变化分析，交叉关联仅Top-2对 |
+| **靜模式完整输出** | 靜(jing): 完整输出，但MCTS每轮后第3轮起用紧凑格式(一行概要) |
+| **CLI调用批量化** | 同Phase的多个compute/guard命令合并为一次调用；语言检查仅在Phase 4最终执行一次 |
+| **Engine文件按需加载** | 只加载当前Phase对应的engine文件，不预读后续Phase的文件 |
+| **上下文压力检测** | 如果感觉自己输出开始被截断或回复变慢 → 自动切换動模式 |
+| **MCTS轮次压缩** | Round 1-2: 完整4-phase | Round 3+: "Round N: Selected [path], V=X, n=N" |
 
-Step 1.5 OUTPUT [Info Gap Supplement Report] — ask user to fill gaps
-           ⚠️ MANDATORY if ANY facet score <7. Use AskUserQuestion.
-           📄 LOAD: engine/mcts-diverge.md (Phase 1.5)
-
-Step 2   OUTPUT [Reconnaissance Report] — per-facet findings + cross-validation
-           📄 LOAD: engine/mcts-diverge.md (Converge phase)
-
-Step 3   OUTPUT [Solution List] — 5~8 solutions + facet coverage matrix
-           → AUTO-ENTER MCTS simulation, no pause
-           📄 LOAD: engine/mcts-simulate.md
-
-Step 3   MCTS SIMULATION — output EVERY round with 4-phase detail
-           📄 LOAD: engine/mcts-simulate.md
-
-Step 3.5 CHECK if user input needed
-           📄 LOAD: engine/mcts-converge.md
-
-Step 3.6 OUTPUT [Blindspot Audit + 言意 Gap Check]
-           Sub-lens coverage table + 言意(Word-Meaning) gap detection
-           ⚠️ 言意: check if user statements were taken literally vs metaphorically
-           Code: `node scripts/mcts_compute.js yan-yi-check`
-           📄 LOAD: engine/mcts-converge.md
-
-Step 4   OUTPUT [Decision Report] — ranking + self-check + blindspot audit + TD write-back
-           📄 LOAD: engine/mcts-converge.md
+**動模式输出模板** (每个Phase ≤ 500字):
+```
+[Phase Name] Key: [1-2 bullet points]
+Scores: F1=8 F2=4↓ F3=7 F4=5↓ F5=9 F6=6 F7=8 F8=7
+Action: [what to do next]
 ```
 
 ## ⛔ FORBIDDEN
 
 - Ignoring detected decision points and answering directly
 - Collapsing multiple steps into one summary
-- MCTS: outputting only final V/n/σ² without per-round 4-phase detail
+- MCTS: outputting only final V/n/σ² without per-round detail
 - Claiming "engine not needed" when decision points exist
+- Verbose output in 動 mode (上下文预算超标 = VIOLATION)
 
 **When in doubt**: `node scripts/mcts_guard.js all-guards`
 
@@ -89,42 +74,43 @@ Step 4   OUTPUT [Decision Report] — ranking + self-check + blindspot audit + T
 
 ## 🔒 COMPRESSION-SAFE CORE
 
-**ALWAYS ACTIVE** | **DECOMPOSE FIRST** | **OUTPUT IN USER LANGUAGE** | **DECISION POINT → ENGINE ENGAGES** | **PHASED OUTPUT (0→0.5→0.5b→1→1.5→2→3→3.5→4)** | **动静 CHECK BEFORE ENGINE** | **本末/有无/张力 CHECK AFTER 五诊**
+**ALWAYS ACTIVE** | **DECOMPOSE FIRST** | **OUTPUT IN USER LANGUAGE** | **DECISION POINT → ENGINE ENGAGES** | **PHASED OUTPUT (0→0.5→0.5b→1→1.5→2→3→3.5→4)** | **動靜 CHECK BEFORE ENGINE** | **本末/有无/张力 CHECK AFTER 五診** | **CONTEXT BUDGET — 動模式紧凑, 靜模式完整**
 
 ---
 
 ## 🌐 Language Guard
 
-① DETECT: `node scripts/language_guard.js detect --message "<msg>"`
-② EXECUTE internally in English
-③ OUTPUT in user's detected language (NON-NEGOTIABLE)
-④ GUARD after each major block: `node scripts/language_guard.js check --user-lang <lang>`
+① DETECT: `language_guard.js detect` → ② Internal English → ③ OUTPUT in user language → ④ FINAL check only (at Step 4)
 
 ---
 
-## 📄 Engine File Routing (LOAD on-demand per phase)
+## 📄 Engine File Routing
 
-| Phase | File | Contains |
-|-------|------|----------|
-| Step 0 | `engine/mcts-constraint.md` | 动静模式判断, decompose |
-| Step 0-0.5b | `engine/mcts-constraint.md` | 五诊需求画像, 本末/有无/张力检测, constraint checklist |
-| Step 1-2 | `engine/mcts-diverge.md` | Eight-Facet Mirror(+体用+理事), info gap supplement, recon, converge(+一多) |
-| Step 3 | `engine/mcts-simulate.md` | MCTS 4-phase per-round, UCB, mutation vector, body-use score |
-| Step 3.5-4 | `engine/mcts-converge.md` | Ranking(+body-use), self-check(+本末+动静), blindspot audit(+言意), TD write-back(+理事) |
-| Post-4 | `engine/td-learner.md` | TD error, value update, knowledge graph lifecycle |
-| Always | `agents/memory-agent.md` | Memory Agent 5 checkpoints |
+| Phase | File | Key Content | Detailed Rules (on-demand CLI) |
+|-------|------|-------------|-------------------------------|
+| Step 0-0.5b | `engine/mcts-constraint.md` | 動靜, 五診, 本末/有无/张力, constraints | `guard five-diagnosis-detail` |
+| Step 1-2 | `engine/mcts-diverge.md` | Eight-Facet(+体用+理事), info gap, converge(+一多) | `guard diverge-detail` |
+| Step 3 | `engine/mcts-simulate.md` | MCTS 4-phase, UCB, mutation, body-use | `guard simulate-detail` |
+| Step 3.5-4 | `engine/mcts-converge.md` | Ranking(+body-use), self-check(+本末+動靜), blindspot(+言意), TD(+理事) | `guard converge-detail` |
+| Post-4 | `engine/td-learner.md` | TD error, value update, knowledge lifecycle | — |
+| Always | `agents/memory-agent.md` | 5 checkpoints (silent, conflict alert only) | — |
+
+**⚠️ Engine files are COMPRESSED — they contain rules but NOT detailed examples/templates. When you need detailed guidance for a specific phase, call the corresponding guard command to get the full rules.**
+
+Shorthand: `node scripts/mcts_guard.js phase-rules --phase <0|1|2|3>`
 
 ---
 
-## 🧠 Memory Agent (5 checkpoints — silent, engages with engine)
+## 🧠 Memory Agent (silent, 6 checkpoints)
 
-① pre_engine: deqi recall → ② during_diverge: emotion → ③ post_simulate: ashi insert
-④ pre_converge: conflict detect → ⑤ post_execution: TD update + decay
+① pre_engine: deqi → ② during_diverge: emotion → ③ post_simulate: ashi + cluster
+③.5 complete: fill _needs_completion → ④ pre_converge: conflict (ALERT if found, max 2/session)
+⑤ post_execution: TD + decay → ⑥ session_end: consolidation
 
-Full rules: agents/memory-agent.md | Verify: `node scripts/mcts_guard.js memory-agent-guard`
+Full rules: `agents/memory-agent.md`
 
 ---
 
 ## 💾 Memory Data Safety
 
-Knowledge graph: `~/.claude/data/skills/mcts-td-planner/`. Isolated from skill code. Delete that directory to reset.
+Knowledge graph: `~/.claude/data/skills/mcts-td-planner/`. Delete that directory to reset.

@@ -489,6 +489,8 @@ function main() {
                     { pair: 'tian↔ren', desc: 'Does timing window match people readiness?' },
                     { pair: 'di↔fa', desc: 'Are resources sufficient for rule requirements?' },
                     { pair: 'wu↔tian', desc: 'Is core goal achievable within current timing?' },
+                    { pair: 'ren↔wu', desc: 'Do stakeholder needs align with core purpose?' },
+                    { pair: 'wu↔fa', desc: 'Does regulation block the core goal?' },
                 ];
                 output({ diagnoses: results, total_questions: Math.min(totalQuestions, 5), cross_checks: crossChecks, max_questions_per_round: 5 });
                 break;

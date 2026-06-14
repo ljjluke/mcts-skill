@@ -1,6 +1,6 @@
 {
   "name": "luke",
-  "version": "1.8.0",
+  "version": "1.9.0",
   "description": "Universal decision engine — MCTS × TD × Eight-Facet Mirror × Xuanxue/Zhanbu. Think first, execute once. Multi-language (zh/ja/ko/en).",
   "author": {
     "name": "ljjluke",

@@ -759,6 +759,299 @@ function solutionCountGuard(state = {}) {
 }
 
 // ═══════════════════════════════════════════════════════════════
+//  Guard 12: 五诊需求画像详细规则 (约束压缩损失的代码化)
+// ═══════════════════════════════════════════════════════════════
+
+function fiveDiagnosisDetail() {
+    return {
+        design_principle: "These 5 dimensions are DOMAIN-AGNOSTIC. They apply to software, medicine, education, driving, cooking — any field. The 'concrete questions' under each dimension are EXAMPLES — LLM must adapt them to the user's specific domain. Never assume 'software project'.",
+        dimensions: [
+            { id: 'tian', name: '天·Timing', quote: '天者，阴阳、寒暑、时制也 — Sunzi Bingfa',
+              abstract: 'When is this happening? What is the temporal context?',
+              generic_probes: ['What stage is this? (starting/growing/mature/scaling)', 'Time pressure: hard deadline or flexible?', 'External environment: stable/changing/turbulent?', 'Window of opportunity: is there one? closing soon?'],
+              domain_examples: { software: 'sprint deadline? tech stack maturity?', medicine: 'acute/chronic? treatment window? comorbidity stage?', education: 'semester start/mid/end? student readiness?', driving: 'weather? road conditions? time of day?' },
+              warning: 'If not asked → solution may miss window or mismatch pace' },
+            { id: 'di', name: '地·Resources', quote: '地者，远近、险易、广狭、死生也 — Sunzi Bingfa',
+              abstract: 'What do you have to work with? What are the limits?',
+              generic_probes: ['People: who is involved? how many? skill/experience level?', 'Budget/money: any financial limits?', 'Physical/material: what is available? can acquire more?', 'Dependencies: any locked-in choices? external constraints?'],
+              domain_examples: { software: 'team size? infra? can add dependencies?', medicine: 'available drugs? equipment? hospital capacity?', education: 'class size? materials? classroom setup?', driving: 'vehicle condition? fuel? route alternatives?' },
+              warning: 'If not asked → solution may exceed actual execution capacity' },
+            { id: 'ren', name: '人·People', quote: '上下同欲者胜 — Sunzi Bingfa | 人和不如地利 — Mengzi',
+              abstract: 'Who is affected? What do they want? Will they accept?',
+              generic_probes: ['Who is impacted by this decision? (directly & indirectly)', 'What do they want/need? What habits/preferences?', 'Who benefits? Who might resist? Who has final say?', 'Who will live with the outcome long-term?'],
+              domain_examples: { software: 'end users? stakeholders? team culture?', medicine: 'patient preferences? family? care team dynamics?', education: 'student learning styles? parent expectations?', driving: 'passengers? other drivers? traffic culture?' },
+              warning: 'If not asked → optimal on paper but rejected in practice' },
+            { id: 'fa', name: '法·Rules', quote: '法者，曲制、官道、主用也 — Sunzi Bingfa',
+              abstract: 'What rules must be followed? What is forbidden?',
+              generic_probes: ['What regulations/standards apply? (formal or informal)', 'What is explicitly forbidden?', 'What process must be followed? (approval, review, etc.)', 'What constraints come from the structure/framework?'],
+              domain_examples: { software: 'compliance? CI/CD? architecture constraints?', medicine: 'clinical guidelines? consent? licensing?', education: 'curriculum standards? school policy? accreditation?', driving: 'traffic laws? company fleet policy? insurance?' },
+              warning: 'If not asked → solution may violate hard constraints' },
+            { id: 'wu', name: '物·Essence', quote: '大道至简 — Laozi | 知止而后有定 — Daxue',
+              abstract: 'What is this REALLY about? What matters most?',
+              generic_probes: ['Core purpose: what is the real goal (strip the packaging)?', 'Success criteria: how to judge "done"?', 'Deal-breakers: what is absolutely unacceptable?', 'Priority: if only one thing can be done, what?', 'Expected impact: what change after completion?'],
+              domain_examples: { software: 'what problem does this feature actually solve?', medicine: "what's the treatment goal? palliative vs curative?", education: 'what should students actually learn?', driving: "what's the real destination? shortest vs safest?" },
+              warning: 'If not asked → solution may miss the real target' },
+        ],
+        follow_up_rules: [
+            '⛔ Do NOT re-ask what user already answered',
+            '⛔ Do NOT ask what can be inferred from available info (check yourself first)',
+            '⛔ Only ask what "only the user would know"',
+            'ADAPT questions to user domain — never assume software',
+        ],
+        follow_up_examples: {
+            good: [
+                '✅ "Who is most affected by this decision? What do they want?"',
+                '✅ "Any deadline? Hard or flexible?"',
+                '✅ "What is the real goal here? What does success look like?"',
+            ],
+            bad: [
+                '❌ "Who maintains the system?" (assumes software — what if user is a doctor?)',
+                '❌ "What is your tech stack?" (should read package.json/go.mod yourself)',
+                '❌ "Any requirements?" (too vague, user does not know where to start)',
+            ],
+        },
+        cross_dimension_pairs: [
+            { pair: '天↔人', meaning: 'timing pressure vs people readiness' },
+            { pair: '地↔法', meaning: 'resources sufficient for governance standards' },
+            { pair: '物↔天', meaning: 'core goal achievable within current timing' },
+            { pair: '人↔物', meaning: 'stakeholder needs align with core purpose' },
+            { pair: '物↔法', meaning: 'does regulation block the core goal' },
+        ],
+        absence_scan_templates: {
+            tian: 'What time constraints are NOT specified? unusual?',
+            di: 'What resource limits are NOT stated? budget? headcount?',
+            ren: 'Who is NOT represented? no opposition = suspicious?',
+            fa: 'What governance is NOT mentioned? audit? compliance?',
+            wu: 'What success criteria are NOT defined? deal-breakers?',
+        },
+        abnormal_absence_examples: [
+            'A medical decision with no consent constraints mentioned → abnormal absence',
+            'A software project with no budget mentioned → abnormal absence',
+            'A driving decision with no safety rules mentioned → abnormal absence',
+        ],
+        constraint_handling_anti_patterns: [
+            { id: 'cannot_fabricate', rule: '"Cannot fabricate" ≠ "output empty template only". Correct: search public data → output real data rows → annotate uncertainty [source pending verification]' },
+            { id: 'no_scraping', rule: '"No live web scraping capability" ≠ "cannot output any data". Correct: search existing public datasets → cite verifiable public info' },
+            { id: 'ai_identity', rule: '"I am an AI" ≠ "I cannot do anything". Correct: search → find APIs → organize existing public data → give usable data to user' },
+        ],
+        low_facet_procedure: [
+            '① WebSearch for external information about the low-scoring dimension',
+            '② ASK THE USER about the specific gap — "Do you have relevant data sources or API links?"',
+            '③ ONLY after search + user confirmation, re-rate the facet',
+            '⛔ Do NOT justify "I cannot do X" as a facet score without first trying to DO something about it',
+            '⛔ Do NOT use "用户自己选的方案" as an excuse to skip delivering real value',
+        ],
+        technical_subset_rule: 'Technical constraints are a SUBSET of 五診画像 — not a replacement. Never skip the five-diagnosis portrait and only do the technical checklist.',
+        self_check_bias_questions: [
+            '静→动: "Have we been in deep analysis so long that a simpler action would have been more effective?"',
+            '动→靜: "Have we acted so quickly that we missed structural considerations?"',
+        ],
+    };
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  Guard 13: Diverge Engine 详细规则 (约束压缩损失的代码化)
+// ═══════════════════════════════════════════════════════════════
+
+function divergeDetail() {
+    return {
+        grill_the_user: {
+            mandatory: true,
+            steps: [
+                '① PARAPHRASE: "I understand you want to [X]. Is that correct? Are there other aspects I should consider?"',
+                '② PROBE: "What have you already tried or considered?"',
+                '③ CONSTRAIN: Ask the 2-3 most critical constraints using structured AskUserQuestion (not free text). Example: "Any dependency limits?" → [Yes, none / Must use Go+gin / No external deps at all]',
+            ],
+            warning: '⚠️ Do NOT skip this. The user knows things you do not.',
+        },
+        facet_actions: {
+            F1_source: { actions: ['① WebSearch: "[task] industry standard approaches"', '② WebSearch: "[task] unconventional / alternative"', '③ WebSearch: "[task] cross-domain analogy"'], forbidden: '⛔ FORBIDDEN: skip search, internal knowledge only', output: 'Industry + Unconventional + Cross-domain' },
+            F2_foundation: { actions: ['① Assess self/KG capability for this task', '② Find gaps → search to fill (not guess)', '③ If score ≤3 → MUST WebSearch + ask user'], output: 'Capability match + areas to supplement' },
+            F3_change: { actions: ['① Present F1 external findings to user', '② Tell user: "I found directions you may not have noticed..."', '③ Ask user: "Which direction should I explore first?"'], forbidden: ['⛔ FORBIDDEN: Skip to subsequent analysis', '⛔ FORBIDDEN: Summarize without asking questions'] },
+            F4_penetration: { actions: ['① Query memory (MMA deqi) + search', '② What other related domains/technologies/solutions can penetrate in?', '③ Search each candidate for known pitfalls + best practices'], output: 'Knowledge breadth map + risks per candidate' },
+            F5_risk: { actions: ['① Search known pitfalls and failure cases', '② Worst case for each candidate?', '③ No risks found? Search not deep enough'], forbidden: '⛔ "This solution has no risks" = you did not search carefully enough', output: 'Risk list + mitigation plans' },
+            F6_dependencies: { actions: ['① Search each candidate dependency tech/platform status', '② Check for deprecation, EOL, major bugs?', '③ If dependency unclear → search to confirm'], output: 'Dependency health check report' },
+            F7_boundary: { actions: ['① Check each item in constraint-checklist → node scripts/mcts_guard.js constraint-checklist', '② Hard violated → eliminate', '③ Soft not met → downgrade'], output: 'Constraint satisfaction matrix' },
+            F8_convergence: { actions: ['① Synthesize F1-F7 findings, list conflicts', '② User wants vs user may not know but beneficial', '③ Decisions needing user → present clearly'], output: 'Conflict list + pending user decisions' },
+        },
+        direction_confirm: {
+            when: 'After clustering, BEFORE culling',
+            rule: 'Briefly confirm each candidate direction with user. Only ask: "Direction X assumes [Y], correct?"',
+            forbidden: ['Do NOT re-ask questions already answered in Phase 1.5', 'Do NOT ask "选方案A还是方案B" — that is YOUR job'],
+        },
+        final_triaging: {
+            sources: [
+                { name: 'MEMORY', command: 'meridian_memory.js deqi', query: 'past similar tasks? user preference patterns? Which approaches succeeded/failed before?' },
+                { name: 'WEB INTELLIGENCE', query: 'industry standard? known pitfalls? Deprecated or bleeding edge?' },
+                { name: 'AI JUDGMENT', criteria: ['Diversity: 3 most DIFFERENT approaches (no variants)', 'Coverage: which cover the MOST facets?', 'Actionability: which are truly doable right now?'] },
+            ],
+            rules: [
+                '⚠️ Every dropped direction needs a specific reason',
+                '⚠️ All kept solutions MUST pass the user detail check first',
+                '⛔ CODE-ENFORCED: node scripts/mcts_guard.js solution-count-guard --state \'{viable_count:N,total_before_cull:M}\'',
+                '<5 viable → notify user; >8 viable → force tighten; <2 → return to diverge',
+            ],
+        },
+        phase15_detail: {
+            why: 'Phase 0 (constraint collection) asks about BOUNDARIES. Phase 1 (diverge) REVEALS what you did not know to ask about. Without this phase, those newly-discovered gaps would silently become assumptions — which is exactly what MCTS exists to prevent.',
+            ask_rules: {
+                do_ask: 'constraints, preferences, domain knowledge, resource availability, priority trade-offs',
+                do_not_ask: ['"which solution do you prefer?" (YOUR job)', 'questions answerable by reading code/docs', 'vague "any requirements?" (be specific about gap)'],
+            },
+            integrate: 'If answers invalidate earlier assumptions → re-diverge those facets',
+        },
+        crystallize_template: {
+            fields: ['Solution Name', 'Core Approach (one sentence)', 'Main Basis (which diverge findings)', 'Constraint Check (satisfied/violated/uncertain)', 'Key Risks (from Risk & Abyss facet)', 'Expected Complexity (Small/Medium/Large)', 'Difference from Others (what is essentially different)'],
+            scorecard: 'Eight-Facet Scrutable Scorecard: 8 facets scored 1-10 with Question + Evidence columns',
+            score_guide: { '8-10': 'Strong (clear basis)', '5-7': 'Medium (some basis but insufficient)', '1-4': 'Weak (insufficient basis or clear issues)', '0': 'Cannot assess' },
+            composite_rules: { '<4': 'eliminate directly (cannot be scrutinized)', '4-6': 'keep but mark "needs attention"', '>6': 'normal entry to MCTS simulation' },
+        },
+        user_confirmation_template: {
+            format: '【Solution List Confirmation】Diverge Phase: X idea fragments | Converge Phase: Y directions → Eliminated Z → Retained N | Coverage: M/8 facets',
+            actions: ['✅ "continue" → Enter Simulate Engine', '➕ "add a XX solution" → Supplement', '➖ "remove solution X" → Remove', '⚡ "just do solution X" → Skip simulation, execute directly'],
+        },
+    };
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  Guard 14: Simulate Engine 详细规则 (约束压缩损失的代码化)
+// ═══════════════════════════════════════════════════════════════
+
+function simulateDetail() {
+    return {
+        knowledge_acquisition: {
+            level1_memory: {
+                query_scope: 'Active entries in knowledge graph (CONFIRMED/PROVISIONAL/HYPOTHESIS) + info already obtained in current session + completed global completion box items',
+                credibility: [
+                    { tier: 'HIGH', condition: 'CONFIRMED + n≥5 + σ²<0.05', action: 'Use directly, do not question' },
+                    { tier: 'MED', condition: 'PROVISIONAL + n<5', action: 'Use but mark "pending verification"' },
+                    { tier: 'LOW', condition: 'HYPOTHESIS + n=1', action: 'Use but declare "new knowledge, reference only"' },
+                    { tier: 'EXCLUDE', condition: 'DISPUTED/REFUTED', action: 'Do NOT use' },
+                ],
+                low_credibility_handling: 'Still use (reduce variance), annotate in report. If later verified → consolidation score +1.',
+            },
+            level2_self_learn: {
+                self_learnable: ['Technical details: API parameters, framework features', 'Best practices: standard approaches for scenario', 'Error messages: what they mean'],
+                not_self_learnable: ['User preferences: simple or complete?', 'Constraints: can new dependencies be introduced?', 'Business rules: field validation rules'],
+                requirements: ['At least 2 independent sources cross-validated', 'If 2 sources conflict → "controversial technical point", lower confidence', 'If only 1 source → "single source, use cautiously"', 'If cannot find → downgrade to level 3 or 4'],
+            },
+            level3_ask_user: {
+                trigger_conditions: ['Involves user preference', 'Involves project constraint', 'Involves business rule', 'Self-learn path failed'],
+                rules: ['Maximum 2 questions at a time', 'Do NOT block other solutions roll-out', 'Collect into "pending questions" list', 'Display to user uniformly when simulation ends'],
+            },
+            level4_assume: {
+                trigger_conditions: ['Not a requirement/preference question', 'Self-learn also fails', 'Roll-out must continue'],
+                rules: ['Must annotate "Assumption: XXX"', 'Variance +0.1', 'List ALL assumptions in simulation report', 'Focus on checking these assumptions during pre-execution self-check'],
+            },
+            critical_rule: '⛔ NEVER jump to asking user without exhausting memory and web first. NEVER ask technical questions the user would not know.',
+        },
+        selection_rules: {
+            pseudocode: [
+                'Step 1: Start from Root',
+                'Step 2: While current is not leaf and has children:',
+                '  If current has unexpanded potential → Stop, enter Expansion',
+                '  If all children explored → select child with highest UCB → current = that child',
+                '  If current is terminal → Stop Selection',
+                'Step 3: Output selection_path → Enter Expansion',
+            ],
+            first_iteration: 'Round 1: all n=0 → UCB=+∞ for all. Use knowledge graph recommendation score for initial sort. If no graph data → randomly select one. UCB drives from Round 2 onward.',
+            k_bonus_constraint: 'K_bonus only effective when n_child < 3',
+        },
+        sub_diverge_flow: {
+            step1: 'Determine decision type: node scripts/mcts_compute.js needs-sub-diverge --type <tech_choice|risk|user_preference|uncertainty>. Only tech_choice triggers sub-divergence.',
+            step2: 'Check recursion depth: node scripts/mcts_compute.js enter-simulation → Returns depth and allowed operation mode.',
+            step3: 'If sub-divergence allowed: begin-sub-diverge → depth+1 → execute simplified divergence → end-sub-diverge → depth-1',
+            step4: 'Synthesize: node scripts/mcts_compute.js synthesize-sim --base-v <V> --sub-results <JSON>. Sub-divergence results weight 0.2, base simulation weight 0.8.',
+            safety_valve: 'Hard limit MCTS_MAX_DIVERGE_DEPTH=3. Exceeding → Throw RecursionError, force terminate.',
+            important: 'Each layer executes REAL divergence simulation, just decreasing depth and perspectives, NO assumptions.',
+        },
+        simulation_rules: {
+            does_not_modify_tree: 'Intermediate nodes on simulation path are NOT added to tree (unless subsequent Expansion creates them). Only backpropagation updates existing nodes statistics.',
+            output_spec: 'V_leaf = Final value of simulation path (0.0~1.0) + Brief reason + Knowledge acquisition record: [what knowledge used, from which source]',
+        },
+        per_round_output_template: {
+            selection: 'Path: Root → ... → [current_node]. UCB values considered: [node: UCB value]. Why this path: [explanation].',
+            expansion: 'New node: [id] (type=[ACTION|RISK|FALLBACK], expansion_potential=[HIGH|MED|LOW|NONE]).',
+            simulation: 'Roll-out path: [path] → V=[value]. Knowledge acquired: [what, from which source]. Assumptions: [if any].',
+            backprop: 'Updated ancestor nodes: [node: n:X→Y, V:A→B]. Effect on next round Selection: [explanation].',
+            tree_state: 'Full tree rendering with n/V/σ² per node.',
+            convergence_check: 'V last 3 rounds: [X→Y→Z]. Change <0.05?',
+        },
+        forbidden: ['⛔ Outputting only final V/n/σ² without per-round detail', '⛔ Collapsing multiple rounds', '⛔ Skipping Selection path explanation', '⛔ Skipping Backpropagation node updates'],
+        self_check_additions: {
+            root_shift: '④ If 1st place violates root dimension (ben) → conditional pass (root constraint must be relaxable)',
+            dong_jing_bias: ['静→動: "Have we been in deep analysis so long that a simpler action would have been more effective?"', '動→靜: "Have we acted so quickly that we missed structural considerations?"'],
+        },
+    };
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  Guard 15: Converge Engine 详细规则 (约束压缩损失的代码化)
+// ═══════════════════════════════════════════════════════════════
+
+function convergeDetail() {
+    return {
+        self_check_full: [
+            { id: 'flaw_find', name: '找漏洞', questions: ['模拟中是否有模糊判断？如果有，具体是什么？', '是否依赖了未验证的假设？列出所有假设。', '是否有被忽略的风险？列出前3个。'] },
+            { id: 'reverse_think', name: '反向思考', questions: ['如果第2名方案实际比第1名更好，可能是什么原因？', '这个原因成立的可能性有多高？(高/中/低)', '如果成立，是否需要改变选择？'] },
+            { id: 'risk_assess', name: '风险评估', questions: ['选择第1名方案的最坏结果是什么？', '影响级别？(轻微/中等/严重)', '能否承受？(能/不能)'] },
+            { id: 'root_shift', name: '本末根移检查', questions: ['1st place violates root dimension (ben)?', 'If Yes → conditional pass (root constraint must be relaxable)'] },
+            { id: 'dong_jing_bias', name: '动静偏差检查', questions: ['靜→動: over-analysis? a simpler action would have been more effective?', '動→靜: under-analysis? acted so quickly that structural considerations missed?'] },
+        ],
+        blindspot_audit_full: {
+            sub_lens_coverage: 'Compare simulation outputs against diverge phase cultural sub-lens findings. Extract blindspots from sub-lenses → check each against ranked solutions → covered or missed.',
+            coverage_table_template: '┌──────────┬──────────┬──────────┬──────────┐ | Perspective blindspot | SolutionA | SolutionB | SolutionC | ├──────────┼──────────┼──────────┼──────────┤ | [lens]   |    ✓/-   |    ✓/-   |    ✓/-   | └──────────┴──────────┴──────────┴──────────┘',
+            uncovered_handling: '3+ missed → WARNING → return to converge, generate supplementary solutions. 1-2 missed → NOTE → annotate in decision report. None missed → full coverage, proceed.',
+        },
+        yan_yi_detail: {
+            scan_questions: [
+                'Did we take any user statement LITERALLY (言) when it was METAPHORICAL (意)? "This should be fast" → literal 50ms? or metaphorical "do not drag"?',
+                'Did we interpret any user concern as METAPHORICAL when it was LITERAL? "Must support IE" → really IE? or "legacy browsers"?',
+                'In solution descriptions, do 言(what it does) and 意(what it achieves) align? Same 意 different 言 → merge (false diversity). Same 言 different 意 → flag as fundamental disagreement (preserve both).',
+            ],
+            when_gap_detected: 'Annotate in decision report: "User said X, interpreted as Y — verify". If interpretation affects ranking → re-simulate affected options. Do NOT assume — mark for user confirmation at Phase 3.5.',
+        },
+        td_writeback_full: {
+            step1: 'Calculate V_actual, TD_error = V_actual - V_predicted',
+            step2: 'Traverse optimal path nodes → match knowledge graph → update or create HYPOTHESIS',
+            step3: 'Check status transitions, sleep, archive',
+            step4: 'Record decision sequence patterns (success/failure paths)',
+            li_shi_dual_layer: {
+                li: '理(Li·Principle): universal pattern → tag layer:principle, cross-domain reusable, CONFIRMED after 3+ different contexts',
+                shi: '事(Shi·Phenomenon): concrete manifestation → tag layer:phenomenon, same-domain reference, promoted based on standard confidence rules',
+                prevents: ['Over-generalization: treating a specific failure as universal principle', 'Over-contextualization: treating a universal pattern as only relevant to one case'],
+            },
+        },
+        decision_report_template: {
+            ranking: 'Rank │ Solution │ V_final │ V_feas │ V_robust │ V_persp │Body-Use│ σ² │ n │ Conf',
+            self_check: '✅ Pass | ⚠️ Risk (recommend user confirm) | ❌ Not passed (re-simulate)',
+            blindspot_audit: '✅ Full coverage | ⚠️ 1-2 uncovered | ❌ 3+ uncovered',
+            yan_yi_check: '✅ No mismatches | ⚠️ [specific gaps found]',
+            execution_plan: '[solution] → [Step1] → [Step2] → ... → [StepN] + Key risks + Fallback plan',
+            phase35_user_check: 'node scripts/mcts_compute.js should-ask-user --ranked <JSON>',
+            knowledge_update: 'New knowledge written to graph + TD error: V_predicted → V_actual',
+            memory_agent_checkpoints: '①[DONE/SKIPPED(why)] ②[DONE/SKIPPED] ③[DONE/SKIPPED] ④[DONE/ALERT] ⑤[DONE/SKIPPED]',
+            language_guard: 'node scripts/language_guard.js check --user-lang <lang> --output "..."',
+        },
+    };
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  Guard 16: Phase-Specific Guard Loader (按需加载详细规则)
+// ═══════════════════════════════════════════════════════════════
+
+function phaseRules(phase = '') {
+    const rules = {
+        '0': () => ({ constraint: fiveDiagnosisDetail(), message: 'Step 0-0.5b: 五診 + 本末/有无/张力 详细规则' }),
+        '1': () => ({ diverge: divergeDetail(), message: 'Step 1-2: Diverge + Converge 详细规则' }),
+        '2': () => ({ simulate: simulateDetail(), message: 'Step 3: Simulate 详细规则' }),
+        '3': () => ({ converge: convergeDetail(), message: 'Step 3.5-4: Converge 详细规则' }),
+    };
+    if (phase && rules[phase]) return rules[phase]();
+    return { available_phases: Object.keys(rules), usage: 'phase-rules --phase <0|1|2|3>' };
+}
+
+// ═══════════════════════════════════════════════════════════════
 //  Guard 11: Full Pipeline Compliance Audit
 // ═══════════════════════════════════════════════════════════════
 
@@ -843,6 +1136,11 @@ function main() {
         log("  phase-15-guard       — Phase 1.5 info gap supplement check");
         log("  engine-mode          — Engine mode selection");
         log("  all-guards           — Output all guard checklists");
+        log("  phase-rules          — Phase-specific detailed rules (0=constraint, 1=diverge, 2=simulate, 3=converge)");
+        log("  five-diagnosis-detail— 五診 dimension details + follow-up examples + absence templates");
+        log("  diverge-detail       — Diverge engine: GRILL, facet-actions, triaging, templates");
+        log("  simulate-detail      — Simulate: knowledge acquisition, selection, sub-diverge, output format");
+        log("  converge-detail      — Converge: self-check 5-item, blindspot, 言意, TD write-back, report template");
         process.exit(0);
     }
 
@@ -896,6 +1194,21 @@ function main() {
             case "solution-count-guard":
                 output(solutionCountGuard(JSON.parse(o.state || "{}")));
                 break;
+            case "phase-rules":
+                output(phaseRules(o.phase));
+                break;
+            case "five-diagnosis-detail":
+                output(fiveDiagnosisDetail());
+                break;
+            case "diverge-detail":
+                output(divergeDetail());
+                break;
+            case "simulate-detail":
+                output(simulateDetail());
+                break;
+            case "converge-detail":
+                output(convergeDetail());
+                break;
             case "all-guards":
                 output({
                     decomposition: decompositionGuard({}),
@@ -940,6 +1253,7 @@ module.exports = {
     diversityChallenge, selfCheckGuard, memoryAgentGuard, complianceReport,
     constraintChecklist, engineMode, horizonScanGuard, phase15InfoGapGuard,
     simulateLayerGuard, blindspotCoverageGuard, forceSearchGuard, solutionCountGuard,
+    fiveDiagnosisDetail, divergeDetail, simulateDetail, convergeDetail, phaseRules,
     REQUIRED_PHASES, INFO_PRIORITY_ORDER, DIVERSITY_ANGLES, MEMORY_AGENT_CHECKPOINTS,
     CONSTRAINT_CHECKLIST,
 };
