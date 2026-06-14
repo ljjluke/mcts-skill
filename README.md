@@ -185,9 +185,10 @@ User intent → Constraint Collection
 ```bash
 /plugin marketplace update luke
 /plugin update luke
+/reload-plugins
 ```
 
-> Restart Claude Code to apply. (No /reload-plugins — restart is required.) Old versions auto-cleaned.
+> `/reload-plugins` activates changes without restart.
 
 Type any task. When you see the ⚡, it's working.
 
