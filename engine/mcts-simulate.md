@@ -49,6 +49,21 @@ Node = { id, description, parent, children,
 **UCB = V + c×√(ln(N_parent)/n_child) + K_bonus**, c=√2
 Code: `ucb --v <V> --n <n> --parent-n <N> --k-bonus <K>`
 
+### 奇正相生 — Sun Tzu's Orthodox & Unorthodox (虚实篇)
+
+"凡战者，以正合，以奇胜" — 正(orthodox)=exploit known best, 奇(unorthodox)=explore unknown potential
+
+UCB本身就是奇正相生的数学表达:
+- **V项**(exploit) = 正 — 利用已验证的最优路径 (以正合)
+- **c×√(ln(N)/n)项**(explore) = 奇 — 探索访问少的分支 (以奇胜)
+- **K_bonus调节奇正比例**: CONFIRMED+高置信→加重"正"(+0.15) | PROVISIONAL/未知→加重"奇"(+0.05) | DISPUTED→减"奇"(-0.10)
+
+OODA与MCTS的对应(Boyd受孙子兵法直接影响):
+```
+OODA:  Observe(观) → Orient(察) → Decide(谋) → Act(行)
+MCTS:  Selection(观) → Expansion(察) → Simulation(谋) → Backprop(行)
+```
+
 **K_bonus**: `k-bonus --status <s> --n <n> --q <q>`
 CONFIRMED+n≥5+q≥0.8 → +0.15 | PROVISIONAL+n<5+q≥0.7 → +0.05 | DISPUTED/q<0.5 → -0.10
 

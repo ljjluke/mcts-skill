@@ -14,6 +14,18 @@ description: MCTS-TD Step 3~3.6 — Converge Engine. CLT-UCB ranking + self-chec
 
 ## Step 3: Aggregate Comparison
 
+### 执两用中 — Doctrine of the Mean (中庸)
+
+"执其两端，用其中于民" — 不是取平均，而是把握两端找到最优平衡点。
+
+Converge排名不是简单选最高V:
+- V_final = 0.5×V_feas + 0.3×V_robust + 0.2×V_persp + Body-Use bonus
+- 这是"执两用中"的量化：可行性(正) + 鲁棒性(反) → 综合最优(中)
+- 第1名V_feas高但V_robust低 → 偏端，不是"中"
+- Self-Check第④问(本末) = 检查是否偏离了"中"
+
+学术支撑: Herbert Simon "Bounded Rationality" (1956) — 最优解不可达时，满意解(中)更实际。
+
 ### Multi-Layer Ranking
 
 ```
@@ -40,7 +52,8 @@ Before self-check, **display MCTS conclusion to user** with ranking + best path 
 
 **⛔ MANDATORY — answer ALL 5 questions before proceeding.**
 
-① **Find flaws**: Is any judgment vague? Any assumption unverified? Any risk ignored?
+① **Find flaws** → "为人谋而不忠乎?": Is any judgment vague? Any assumption unverified? Any risk ignored?
+   - 忠=忠于问题本身，不是忠于自己的偏好。检查是否被"我擅长X"带偏了方向
    - Check each solution: does it rely on "probably fine" or "should work"?
    - Check for wishful thinking: "the API will handle it" → really?
 
@@ -48,7 +61,8 @@ Before self-check, **display MCTS conclusion to user** with ranking + best path 
    - Construct a scenario where 2nd place wins. Is it plausible?
    - If yes → ask user about that scenario specifically
 
-③ **Risk assessment**: Worst outcome of the #1 choice? Can we bear it?
+③ **Risk assessment** → "与朋友交而不信乎?": Worst outcome of the #1 choice? Can we bear it?
+   - 信=方案的承诺是否能兑现。第1名说"可行"——真的可信吗？
    - What's the maximum downside? Probability? Can it be reversed?
    - If irreversible and probability >10% → ⚠️ Risk
 
@@ -56,7 +70,8 @@ Before self-check, **display MCTS conclusion to user** with ranking + best path 
    - Root dimension = the one that defines the problem's essence
    - If 1st place sacrifices root for branch convenience → conditional pass only
 
-⑤ **動静 Mode Check**: Are we biased?
+⑤ **動静 Mode Check** → "传不习乎?": Are we biased?
+   - 习=实践检验，不是机械套用流程。是否在"走流程"而非"真思考"？
    - Over-analyzing a simple problem (靜→動 bias)? → simplify, decide
    - Under-analyzing a complex problem (動→靜 bias)? → slow down, more sim
 

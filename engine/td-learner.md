@@ -83,6 +83,20 @@ V(s_terminal) =
 
 ## Value Update Rules
 
+### 学不可以已 — Xunzi's Progressive Accumulation (劝学篇)
+
+"不积跬步，无以至千里" — TD学习就是跬步积累:
+- 每次执行的TD_error就是一步跬步，单步微小但累积方向确定
+- α学习率 = 步幅大小：初学大步(α=0.5)，熟练小步(α=0.05) — "锲而不舍，金石可镂"
+- HYPOTHESIS→PROVISIONAL→CONFIRMED的积累过程 = 跬步至千里
+
+"青取之于蓝而青于蓝" — 知识可以超越来源:
+- HYPOTHESIS(蓝) → PROVISIONAL(提炼) → CONFIRMED(青) = 青出于蓝
+- 但DISPUTED→REFUTED = 某些"蓝"本身有问题，需要重新审视来源的可靠性
+- Rollback机制 = "蓝"被推翻后恢复正确知识，防止错误积累
+
+学术支撑: TD学习本质是增量式值函数逼近 — 每步只调整一小步(跬步)，但方向正确则收敛至最优(千里)。
+
 ### Gamma Discounted Backpropagation
 
 Inference rules ported from tetris_mcts's `backup_trace_obs` function:

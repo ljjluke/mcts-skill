@@ -118,35 +118,38 @@ Code: `node scripts/mcts_compute.js li-shi-split --facets '<JSON>'`
 
 ### Per-Facet Action Sequences (execute during Round 1)
 
-Each facet has 3 search actions + 1 FORBIDDEN rule:
+Each facet has 3 search actions — ② expands scope, ③ uses cultural analogy to jump out of conventional thinking:
 
-| Facet | Search Actions | Output Target |
-|-------|---------------|---------------|
-| F1 Source | ① industry standard ② unconventional ③ cross-domain analogy | Industry + Unconventional + Cross-domain |
-| F2 Foundation | ① best practices ② resource constraints ③ scalability limits | Best practices + Limits |
-| F3 Change | ① risk factors ② historical precedents ③ early warning signs | Risk factors + Warning signs |
-| F4 Penetration | ① adoption strategies ② diffusion barriers ③ leverage points | Strategies + Barriers |
-| F5 Risk | ① worst cases ② failure modes ③ mitigation strategies | Worst case + Mitigation |
-| F6 Visible | ① surface dependencies ② hidden coupling ③ technical debt | Dependencies + Coupling |
-| F7 Boundary | ① compliance requirements ② hard limits ③ ethical constraints | Compliance + Hard limits |
-| F8 Convergence | ① stakeholder needs ② win-win scenarios ③ trade-off space | Needs + Trade-offs |
+| Facet | ① Standard | ② Expansion | ③ Cultural Analogy (跳出框架) |
+|-------|-----------|-------------|-------------------------------|
+| F1 Source | industry standard | unconventional approaches | **兵法类比**(孙子·势篇: 造势vs借势 — force是造出来的还是借来的?) |
+| F2 Foundation | best practices | resource constraints | **農耕类比**(農家: 因地制宜 — 这块"地"适合种什么?) |
+| F3 Change | risk factors | historical precedents | **醫道类比**(醫家: 治未病 — 哪里还没出症状但已有病根?) |
+| F4 Penetration | adoption strategies | diffusion barriers | **巧匠类比**(庖丁解牛: 找关节缝隙，不硬推) |
+| F5 Risk | worst cases | failure modes | **史鉴类比**(以史为鉴: 类似决策的历史结局) |
+| F6 Visible | surface dependencies | hidden coupling | **儒法类比**(正名: 名实是否一致?) |
+| F7 Boundary | compliance requirements | hard limits | **道法类比**(知止不殆: 哪些边界是保护性的?) |
+| F8 Convergence | stakeholder needs | win-win scenarios | **縱橫类比**(合纵连横: 利益能否重新分配?) |
 
-⛔ FORBIDDEN for all facets: skip search, rely on internal knowledge only.
+⛔ FORBIDDEN: skip ③ cultural analogy step, rely on conventional thinking only.
+📚 Full analogy methodology: `references/culture-algorithm-reference.md`
 
 ### 诸子百家 Sub-Lenses (apply during Round 1, INTERNAL use)
 
-Each facet's sub-lenses interrogate your OWN assumptions — not user's answers:
+Each facet's sub-lenses interrogate your OWN assumptions with **analogy-based reasoning** (类比推演):
 
-| Facet | Sub-lens 1 | Sub-lens 2 | Key question to ask yourself |
-|-------|-----------|-----------|------------------------------|
-| F1 | 兵家(strategic advantage) | 縱横家(interest alignment) | "Am I only seeing obvious forces?" |
-| F2 | 農家(fundamental resources) | 水利家(resource flow) | "Am I ignoring resource bottlenecks?" |
-| F3 | 醫家(surface vs root) | 陰陽家(opposing forces) | "Am I treating symptom as cause?" |
-| F4 | 工匠(core tools) | 禪家(strip assumptions) | "Am I adding unnecessary complexity?" |
-| F5 | 史家(historical precedent) | 道家(reverse risk of over-intervention) | "Am I creating new risks by fixing old ones?" |
-| F6 | 工匠(what makes visible) | 儒家(human values) | "Am I ignoring human dependency?" |
-| F7 | 法家(rules/enforcement) | 道家(knowing when to stop) | "Am I assuming rules are immutable?" |
-| F8 | 儒家(ethical foundation) | 縱横家(alliances) | "Am I missing a stakeholder?" |
+| Facet | Sub-lens 1 + 推演 | Sub-lens 2 + 推演 |
+|-------|-------------------|-------------------|
+| F1 | **兵家**(strategic advantage): "谁是敌？谁是友？什么是制高点？看似坚固的是否真是实？" | **縱横家**(interest alignment): "各方利益能否对齐？谁能被拉拢？谁不可动摇？" |
+| F2 | **農家**(fundamental resources): "土壤(团队)适合种什么？有灌溉(资金)吗？季节(时机)对吗？" | **水利家**(resource flow): "资源流向哪里？有堵点吗？上游下游关系？" |
+| F3 | **醫家**(surface vs root): "这是症状还是病因？治标还是治本？有没有'未病'？" | **陰陽家**(opposing forces): "对立面是谁？消长趋势？物极必反的转折点？" |
+| F4 | **工匠**(core tools): "核心工具够用吗？有没有更简单的做法？庖丁解牛的缝隙在哪？" | **禪家**(strip assumptions): "去掉所有装饰后剩下什么？'无'中是否藏着可能？" |
+| F5 | **史家**(historical precedent): "历史上谁犯过类似错误？结局如何？教训是什么？" | **道家**(reverse risk of over-intervention): "不做比做更好吗？干预是否制造新风险？" |
+| F6 | **工匠**(what makes visible): "什么让表面看起来好？支撑它的隐藏结构是什么？" | **儒家**(human values): "谁被忽略了？人的需求是否被技术遮蔽？" |
+| F7 | **法家**(rules/enforcement): "规则是否过时？谁来执行？违规的代价？" | **道家**(knowing when to stop): "哪里是不该越的线？知止=保护还是限制？" |
+| F8 | **儒家**(ethical foundation): "各方利益的道德底线？谁的利益被牺牲？" | **縱横家**(alliances): "利益能否重新分配？谁是天然盟友？" |
+
+📚 Full methodology + academic basis: `references/culture-algorithm-reference.md`
 
 ---
 
