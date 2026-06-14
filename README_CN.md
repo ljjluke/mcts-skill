@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://img.shields.io/badge/版本-1.6.1-blue" alt="版本">
+  <img src="https://img.shields.io/badge/版本-1.9.0-blue" alt="版本">
   <img src="https://img.shields.io/badge/状态-稳定-green" alt="状态">
   <img src="https://img.shields.io/badge/许可-MIT-yellow" alt="许可">
 </p>
@@ -225,9 +225,10 @@ AI: ⚡ 这事有好几种做法，先让我想清楚
 
 ```bash
 /plugin marketplace update luke
-/plugin install luke
-/reload-plugins
+/plugin update luke
 ```
+
+> 重启 Claude Code 生效。旧版本自动清理。
 
 ### ⚡ 记忆安全
 

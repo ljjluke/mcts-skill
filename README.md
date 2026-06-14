@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.6.1-blue" alt="version">
+  <img src="https://img.shields.io/badge/version-1.9.0-blue" alt="version">
   <img src="https://img.shields.io/badge/status-stable-green" alt="status">
   <img src="https://img.shields.io/badge/license-MIT-yellow" alt="license">
 </p>
@@ -184,11 +184,10 @@ User intent → Constraint Collection
 
 ```bash
 /plugin marketplace update luke
-/plugin install luke
-/reload-plugins
+/plugin update luke
 ```
 
-> Old versions are auto-cleaned after upgrade — no manual cleanup needed.
+> Restart Claude Code to apply. Old versions auto-cleaned.
 
 Type any task. When you see the ⚡, it's working.
 
