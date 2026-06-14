@@ -225,7 +225,7 @@ AI: ⚡ 这事有好几种做法，先让我想清楚
 
 ```bash
 /plugin marketplace update luke
-/plugin update luke
+/plugin install luke              # 已安装则自动更新
 /reload-plugins              # 或重启 Claude Code
 ```
 

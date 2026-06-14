@@ -184,7 +184,7 @@ User intent → Constraint Collection
 
 ```bash
 /plugin marketplace update luke
-/plugin update luke
+/plugin install luke              # auto-updates if already installed
 /reload-plugins              # or restart Claude Code
 ```
 
