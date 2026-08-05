@@ -1,3 +1,0 @@
-# Memory data files — do NOT track. These should not be overwritten during skill updates.
-mcts-td-value-archive.md
-archive/

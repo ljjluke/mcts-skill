@@ -251,7 +251,7 @@ function main() {
                 break;
             }
             case "observe": {
-                // Unified observe command for Memory Agent checkpoints
+                // Unified observe command for memory lifecycle checkpoints
                 const phase = args[args.indexOf('--phase') + 1] || null;
                 const dataIdx = args.indexOf('--data');
                 const data = dataIdx >= 0 ? JSON.parse(args[dataIdx + 1] || "{}") : {};
@@ -269,7 +269,7 @@ function main() {
 if (require.main === module) main();
 
 /**
- * 一键观察点路由 — Memory Agent 5 checkpoints
+ * 一键观察点路由 — memory lifecycle checkpoints
  * Routes to correct MMA operation based on phase name
  */
 function observeRoute(phase, data) {
@@ -403,7 +403,7 @@ function observeRoute(phase, data) {
     saveMMA(kg);
     return result;
     } catch (e) {
-        return { phase, error: `Memory Agent observe failed: ${e.message}`, safe: true };
+        return { phase, error: `Memory lifecycle observation failed: ${e.message}`, safe: true };
     }
 }
 

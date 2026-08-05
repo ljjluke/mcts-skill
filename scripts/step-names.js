@@ -7,11 +7,11 @@
  *   中文: 神思/发散/八卦镜/收敛/综合 ...
  * 直接前缀匹配 [step:bagua] 召不回历史用 [step:dimension] 存的数据 → 历史召回断链。
  *
- * 单一真源 = SKILL.md 八步。所有入口读入先 normalizeStep() 归一化,
+ * 单一真源 = skills/ponder/SKILL.md 十步。所有入口读入先 normalizeStep() 归一化,
  * 召回时用 matchStepPrefix() 把全部别名都当前缀候选。
  */
 
-// 标准八步(SKILL.md 单一真源,顺序即管线顺序)
+// 标准十步（skills/ponder/SKILL.md 为单一真源，顺序即管线顺序）
 const STEPS = ['shensi', 'divergence', 'bagua', 'plans', 'converge', 'simulate', 'debate', 'synthesis'];
 
 // 别名 → 标准名(历史兼容)

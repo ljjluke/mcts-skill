@@ -10,7 +10,7 @@
  *    → 虚实 (Deficiency-Excess): 不可靠 vs 可靠
  *
  *  用途: 得气召回时用八纲辨证调整每条知识的deqi_score权重
- *        在Memory Agent的pre_converge检查点作为诊断增强
+ *        在记忆生命周期的pre_converge检查点作为诊断增强
  */
 
 const now = () => new Date();

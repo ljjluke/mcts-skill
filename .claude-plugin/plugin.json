@@ -1,7 +1,7 @@
 {
   "name": "luke",
   "version": "1.18.52",
-  "description": "Self-evolving cognitive framework. 8-step reasoning pipeline + MMA knowledge system + automatic evolution. Code-enforced depth loop. Data-driven optimization.",
+  "description": "Self-evolving cognitive framework with nine composable skills, a ten-stage reasoning process, durable knowledge memory, and automatic evolution.",
   "author": {
     "name": "ljjluke",
     "url": "https://github.com/ljjluke/mcts-skill"
@@ -18,8 +18,5 @@
     "structured-thinking",
     "multi-step-reasoning",
     "meta-cognition"
-  ],
-  "skills": [
-    "./"
   ]
 }

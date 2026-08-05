@@ -1,14 +1,14 @@
 {
   "name": "luke",
   "version": "1.18.52",
-  "description": "Self-evolving cognitive framework. 8-step reasoning + MMA memory + auto-evolution. Code-enforced depth loop. Data-driven.",
+  "description": "Self-evolving cognitive framework with nine composable skills, a ten-stage reasoning process, durable knowledge memory, and automatic evolution.",
   "owner": {
     "name": "ljjluke"
   },
   "plugins": [
     {
       "name": "luke",
-      "description": "Self-evolving cognitive framework. 8-step reasoning + MMA memory + automatic evolution. Code-enforced depth loop. Data-driven optimization.",
+      "description": "Self-evolving cognitive framework with nine composable skills, a ten-stage reasoning process, durable knowledge memory, and automatic evolution.",
       "source": "./",
       "version": "1.18.52",
       "author": {

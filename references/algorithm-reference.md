@@ -16,10 +16,10 @@ metadata:
 | 创新点 | 原项目实现 | 本Skill适配 |
 |--------|----------|------------|
 | CLT-UCB选择 | `policy_clt` 函数 | `engine/mcts-converge.md` 中的CLT-UCB选择规则 |
-| Welford方差 | `backup_trace_obs` 中的方差更新 | `engine/td-learner.md` 中的Welford方差推理 |
-| Gamma折扣TD | `backup_trace_obs` 的折扣循环 | `engine/td-learner.md` 中的折扣反向传播 |
-| 状态投影去重 | `projection` 机制 + `obs_arrays` | `engine/td-learner.md` 中的状态投影规则 |
-| 经验回放 | `store_nodes` + `train_nodes` | `engine/td-learner.md` 中的经验回放规则 |
+| Welford方差 | `backup_trace_obs` 中的方差更新 | `references/algorithms/td-learner.md` 中的Welford方差推理 |
+| Gamma折扣TD | `backup_trace_obs` 的折扣循环 | `references/algorithms/td-learner.md` 中的折扣反向传播 |
+| 状态投影去重 | `projection` 机制 + `obs_arrays` | `references/algorithms/td-learner.md` 中的状态投影规则 |
+| 经验回放 | `store_nodes` + `train_nodes` | `references/algorithms/td-learner.md` 中的经验回放规则 |
 
 ---
 
@@ -73,6 +73,16 @@ $$UCB(a_i) = \bar{V}_i + \Phi^{-1}\left(1 - \frac{1}{N}\right) \times \sqrt{\fra
    更新路径上所有节点的统计信息
 ```
 
+### 评分解释与策略选择
+
+期望价值与方差统一使用 `0.0–1.0`：`V≥0.8` 表示整体可行且只预期少量可控波折，`V≈0.5` 表示信息不足或结果近于中性，`V≤0.3` 表示失败概率或代价过高。方差 `<0.1` 可视为高置信，`0.1–0.3` 为中等置信，`≥0.3` 只适合作为探索性参考。方差应综合历史模式匹配度、当前上下文清晰度、方案复杂度和方法熟悉度，而不是由主观措辞直接给出。
+
+有方差信息时优先使用 CLT-UCB；缺少可靠方差时可退回最大方差探索项；当证据充分且风险低时才按平均价值贪心排序。若候选 UCB 差值小于 `0.05`，应并列展开价值与方差细节；小于 `0.02` 时，不应伪造确定性，应把实质性取舍交给用户确认。
+
+### 状态持久化边界
+
+算法状态、价值统计和跨会话知识均通过共享 MMA 接口持久化到 `PONDER_DATA_DIR`。Plugin 安装目录只保存不可变的算法与 prompt 资源；不得在仓库 `memory/` 或调用工程中维护另一套隐式价值档案。
+
 ---
 
 ## TDL 算法参考
@@ -121,7 +131,7 @@ $$\Delta V(s) = \alpha \delta_t e_t(s)$$
 
 ```
 tetris_mcts/
-├── agents/
+├── agent modules/          # 上游 tetris_mcts 的 Agent 实现目录（不是 Ponder 插件结构）
 │   ├── agent.py            # 基类Agent + TreeAgent（数组管理、节点分配）
 │   ├── agent_mcts.py       # 早期MCTS实现（经典UCB1）
 │   ├── core.py             # 核心选择/回溯函数（纯Python + Numba JIT）
@@ -163,8 +173,8 @@ tetris_mcts/
 | ValueSim.py | MCTS+TD+NN混合Agent | SKILL.md + 引擎文件 |
 | agent.py TreeAgent | 数组管理、节点分配 | 决策树推理内存 |
 | core.py select_trace | 选择路径 | engine/mcts-converge.md CLT-UCB排序 |
-| core.py backup_trace | 价值回溯 | engine/td-learner.md 价值更新 |
-| policy.py | 策略函数 | policies/code-task-policy.md |
+| core.py backup_trace | 价值回溯 | references/algorithms/td-learner.md 价值更新 |
+| policy.py | 策略函数 | 本文的策略选择与接近排名规则 |
 | model_vv.py | 价值+方差NN | Claude的内隐知识 |
 | core.h (C++) | 高性能select/backup | 推理规则（无数值计算） |
 

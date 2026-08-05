@@ -9,13 +9,12 @@
  *  当上下文变长/注意力稀释时，规则可能被跳过。
  *  这个守护提供可编程的检查点，在关键节点发出"必须执行"的信号。
  *
- *  7个守卫命令:
+ *  6个核心守卫命令:
  *    decomposition-guard   — 反"唯一方案"检查
  *    phase-enforce         — 阶段输出强制验证
  *    info-gap-guard        — 信息获取5级优先级检查
  *    diversity-challenge   — 方案多样性强制反问
  *    self-check-guard      — 自检核对清单
- *    memory-agent-guard    — Memory Agent 5检查点验证
  *    compliance-report     — 全流程合规审计报告
  *
  *  Usage: node mcts_guard.js <command> [args...]
@@ -282,35 +281,6 @@ function selfCheckGuard() {
             risk: '⚠️ 有风险 — 建议用户确认后执行',
             fail: '❌ 不通过 — 重新模拟或切换方案',
         },
-    };
-}
-
-// ═══════════════════════════════════════════════════════════════
-//  守卫6: Memory Agent 5检查点验证
-// ═══════════════════════════════════════════════════════════════
-
-const MEMORY_AGENT_CHECKPOINTS = [
-    { id: 1, phase: 'pre_engine',      action: '得气召回 — 注入上下文',                          script: "node scripts/meridian_memory.js observe --phase pre_engine" },
-    { id: 2, phase: 'during_diverge',   action: '感知七情 — 情绪时间线',                          script: "node scripts/meridian_memory.js observe --phase during_diverge" },
-    { id: 3, phase: 'post_simulate',    action: '阿是穴插入 — 经脉穴位',                          script: "node scripts/meridian_memory.js observe --phase post_simulate" },
-    { id: 4, phase: 'pre_converge',     action: '阴阳对冲检测 — 矛盾时谏言',                       script: "node scripts/meridian_memory.js observe --phase pre_converge" },
-    { id: 5, phase: 'post_execution',   action: '补泻更新 — TD闭环 + 衰减检查',                   script: "node scripts/meridian_memory.js observe --phase post_execution" },
-    { id: 6, phase: 'session_end',      action: '睡眠回放 — 记忆巩固',                           script: "node scripts/meridian_memory.js observe --phase session_end" },
-];
-
-function memoryAgentGuard(executedCheckpoints = []) {
-    const missing = MEMORY_AGENT_CHECKPOINTS.filter(
-        cp => !executedCheckpoints.includes(cp.id) && cp.id <= 5 // session_end is optional until end
-    );
-
-    return {
-        total_checkpoints: MEMORY_AGENT_CHECKPOINTS.length,
-        executed: executedCheckpoints.length,
-        missing: missing.map(m => ({ id: m.id, phase: m.phase, action: m.action, script: m.script })),
-        verdict: missing.length > 0 ? 'INCOMPLETE' : 'COMPLETE',
-        message: missing.length > 0
-            ? `${missing.length}个Memory Agent检查点未执行: ${missing.map(m => m.phase).join(', ')}`
-            : 'Memory Agent全部检查点已执行',
     };
 }
 
@@ -1031,7 +1001,7 @@ function convergeDetail() {
             execution_plan: '[solution] → [Step1] → [Step2] → ... → [StepN] + Key risks + Fallback plan',
             phase35_user_check: 'node scripts/mcts_compute.js should-ask-user --ranked <JSON>',
             knowledge_update: 'New knowledge written to graph + TD error: V_predicted → V_actual',
-            memory_agent_checkpoints: '①[DONE/SKIPPED(why)] ②[DONE/SKIPPED] ③[DONE/SKIPPED] ④[DONE/ALERT] ⑤[DONE/SKIPPED]',
+            memory_lifecycle_checkpoints: '①[DONE/SKIPPED(why)] ②[DONE/SKIPPED] ③[DONE/SKIPPED] ④[DONE/ALERT] ⑤[DONE/SKIPPED]',
             language_guard: 'node scripts/language_guard.js check --user-lang <lang> --output "..."',
         },
     };
@@ -1058,15 +1028,14 @@ function phaseRules(phase = '') {
 
 function complianceReport(state = {}) {
     const { completed_phases = [], acquisition_log = [], solutions = [],
-            memory_checkpoints = [], self_check_done = false, blindspot_audit_done = false } = state;
+            self_check_done = false, blindspot_audit_done = false } = state;
 
     const phaseReport = phaseEnforce(completed_phases);
     const decomposition = decompositionGuard(state.decomposition_claim || {});
     const infoGap = infoGapGuard(acquisition_log);
     const diversity = diversityChallenge(solutions);
-    const memoryAgent = memoryAgentGuard(memory_checkpoints);
 
-    const score = calculateComplianceScore(phaseReport, decomposition, infoGap, diversity, memoryAgent,
+    const score = calculateComplianceScore(phaseReport, decomposition, infoGap, diversity,
         self_check_done, blindspot_audit_done);
 
     return {
@@ -1077,7 +1046,6 @@ function complianceReport(state = {}) {
         decomposition_guard: decomposition,
         info_gap_guard: infoGap,
         diversity_challenge: diversity,
-        memory_agent_guard: memoryAgent,
         self_check: { done: self_check_done, required: true },
         blindspot_audit: { done: blindspot_audit_done, required: true },
         recommendation: score < 70
@@ -1086,14 +1054,13 @@ function complianceReport(state = {}) {
     };
 }
 
-function calculateComplianceScore(phase, decomp, infoGap, diversity, memoryAgent, selfCheck, blindspot) {
+function calculateComplianceScore(phase, decomp, infoGap, diversity, selfCheck, blindspot) {
     let score = 100;
     if (phase.verdict === 'VIOLATION') score -= 20;
     if (decomp.blocked) score -= 25;
     if (infoGap.verdict === 'VIOLATION') score -= 15;
     if (diversity.verdict === 'BLOCKED') score -= 25;
     else if (diversity.verdict === 'WARNING') score -= 10;
-    if (memoryAgent.verdict === 'INCOMPLETE') score -= 10;
     if (!selfCheck) score -= 10;
     if (!blindspot) score -= 10;
     return Math.max(0, score);
@@ -1118,7 +1085,6 @@ function main() {
         log("  info-gap-guard       — Info acquisition priority check");
         log("  diversity-challenge  — Solution diversity check");
         log("  self-check-guard     — Self-check list");
-        log("  memory-agent-guard   — Memory Agent checkpoints verify");
         log("  compliance-report    — Full pipeline compliance audit");
         log("  constraint-checklist — Constraint checklist");
         log("  horizon-scan-guard   — Horizon scan check (anti-well-frog)");
@@ -1152,9 +1118,6 @@ function main() {
                 break;
             case "self-check-guard":
                 output(selfCheckGuard());
-                break;
-            case "memory-agent-guard":
-                output(memoryAgentGuard(JSON.parse(o.executed || "[]")));
                 break;
             case "compliance-report":
                 output(complianceReport(JSON.parse(o.state || "{}")));
@@ -1205,7 +1168,6 @@ function main() {
                     info_priority: INFO_PRIORITY_ORDER,
                     diversity_angles: DIVERSITY_ANGLES,
                     self_check: selfCheckGuard(),
-                    memory_agent_checkpoints: MEMORY_AGENT_CHECKPOINTS,
                     phase_15_check: phase15InfoGapGuard({}),
                     simulate_layer: simulateLayerGuard({}),
                     blindspot_coverage: blindspotCoverageGuard({}),
@@ -1239,10 +1201,10 @@ if (require.main === module) main();
 
 module.exports = {
     decompositionGuard, phaseEnforce, infoGapGuard,
-    diversityChallenge, selfCheckGuard, memoryAgentGuard, complianceReport,
+    diversityChallenge, selfCheckGuard, complianceReport,
     constraintChecklist, engineMode, horizonScanGuard, phase15InfoGapGuard,
     simulateLayerGuard, blindspotCoverageGuard, forceSearchGuard, solutionCountGuard,
     fiveDiagnosisDetail, divergeDetail, simulateDetail, convergeDetail, phaseRules,
-    REQUIRED_PHASES, INFO_PRIORITY_ORDER, DIVERSITY_ANGLES, MEMORY_AGENT_CHECKPOINTS,
+    REQUIRED_PHASES, INFO_PRIORITY_ORDER, DIVERSITY_ANGLES,
     CONSTRAINT_CHECKLIST,
 };

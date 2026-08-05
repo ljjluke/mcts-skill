@@ -27,7 +27,7 @@ Will it nail it this time? Miss something obvious? Give you the same confident-s
 
 **That's not a model problem. It's a process problem.**
 
-LLMs answer the moment you ask. Ponder doesn't. It runs every question through 9 structured phases: requirement refinement → frame-breaking → multi-perspective scan → blindspot discovery → solution generation → scoring → simulation → debate → user confirmation. Each phase has its own thinking framework, independent evaluators, and code-enforced quality gates.
+LLMs answer the moment you ask. Ponder doesn't. Its complete entry runs a ten-stage process: interview → premise examination → perspective expansion → blind-spot audit → solution generation → convergence → scoring → simulation → debate → synthesis. Each stage has its own thinking framework, independent evaluators, and code-enforced quality gates.
 
 The result isn't faster answers. It's **answers you can trust**.
 
@@ -59,9 +59,9 @@ Every phase verified, every result accumulated. Next time is sharper.
 
 ### See the difference
 
-![Ponder demo](scripts/ponder-demo-en.gif)
+![Ponder demo](assets/ponder-demo-en.gif)
 
-*Direct LLM answer vs same question through Ponder's 9-phase pipeline.*
+*Direct LLM answer vs the same question through Ponder's complete ten-stage process.*
 
 ```
 You ask → Requirement refinement → Frame-breaking → Multi-perspective scan
@@ -90,9 +90,9 @@ Every step feeds back into memory. Every run makes the next one sharper.
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│                    ORCHESTRATOR (SKILL.md)                        │
-│  The only orchestrator. No pipeline, no workflow engine.          │
-│  LLM reads SKILL.md → executes phases in order → done.           │
+│             FULL ORCHESTRATOR (skills/ponder/SKILL.md)             │
+│  The complete skill orchestrates ten stages; specialist skills      │
+│  expose individual capabilities. No workflow engine is required.    │
 ├──────────────────────────────────────────────────────────────────┤
 │                                                                   │
 │  ┌─ Requirement Refinement ──────────────────────────────────┐   │
@@ -108,7 +108,7 @@ Every step feeds back into memory. Every run makes the next one sharper.
 │  │  方案 Solution Generation → N agents × 1 plan             │   │
 │  │  方案评分 8-D Scoring     → N agents × 8 dimensions       │   │
 │  │  收敛 Convergence         → 主线程，依据评分淘汰           │   │
-│  │  推演 Simulation          → N agents (mcts-simulator)     │   │
+│  │  Simulation               → N isolated Subagents            │   │
 │  │  辩论 Debate/Attack       → 立论 + 围攻 + 抗压排名         │   │
 │  │  用户确认 User Confirm    → LLM推荐 + 检查遗留盲点         │   │
 │  │  综合 Final Conclusion    → 完整结论+风险+建议             │   │
@@ -161,7 +161,7 @@ By the end, you've seen the problem from 20+ distinct vantage points. The blinds
 Each step executes → orchestrate.js step saves output to MMA
   (natural language, not JSON — semantic matching ready)
 
-Next similar question → node scripts/orchestrate.js history <phase> <type>
+Next similar question → node skills/ponder/scripts/orchestrate.js history <phase> <type>
   → returns top-3 most relevant historical matches
   → injected into phase prompt as reference
 
@@ -184,7 +184,15 @@ Old data decays → unused knowledge sleeps → low quality archived
 /luke:ponder 帮我分析这个项目的技术选型
 /luke:ponder Evaluate which marketing strategy to pursue
 /luke:ponder Help me decide between treatment options for a patient
-/luke:ponder Compare investment portfolio strategies
+# Specialist skills — invoke only the capability you need
+/luke:interview Clarify the requirements for this project
+/luke:explore Challenge the framing of this decision
+/luke:blindspots Audit these findings for overlooked risks
+/luke:solutions Generate, converge, and score viable options
+/luke:simulate Stress-test these surviving options
+/luke:debate Pressure-test and rank these options
+/luke:synthesis Turn this completed debate into a recommendation
+/luke:memory Recall relevant lessons from prior decisions
 ```
 
 ### Custom Data Directory
@@ -199,7 +207,7 @@ $env:PONDER_DATA_DIR = "D:\my-knowledge"
 claude
 ```
 
-Default: `~/.claude/data/skills/ponder/`
+Default: `~/.claude/data/skills/ponder/`. `PONDER_DATA_DIR` must remain outside the installed Plugin directory. The Plugin root is read-only at runtime; requested files are written to the calling project, while memory, metrics, learned weights, and evolution state are written only to this data directory.
 
 ---
 
@@ -207,32 +215,25 @@ Default: `~/.claude/data/skills/ponder/`
 
 ```
 ponder-skill/
-├── SKILL.md                        # Single orchestrator — no pipeline, no workflow
-├── agents/                         # Sub-agent definitions (each = one role)
-│   ├── dimension-evaluator.md      # Blindspot finder per dimension
-│   ├── solution-generator.md       # Independent plan generator
-│   ├── debater.md                  # Solution advocate (opening stance)
-│   └── mcts-simulator.md           # Scenario simulator
-├── engine/                         # Thinking frameworks (one per phase)
-│   ├── shensi.md / divergence.md / bagua.md
-│   ├── converge.md / debate.md / synthesis.md
-│   └── mcts-constraint.md / mcts-predictive.md / td-learner.md
-├── scripts/
-│   ├── orchestrate.js             # Step persistence, history query, finalize
-│   ├── mcts_compute.js            # Math engine (80+ commands)
-│   ├── mcts_guard.js              # Compliance guards (15 checkers)
-│   ├── mcts_tree.js               # Tree data structure (optional)
-│   ├── knowledge.js               # MMA memory interface
-│   ├── prompts/                   # Phase prompt templates + schemas
-│   │   ├── shensi.json / divergence.json / bagua.json
-│   │   ├── plans.json / simulate.json / converge.json
-│   │   ├── debate.json / synthesis.json
-│   └── mma/                       # Meridian Memory Algorithm (12 modules)
-│       ├── io.js / deqi.js / ashi.js / reinforce.js / decay.js
-│       ├── constants.js / state_machine.js / ziwu.js
-│       ├── diagnosis.js / cluster.js / audit.js / user_profile.js
-├── hooks/hooks.json               # Session lifecycle
-└── pipeline-meta.json             # Evolutionary metadata
+├── .claude-plugin/                  # Plugin and marketplace manifests
+├── skills/                          # Nine independently discoverable Skills
+│   ├── ponder/
+│   │   ├── SKILL.md                 # Complete ten-stage orchestrator
+│   │   ├── scripts/                 # Ponder-only persistence and evolution
+│   │   └── resources/               # Immutable metadata/rule seeds
+│   ├── interview/ … synthesis/      # Specialist reasoning Skills
+│   └── memory/SKILL.md              # Recall, record, and outcomes
+├── engine/                          # Shared read-only reasoning frameworks
+├── resources/prompts/               # Shared prompt templates and schemas
+├── scripts/                         # Shared runtime, guards, math, and MMA
+│   ├── runtime-paths.js             # Plugin/project/data path authority
+│   ├── knowledge.js                 # Durable knowledge interface
+│   └── mma/                         # Knowledge storage implementation
+├── hooks/
+│   ├── hooks.json                   # Session lifecycle registration
+│   └── scripts/                     # Hook-only implementations
+├── references/                      # Algorithm and framework references
+└── assets/                          # Documentation media
 ```
 
 ---
@@ -241,7 +242,7 @@ ponder-skill/
 
 | Principle | Meaning |
 |-----------|---------|
-| **No hidden orchestration** | SKILL.md is the only orchestrator. What you read is what executes. |
+| **Visible orchestration** | `skills/ponder/SKILL.md` is the complete orchestrator; specialist skills expose bounded phases. What you read is what executes. |
 | **Isolate only when necessary** | Sub-agents only for truly parallel, independent work (dimensions, plans, simulations). Everything else runs in the main thread. |
 | **Code structure, not code enforcement** | Prompts guide, schemas constrain, agents specialize. No workflow engine, no pipeline runner. |
 | **Domain-agnostic by design** | All dimensions, frameworks, and prompts use domain-neutral language. No assumptions about software, finance, or any vertical. |

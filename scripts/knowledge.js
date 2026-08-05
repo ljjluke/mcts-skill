@@ -17,8 +17,8 @@
  *   SLEEPING    — unused for 30d
  */
 const path = require('path');
-const os = require('os');
 const { spawnSync } = require('child_process');
+const { childProcessOptions } = require('./runtime-paths');
 
 // 步骤命名单一真源 + 历史别名兼容层(避免新旧名混杂导致召回断链)
 const { normalizeStep, categoryFor, matchStepPrefix } = require('./step-names');
@@ -26,27 +26,7 @@ const { normalizeStep, categoryFor, matchStepPrefix } = require('./step-names');
 // 分词:中英文混合切词(acquire 和 recallStepHistory 共用,提到顶层避免作用域断裂)
 function _seg(s){if(!s)return[];var r=[];var buf='';for(var i=0;i<s.length;i++){var c=s[i];if(/[a-zA-Z0-9À-ɏ]/.test(c)){buf+=c}else{if(buf.length>0){r.push(buf);buf=''}if(c.trim()&&!c.match(/[\s,，。、]/))r.push(c)}}if(buf.length>0)r.push(buf);return r}
 
-const MMA_SCRIPT = findMmaScript();
-
-function findMmaScript() {
-  const candidates = [
-    path.join(os.homedir(), '.claude', 'plugins', 'cache', 'luke', 'luke'),
-    path.join(os.homedir(), '.claude', 'plugins', 'cache', 'luke', 'luke', '1.14.0'),
-  ];
-  for (const base of candidates) {
-    try {
-      const items = require('fs').readdirSync(base).filter(f => /^\d+\.\d+\.\d+$/.test(f)).sort().reverse();
-      for (const v of items) {
-        const p = path.join(base, v, 'scripts', 'mcts.js');
-        if (require('fs').existsSync(p)) return p;
-      }
-    } catch (e) {}
-  }
-  // Fallback: try relative path (development mode)
-  const devPath = path.join(__dirname, 'mcts.js');
-  if (require('fs').existsSync(devPath)) return devPath;
-  return null;
-}
+const MMA_SCRIPT = path.join(__dirname, 'mcts.js');
 
 function acquire(query, options = {}, stepName = '') {
   const { tags = [], limit = 5, allowSearch = true, storeNew = true } = query || {};
@@ -54,9 +34,9 @@ function acquire(query, options = {}, stepName = '') {
 
   // Phase 1: Check MMA memory with the original tags (deqi handles partial matching internally)
   if (MMA_SCRIPT && tags.length > 0) {
-    const mmaResult = spawnSync('node', [MMA_SCRIPT, 'mma', 'deqi', JSON.stringify({ tags, limit })], {
+    const mmaResult = spawnSync('node', [MMA_SCRIPT, 'mma', 'deqi', JSON.stringify({ tags, limit })], childProcessOptions({
       timeout: 10000, encoding: 'utf-8',
-    });
+    }));
     if (mmaResult.status === 0) {
       try {
         const parsed = JSON.parse(mmaResult.stdout);
@@ -211,9 +191,9 @@ function store(entry) {
     q: entry.q || 0.5,
   });
 
-  const result = spawnSync('node', [MMA_SCRIPT, 'mma', 'ashi', payload], {
+  const result = spawnSync('node', [MMA_SCRIPT, 'mma', 'ashi', payload], childProcessOptions({
     timeout: 10000, encoding: 'utf-8',
-  });
+  }));
 
   if (result.status === 0) {
     try {
@@ -411,11 +391,7 @@ function recallErrors(questionType, stepName, opts = {}) {
     }
   } catch (e) {}
 
-  // 2. 保洁降权记录 — 过去哪些经验没用上
-  try {
-    const metricsPath = require('path').join(require('os').homedir(), '.claude', 'data', 'skills', 'ponder', 'metrics');
-    // 保洁日志在MMA中通过tag标记，这里通过REFUTED已经覆盖
-  } catch (e) {}
+  // 2. 保洁降权记录已由 MMA 状态和标签覆盖。
 
   errors.sort(function(a, b) {
     if (a.severity === 'high' && b.severity !== 'high') return -1
@@ -441,7 +417,7 @@ function recordOutcome(pointId, outcome, detail = '') {
   if (outcome === 'confirmed') {
     // Reinforce: move toward CONFIRMED
     spawnSync('node', [MMA_SCRIPT, 'mma', 'reinforce', pointId, '0.15',
-      JSON.stringify({ source: 'user_confirmation' })], { timeout: 5000 });
+      JSON.stringify({ source: 'user_confirmation' })], childProcessOptions({ timeout: 5000 }));
   } else if (outcome === 'refuted' || outcome === 'corrected') {
     // Store correction as new knowledge
     const correctionEntry = {
@@ -455,7 +431,7 @@ function recordOutcome(pointId, outcome, detail = '') {
     if (storeResult) {
       // Schedule original point for review: reinforce with strong negative + force_refuted
       spawnSync('node', [MMA_SCRIPT, 'mma', 'reinforce', pointId, '-0.5',
-        JSON.stringify({ force_refuted: true, source: 'user_correction', reason: detail.substring(0, 200) })], { timeout: 5000 });
+        JSON.stringify({ force_refuted: true, source: 'user_correction', reason: detail.substring(0, 200) })], childProcessOptions({ timeout: 5000 }));
     }
   }
 }
@@ -539,7 +515,7 @@ function tagVerdict(pointId, verdict = 'confirmed', detail = '') {
     const related = p.related_points || [];
     for (const r of related) {
       spawnSync('node', [MMA_SCRIPT, 'mma', 'reinforce', r.id, '0.1',
-        JSON.stringify({ source: 'user_confirmation_chain' })], { timeout: 3000 });
+        JSON.stringify({ source: 'user_confirmation_chain' })], childProcessOptions({ timeout: 3000 }));
     }
   }
 

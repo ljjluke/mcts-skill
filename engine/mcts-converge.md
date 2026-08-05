@@ -175,7 +175,7 @@ Code: li-shi-split --insight '<JSON>'
 
  Knowledge Update: [new knowledge] [TD error: V_predicted → V_actual]
 
- Memory Agent Checkpoints:
+ Memory Lifecycle Checkpoints:
    ☐ pre_engine: [DONE/SKIPPED(why)]
    ☐ during_diverge: [DONE/SKIPPED(why)]
    ☐ post_simulate: [DONE/IDs:.../SKIPPED(why)]

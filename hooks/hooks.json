@@ -1,5 +1,5 @@
 {
-  "description": "Ponder hooks — Setup/SessionStart/SessionEnd via bootstrap-hook.js. agent-reach checked every start, installed on Setup.",
+  "description": "Ponder hooks — Setup/SessionStart/SessionEnd through the bundled bootstrap entry point.",
   "hooks": {
     "Setup": [
       {
@@ -7,7 +7,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const fs=require('fs'),path=require('path'),os=require('os');const b=os.homedir()+'/.claude/plugins/cache';let c=null;for(const n of['luke','mcts','mcts-td-planner']){const d=path.join(b,n,n);if(fs.existsSync(d)){c=d;break}}if(c){let v;try{v=fs.readdirSync(c).filter(x=>{try{return fs.statSync(path.join(c,x)).isDirectory()&&/^\\d+\\.\\d+\\.\\d+$/.test(x)}catch(e){return false}}).sort((a,b)=>{const[a1,a2,a3]=a.split('.').map(Number),[b1,b2,b3]=b.split('.').map(Number);return b1-a1||b2-a2||b3-a3})[0]}catch(e){}if(v){const p=path.join(c,v,'scripts/bootstrap-hook.js');if(fs.existsSync(p)){try{require('child_process').spawnSync('node',[p,'setup'],{stdio:'inherit',timeout:180000})}catch(e){}}}}\"",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/bootstrap-hook.js\" setup",
             "timeout": 180
           }
         ]
@@ -19,7 +19,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const fs=require('fs'),path=require('path'),os=require('os');const b=os.homedir()+'/.claude/plugins/cache';let c=null;for(const n of['luke','mcts','mcts-td-planner']){const d=path.join(b,n,n);if(fs.existsSync(d)){c=d;break}}if(c){let v;try{v=fs.readdirSync(c).filter(x=>{try{return fs.statSync(path.join(c,x)).isDirectory()&&/^\\d+\\.\\d+\\.\\d+$/.test(x)}catch(e){return false}}).sort((a,b)=>{const[a1,a2,a3]=a.split('.').map(Number),[b1,b2,b3]=b.split('.').map(Number);return b1-a1||b2-a2||b3-a3})[0]}catch(e){}if(v){const p=path.join(c,v,'scripts/bootstrap-hook.js');if(fs.existsSync(p)){try{require('child_process').spawnSync('node',[p,'session-start'],{stdio:'inherit',timeout:15000})}catch(e){}}}}\"",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/bootstrap-hook.js\" session-start",
             "timeout": 20
           }
         ]
@@ -31,7 +31,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const fs=require('fs'),path=require('path'),os=require('os');const b=os.homedir()+'/.claude/plugins/cache';let c=null;for(const n of['luke','mcts','mcts-td-planner']){const d=path.join(b,n,n);if(fs.existsSync(d)){c=d;break}}if(c){let v;try{v=fs.readdirSync(c).filter(x=>{try{return fs.statSync(path.join(c,x)).isDirectory()&&/^\\d+\\.\\d+\\.\\d+$/.test(x)}catch(e){return false}}).sort((a,b)=>{const[a1,a2,a3]=a.split('.').map(Number),[b1,b2,b3]=b.split('.').map(Number);return b1-a1||b2-a2||b3-a3})[0]}catch(e){}if(v){const p=path.join(c,v,'scripts/bootstrap-hook.js');if(fs.existsSync(p)){try{require('child_process').spawnSync('node',[p,'session-end'],{stdio:'inherit',timeout:10000})}catch(e){}}}}\"",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/bootstrap-hook.js\" session-end",
             "timeout": 15
           }
         ]

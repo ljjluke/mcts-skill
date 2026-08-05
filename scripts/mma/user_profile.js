@@ -9,9 +9,9 @@
  * ═══════════════════════════════════════════════════════════════ */
 const fs = require('fs');
 const path = require('path');
-const os = require('os');
+const { resolveData } = require('../runtime-paths');
 
-const USERS_DIR = path.join(os.homedir(), '.claude', 'data', 'skills', 'mcts-td-planner', 'users');
+const USERS_DIR = resolveData('users');
 
 function ensureDir() { if (!fs.existsSync(USERS_DIR)) fs.mkdirSync(USERS_DIR, { recursive: true }); }
 

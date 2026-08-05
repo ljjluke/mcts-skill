@@ -6,10 +6,10 @@
  */
 
 const path = require('path');
-const os = require('os');
+const { dataRoot } = require('../runtime-paths');
 
 // ===== 存储路径 =====
-const DATA_DIR = process.env.PONDER_DATA_DIR ? require("path").resolve(process.env.PONDER_DATA_DIR) : path.join(os.homedir(), '.claude', 'data', 'skills', 'ponder');
+const DATA_DIR = dataRoot;
 const MEMORY_DIR = path.join(DATA_DIR, 'memory');
 const MMA_FILE = path.join(MEMORY_DIR, 'meridian_kg.json');
 const MMA_SHARDS_DIR = path.join(MEMORY_DIR, 'shards'); // 经脉分片目录

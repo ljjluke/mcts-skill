@@ -18,6 +18,7 @@
 
 const { spawnSync } = require('child_process');
 const path = require('path');
+const { childProcessOptions } = require('./runtime-paths');
 
 const ENGINES = {
     compute: {
@@ -40,9 +41,9 @@ const ENGINES = {
     },
     guard: {
         script: 'mcts_guard.js',
-        desc: '合规守护 — 反唯一方案/阶段强制/信息优先级/方案多样性/自检/MemoryAgent/合规审计/约束/模式/玄学占卜增强/Phase详细规则',
+        desc: '合规守护 — 反唯一方案/阶段强制/信息优先级/方案多样性/自检/合规审计/约束/模式/玄学占卜增强/Phase详细规则',
         commands: ['decomposition-guard','phase-enforce','info-gap-guard','diversity-challenge',
-                   'self-check-guard','memory-agent-guard','compliance-report',
+                   'self-check-guard','compliance-report',
                    'constraint-checklist','engine-mode','phase-15-guard','all-guards',
                    'phase-rules','five-diagnosis-detail','diverge-detail',
                    'simulate-detail','converge-detail',
@@ -132,10 +133,11 @@ function main() {
     const scriptPath = path.join(__dirname, cfg.script);
     const restArgs = args.slice(1);
 
-    const result = spawnSync('node', [scriptPath, ...restArgs], {
-        stdio: 'inherit',
-        cwd: path.join(__dirname, '..'),
-    });
+    const result = spawnSync(
+        'node',
+        [scriptPath, ...restArgs],
+        childProcessOptions({ stdio: 'inherit' })
+    );
 
     if (result.status !== 0) {
         process.exit(result.status || 1);

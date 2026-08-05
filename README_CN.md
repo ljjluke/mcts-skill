@@ -27,7 +27,7 @@
 
 **问题不在模型，在想的过程。**
 
-大多数 LLM 有问必答。Ponder 不——它把每个问题跑完 9 道工序：需求打磨 → 神思破框 → 多视角扫描 → 盲点发现 → 方案生成 → 8 维评分 → 推演 → 辩论攻防 → 用户确认。每道工序有独立的检查、代码质量门禁、和存储机制。
+大多数 LLM 有问必答。Ponder 不——完整入口会走完十个阶段：需求画像 → 前提审视 → 多视角发散 → 八维盲点 → 方案生成 → 收敛 → 八维评分 → 情景推演 → 辩论攻防 → 综合结论。每个阶段有独立的思考框架、检查和质量门禁。
 
 结果不是"答得更快"，是**"答得更可信"**。
 
@@ -59,9 +59,9 @@
 
 ### 看对比
 
-![Ponder demo](scripts/ponder-demo-zh.gif)
+![Ponder demo](assets/ponder-demo-zh.gif)
 
-*左侧: 直接问 LLM。右侧: 同一问题通过 Ponder 9 道管线。*
+*左侧：直接问 LLM。右侧：同一问题通过 Ponder 完整十阶段流程。*
 
 ```
 
@@ -91,9 +91,9 @@
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│                        编排器 (SKILL.md)                          │
-│  唯一的编排者。没有管道引擎、没有 workflow、没有调度层。           │
-│  LLM 读到 SKILL.md → 按顺序执行各阶段 → 完成。                   │
+│                完整编排器 (skills/ponder/SKILL.md)                │
+│  完整技能负责编排十阶段；专项技能暴露可独立调用的能力。             │
+│  没有 workflow 引擎或隐藏调度层。                                 │
 ├──────────────────────────────────────────────────────────────────┤
 │                                                                   │
 │  ┌─ 需求打磨 ────────────────────────────────────────────────┐   │
@@ -109,7 +109,7 @@
 │  │  方案 (生成)      → N agent × 1 方案                    │   │
 │  │  方案评分 (8维)   → N agent × 8 维度评分                │   │
 │  │  收敛 (淘汰)      → 主线程，依评分保留最优              │   │
-│  │  推演 (模拟)      → N agent × mcts-simulator            │   │
+│  │  推演（模拟）     → N 个隔离 Subagent                    │   │
 │  │  辩论 (攻防)      → 立论 + 围攻 + 抗压排名              │   │
 │  │  用户确认         → LLM推荐 + 检查遗留盲点              │   │
 │  │  综合结论         → 完整结论+风险+建议                   │   │
@@ -161,7 +161,7 @@ Ponder 不是在"更努力地思考"——它是在从不同位置思考。每�
 每步执行完 → orchestrate.js step 存产出到 MMA
   （自然语言，不是 JSON → 语义匹配可用）
 
-下次同类问题 → node scripts/orchestrate.js history <阶段> <类型>
+下次同类问题 → node skills/ponder/scripts/orchestrate.js history <阶段> <类型>
   → 返回 top 3 最相关的历史记录
   → 注入当前阶段的 prompt 作为参考
 
@@ -183,7 +183,15 @@ Ponder 不是在"更努力地思考"——它是在从不同位置思考。每�
 /luke:ponder 分析这个创业项目的竞争格局
 /luke:ponder 比较三种营销策略的优劣
 /luke:ponder 帮我评估两种治疗方案
-/luke:ponder 分析这个农业项目的可行性
+# 专项技能——只调用当前需要的能力
+/luke:interview 打磨这个项目的需求画像
+/luke:explore 质疑这个决策的问题框架
+/luke:blindspots 检查这些发现还有哪些盲点
+/luke:solutions 生成、收敛并评分可行方案
+/luke:simulate 推演这些幸存方案
+/luke:debate 对这些方案做抗压辩论和排名
+/luke:synthesis 把完整辩论结果综合成建议
+/luke:memory 回忆相关历史经验
 ```
 
 ### 自定义存储目录
@@ -198,7 +206,7 @@ $env:PONDER_DATA_DIR = "D:\my-knowledge"
 claude
 ```
 
-默认: `~/.claude/data/skills/ponder/`
+默认：`~/.claude/data/skills/ponder/`。`PONDER_DATA_DIR` 必须位于 Plugin 安装目录之外。Plugin 根目录在运行时只读；用户要求生成的文件写入调用工程，记忆、指标、学习权重和进化状态只写入该数据目录。
 
 ---
 
@@ -206,32 +214,25 @@ claude
 
 ```
 ponder-skill/
-├── SKILL.md                        # 唯一编排器——无管道、无workflow
-├── agents/                         # 子agent定义（一个文件一个角色）
-│   ├── dimension-evaluator.md      # 维度盲点发现
-│   ├── solution-generator.md       # 独立方案生成
-│   ├── debater.md                  # 方案辩护
-│   └── mcts-simulator.md           # 情景模拟推演
-├── engine/                         # 思考框架文档（每阶段一个）
-│   ├── shensi.md / divergence.md / bagua.md
-│   ├── converge.md / debate.md / synthesis.md
-│   └── mcts-constraint.md / mcts-predictive.md / td-learner.md
-├── scripts/
-│   ├── orchestrate.js             # 存产出、查历史、收尾
-│   ├── mcts_compute.js            # 数学引擎（80+命令）
-│   ├── mcts_guard.js              # 合规守卫（15个检查器）
-│   ├── mcts_tree.js               # 树数据结构（可选）
-│   ├── knowledge.js               # MMA记忆接口
-│   ├── prompts/                   # 阶段prompt模板 + schema
-│   │   ├── shensi.json / divergence.json / bagua.json
-│   │   ├── plans.json / simulate.json / converge.json
-│   │   ├── debate.json / synthesis.json
-│   └── mma/                       # MMA记忆算法（12模块）
-│       ├── io.js / deqi.js / ashi.js / reinforce.js / decay.js
-│       ├── constants.js / state_machine.js / ziwu.js
-│       ├── diagnosis.js / cluster.js / audit.js / user_profile.js
-├── hooks/hooks.json               # 会话生命周期
-└── pipeline-meta.json             # 进化元数据
+├── .claude-plugin/                  # Plugin 与市场清单
+├── skills/                          # 九个可独立发现的 Skill
+│   ├── ponder/
+│   │   ├── SKILL.md                 # 完整十阶段编排器
+│   │   ├── scripts/                 # ponder 独享的持久化与进化实现
+│   │   └── resources/               # 不可变元数据与规则种子
+│   ├── interview/ … synthesis/      # 专项推理 Skill
+│   └── memory/SKILL.md              # 召回、记录和结果学习
+├── engine/                          # 多 Skill 共享的只读推理框架
+├── resources/prompts/               # 共享提示模板与 schema
+├── scripts/                         # 共享运行时、守卫、计算和 MMA
+│   ├── runtime-paths.js             # Plugin/工程/数据路径权威
+│   ├── knowledge.js                 # 持久知识接口
+│   └── mma/                         # 知识存储实现
+├── hooks/
+│   ├── hooks.json                   # 会话生命周期注册
+│   └── scripts/                     # Hook 独享实现
+├── references/                      # 算法与框架参考
+└── assets/                          # 文档媒体
 ```
 
 ---
@@ -240,7 +241,7 @@ ponder-skill/
 
 | 原则 | 含义 |
 |------|------|
-| **无隐藏编排** | SKILL.md 是唯一的编排者。你读到什么，LLM 就执行什么。 |
+| **编排透明** | `skills/ponder/SKILL.md` 负责编排完整流程；专项技能暴露边界清晰的阶段能力。你读到什么，LLM 就执行什么。 |
 | **仅在必要时隔离** | 子 agent 只用于真正需要并行和隔离的工作（多维评分、方案生成、模拟推演）。其余全在主线程执行。 |
 | **代码结构，非代码强制** | prompt 做引导，schema 做约束，agent 做专业化。没有 workflow 引擎。 |
 | **跨领域设计** | 所有维度和框架使用领域中性语言。不假设用户是搞技术、金融还是医疗。 |

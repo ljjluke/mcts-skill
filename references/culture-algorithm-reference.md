@@ -13,10 +13,10 @@ metadata:
 |---------|---------|-----------|---------|
 | 八卦阴阳→二进制 | mutation vector 5-bit编码 | mcts-simulate | Leibniz on Binary (2022) |
 | 五行生克→正负反馈 | reinforce(生)/drain(克) | mcts-simulate | Wu Xing Math Reasoning (2021) |
-| 经络→知识图谱 | MMA 12经脉+穴位=节点 | memory-agent | Meridian GCN (2020) |
+| 经络→知识图谱 | MMA 12经脉+穴位=节点 | memory Skill + knowledge.js | Meridian GCN (2020) |
 | 孙子兵法→OODA→MCTS | 四阶段决策循环 | mcts-simulate | Boyd OODA, Deciphering Sun Tzu (2015) |
 | 阴阳辩证→不确定性推理 | TD误差正负方向 | td-learner | QAQI Quantum Intelligence (2014) |
-| 藏象→功能模块化 | 12经脉=12知识类别 | memory-agent | Modern Bioinformatics meets TCM (2013) |
+| 藏象→功能模块化 | 12经脉=12知识类别 | memory Skill + knowledge.js | Modern Bioinformatics meets TCM (2013) |
 | 诸子百家→多视角分析 | 8 facet sub-lenses | mcts-diverge | Simon Bounded Rationality (1956) |
 | 奇正相生→探索/利用 | UCB的V(正)+c√(奇) | mcts-simulate | Boyd, Sun Tzu虚实篇 |
 | 中庸→折中收敛 | V_final多维度加权 | mcts-converge | Simon Satisficing (1956) |

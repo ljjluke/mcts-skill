@@ -22,11 +22,11 @@ const { parseArgsSimple } = require('./shared');
  * ═══════════════════════════════════════════════════════════════ */
 const fs = require('fs');
 const path = require('path');
-const os = require('os');
 const COMPUTE = require('./mcts_compute');
+const { resolveData } = require('./runtime-paths');
 
 // ── 存储路径 ──
-const TREE_DIR = path.join(os.homedir(), '.claude', 'data', 'skills', 'mcts-td-planner', 'memory', 'trees');
+const TREE_DIR = resolveData('memory', 'trees');
 function nodeFile(sessionId) { return path.join(TREE_DIR, `${sessionId}.json`); }
 function nodeBak(sessionId) { return path.join(TREE_DIR, `${sessionId}.bak.json`); }
 function ensureDir() { if (!fs.existsSync(TREE_DIR)) fs.mkdirSync(TREE_DIR, { recursive: true }); }

@@ -1,6 +1,6 @@
 # Ponder 真实架构方案（2026-06-23）
 
-> 基于 SKILL.md + 实际代码分析。
+> 基于 `skills/ponder/SKILL.md` + 实际代码分析。
 > 无 Workflow、无管道编排器、无 Agent 调度层。
 > 主线程 LLM 是唯一编排者，子 agent 只做"内容生产"。
 
@@ -8,7 +8,7 @@
 
 ## 一、核心原则
 
-1. **SKILL.md 是唯一的编排者** — 步骤顺序、数据传递全部写在其中
+1. **`skills/ponder/SKILL.md` 是完整流程的唯一编排者** — 步骤顺序、数据传递全部写在其中；其他技能提供边界清晰的专项入口
 2. **每个步骤 = 一个独立子逻辑** — 读 prompt → 执行 → 评分 → 展示
 3. **产物相互独立 → 子 agent 并行** — 八卦镜/方案/推演/辩论
 4. **需要全局连贯 → 主线程** — 神思/发散/收敛/综合
@@ -27,7 +27,7 @@
 | **八卦镜** | **8 维度 × 各评分+子视角** | **各维度独立** | **✅ 子 agent 并行** |
 | **方案** | **5-8 个方案** | **各方案独立** | **✅ 子 agent 并行** |
 | 收敛 | 3-5 幸存方案 | 需要全局比较淘汰 | ❌ 主线程 |
-| **推演** | **每方案 × 10 天干** | **隔离+并行** | **✅ 子 agent 并行** |
+| **推演** | **每个幸存方案 × 多个有意义场景** | **各方案隔离** | **✅ 通用 Subagent 并行** |
 | **辩论** | **多方案 × 各立场+反驳** | **每立场独立** | **✅ 子 agent 并行** |
 | 综合 | 单一结论 | 整合全局 | ❌ 主线程 |
 
@@ -166,7 +166,7 @@
 ```
 ┌──────────────────────────────────────────────────┐
 │ ① 构建该步骤的 prompt                              │
-│    - 主线程步骤: 读 prompts/<name>.json → 参数替换  │
+│    - 主线程步骤: 读 resources/prompts/<name>.json → 参数替换  │
 │    - 子 agent 步骤: 动态构造每个子 agent 的 prompt  │
 ├──────────────────────────────────────────────────┤
 │ ② 执行                                            │
@@ -291,13 +291,14 @@ if (finalScore < 0.55) {
 scripts/mcts.js         → 统一入口，LLM 按需调用
 scripts/mcts_compute.js → 数学工具（UCB/评分/收敛检测/注意力门控）
 scripts/mcts_guard.js   → 合规守卫（可选安全检查点）
-scripts/mcts_tree.js    → 树结构工具（可选持久化）
-scripts/orchestrate.js  → 前后处理工具（可选加载/存储）
-scripts/evolve.js       → 离线分析工具
+skills/ponder/scripts/orchestrate.js  → 步骤存储、历史和流程收尾工具
+skills/ponder/scripts/evolve.js       → 离线分析工具
 scripts/knowledge.js    → 知识获取工具
-scripts/weights.js      → 权重学习工具
+skills/ponder/scripts/weights.js      → 权重学习工具
 scripts/clarity-check.js→ 清晰度评分 CLI（每步强制调用）
 scripts/mma/*           → MMA 记忆引擎（存储/召回/衰减/审计）
+
+目录所有权：`engine/` 与当前 prompt 资源是多 Skill 共享的只读资源；`skills/ponder/scripts/` 只承载完整 ponder 独享实现；`hooks/scripts/` 仅服务生命周期。Plugin 根目录只读，工程产物写调用工程，持久状态只写经 `scripts/runtime-paths.js` 校验的 `PONDER_DATA_DIR`。
 ```
 
 使用时机：
@@ -320,18 +321,18 @@ scripts/mma/*           → MMA 记忆引擎（存储/召回/衰减/审计）
 SKILL.md 定义                       →  代码文件
 ─────────────────────────────────────────────────
 Step 1: 采访                         →  纯 LLM（无代码文件）
-Step 2: 神思（读 shensi.json）        →  prompts/shensi.json
-Step 3: 发散（读 divergence.json）    →  prompts/divergence.json
-Step 4: 八卦镜（子 agent × 8）        →  prompts/bagua.json（schema）
-Step 5: 方案（子 agent × 5-8）        →  prompts/plans.json（schema）
-Step 6: 收敛（读 converge.json）      →  prompts/converge.json
+Step 2: 神思（读 shensi.json）        →  resources/prompts/shensi.json
+Step 3: 发散（读 divergence.json）    →  resources/prompts/divergence.json
+Step 4: 八卦镜（子 agent × 8）        →  resources/prompts/bagua.json（schema）
+Step 5: 方案（子 agent × 5-8）        →  resources/prompts/plans.json（schema）
+Step 6: 收敛（读 converge.json）      →  resources/prompts/converge.json
 Step 7: 推演（子 agent × 幸存数）      →  无 JSON（动态构造 prompt）
-Step 8: 辩论（子 agent × 方案数）      →  prompts/debate.json（schema）
-Step 9: 综合（读 synthesis.json）     →  prompts/synthesis.json
+Step 8: 辩论（子 agent × 方案数）      →  resources/prompts/debate.json（schema）
+Step 9: 综合（读 synthesis.json）     →  resources/prompts/synthesis.json
 Step 10: 呈现                         →  纯 LLM（无代码文件）
 每步后清晰度检查                      →  scripts/clarity-check.js
-或chestrate before/after              →  scripts/orchestrate.js
-自进化分析                            →  scripts/evolve.js
+或chestrate before/after              →  skills/ponder/scripts/orchestrate.js
+自进化分析                            →  skills/ponder/scripts/evolve.js
 ```
 
 ---
@@ -340,11 +341,9 @@ Step 10: 呈现                         →  纯 LLM（无代码文件）
 
 | 组件 | 作用 | 是否必需 |
 |------|------|---------|
-| `mcts_tree.js` | MCTS 真实树持久化 | ❌ 可选 |
 | `weights.js` | 自动权重学习 | ❌ 可选 |
 | `evolve.js` | 离线进化分析 | ❌ 可选 |
-| `pipeline-meta.json` | 进化状态记录 | ❌ 可选 |
-| `pipeline.js` | meta 管理 CLI | ❌ 可选 |
+| `skills/ponder/resources/pipeline-meta.json` | 不可变初始种子；运行态副本位于 `PONDER_DATA_DIR` | ❌ 可选 |
 | `MMA 记忆引擎` | 知识存储/召回 | ⚠️ 可选（但会丢失记忆积累） |
 | `mcts_guard.js` | 合规守卫 | ❌ 可选 |
 | `user_profile.js` | 用户画像 | ❌ 可选 |
@@ -387,7 +386,7 @@ Step 10: 呈现                         →  纯 LLM（无代码文件）
 ## 十一、总结
 
 ```
-Ponder = SKILL.md（编排） + prompts/*.json（schema） + scripts/*.js（工具）
+Ponder = skills/ponder/SKILL.md（编排） + resources/prompts/*.json（共享 schema） + engine/*.md（共享只读框架） + scripts/*.js（共享运行时） + skills/ponder/scripts/*.js（独享实现）
           ↑                     ↑                        ↑
         纯文本指令             结构化输出约束             CLI 工具
         LLM 执行               agent() 调用             按需调用
