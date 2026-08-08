@@ -775,6 +775,6 @@ Memory file stores complete knowledge graph. **Knowledge divided into "active" a
 #### Storage and Management
 
 Archive/recall/cleanup operations:
-node $P/scripts/mcts.js mma status
+node $P/scripts/knowledge.js status
 Storage path: ~/.claude/data/skills/ponder/memory/
 (physically isolated from skill code)

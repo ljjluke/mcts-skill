@@ -6,7 +6,7 @@ argument-hint: "<profile, key finding, and decision stake>"
 
 # Solution generation, convergence, and scoring
 
-Use `${CLAUDE_PLUGIN_ROOT}/resources/prompts/plans.json`, `converge.json`, and `simulate.json`. The legacy filename `simulate.json` is the **scoring** prompt; scenario simulation belongs to the separate `simulate` Skill.
+Use `${CLAUDE_PLUGIN_ROOT}/skills/solutions/resources/plans.json`, `${CLAUDE_PLUGIN_ROOT}/skills/solutions/resources/converge.json`, and `${CLAUDE_PLUGIN_ROOT}/skills/solutions/resources/score.json`. Scenario simulation belongs to the separate `simulate` Skill.
 
 ## Solution worker contract
 
@@ -29,7 +29,7 @@ Read the convergence prompt and engines. Retain at least three survivors when th
 
 ## Scoring worker contract
 
-After convergence, launch one isolated general-purpose Subagent for every survivor. Give each worker the same profile, constraints, weights, and all eight scoring dimensions from `simulate.json`, but only its assigned solution.
+After convergence, launch one isolated general-purpose Subagent for every survivor. Give each worker the same profile, constraints, weights, and all eight scoring dimensions from `score.json`, but only its assigned solution.
 
 Each scoring worker must provide evidence and an individual score for every dimension, plus a justified total. Start all scoring workers in parallel, wait for every one to return, and display all scorecards before comparing totals. Never rank partial results. For high-stake decisions, examine why the leader scored highest, how the ranking changes if those causes fail, and whether the scoring priors or weights are appropriate.
 

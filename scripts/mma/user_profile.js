@@ -8,14 +8,17 @@
  *    - 发散引擎永不接收画像数据 → 思维不受限
  * ═══════════════════════════════════════════════════════════════ */
 const fs = require('fs');
-const path = require('path');
-const { resolveData } = require('../runtime-paths');
+const crypto = require('crypto');
+const { ensureDataDir, resolveData } = require('../runtime-paths');
 
 const USERS_DIR = resolveData('users');
 
-function ensureDir() { if (!fs.existsSync(USERS_DIR)) fs.mkdirSync(USERS_DIR, { recursive: true }); }
+function ensureDir() { ensureDataDir('users'); }
 
-function userFilePath(userId) { return path.join(USERS_DIR, userId + '.json'); }
+function userFilePath(userId) {
+    const safeId = String(userId || 'default').replace(/[^a-zA-Z0-9._-]/g, '_');
+    return resolveData('users', safeId + '.json');
+}
 
 /**
  * 默认用户画像 (冷启动)
@@ -48,7 +51,7 @@ function defaultProfile(userId) {
             corrects_assumptions: 0,       // 计数器: 纠正假设
         },
         // 领域专业维度 — 由苏格拉底无知自检补上的、五诊探不到的专业事项
-        // 格式: [{ dimension: "税负结构", value: "A股账户,ETF收益计入个税", source: "无知自检追问", session: "..." }]
+        // 格式: [{ dimension: "税负结构", value: "相关税法规定", source: "无知自检追问", session: "..." }]
         domain_professional_dimensions: [],
         // 交互历史摘要 (最近10条)
         recent_interactions: [],
@@ -88,9 +91,13 @@ function saveProfile(profile) {
     ensureDir();
     const fp = userFilePath(profile.user_id);
     profile.last_seen = new Date().toISOString();
-    const tmp = fp + '.tmp';
-    fs.writeFileSync(tmp, JSON.stringify(profile, null, 2), 'utf-8');
-    fs.renameSync(tmp, fp);
+    const tmp = `${fp}.${process.pid}.${crypto.randomUUID()}.tmp`;
+    try {
+        fs.writeFileSync(tmp, JSON.stringify(profile, null, 2), { encoding: 'utf-8', flag: 'wx' });
+        fs.renameSync(tmp, fp);
+    } finally {
+        if (fs.existsSync(tmp)) fs.unlinkSync(tmp);
+    }
 }
 
 /**

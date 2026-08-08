@@ -18,13 +18,10 @@
  */
 const fs = require('fs');
 const path = require('path');
-const { dataRoot, initializeDataFile, resolvePlugin } = require('../../../scripts/runtime-paths');
+const { dataRoot, initializeJsonDataFile, resolvePlugin } = require('../../../scripts/runtime-paths');
 
 const DATA_DIR = dataRoot;
-const META_FILE = initializeDataFile(
-  'pipeline-meta.json',
-  resolvePlugin('skills', 'ponder', 'resources', 'pipeline-meta.json')
-);
+const META_FILE = initializeJsonDataFile('pipeline-meta.json', resolvePlugin('skills', 'ponder', 'resources', 'pipeline-meta.json'));
 
 // 延迟加载
 var _WeightRegistry = null;
@@ -88,6 +85,7 @@ function storeStep(stepName, questionType, stepOutputJson, userRequest) {
     return null;
   }
   output = extractJson(stepOutputJson);
+  var validJson = !!output;
   if (!output) {
     // 降级:不崩,存原始文本,记 warning,指标用空对象
     console.error('⚠️ 步骤输出非合法JSON,降级存原始文本(step=' + stepName + ')');
@@ -95,15 +93,49 @@ function storeStep(stepName, questionType, stepOutputJson, userRequest) {
   }
 
   var result = { stored: false, metric_recorded: false };
+  var orderValid = true;
+  var guardState = null;
+
+  // 0. 步骤顺序校验：非法 JSON、未初始化或跳步都不得持久化。
+  try {
+    var stepGuard = require('./step-guard');
+    guardState = stepGuard.status();
+    var stdStep = stepGuard.normalizeStepName(stepName);
+    var STEPS = stepGuard.STEPS || [];
+    if (STEPS.indexOf(stdStep) !== -1) {
+      var guardResult = stepGuard.before(stdStep);
+      if (guardResult.verdict !== 'OK') {
+        orderValid = false;
+        result.step_order_violation = true;
+        result.blocked_step = stdStep;
+        result.missing_steps = guardResult.missing || [];
+        result.message = guardResult.message;
+      }
+    }
+  } catch(e) {
+    orderValid = false;
+    result.step_order_error = e.message;
+  }
+
+  if (!validJson || !orderValid) {
+    result.invalid_json = !validJson;
+    result.step_guard = 'NOT_ADVANCED';
+    console.log(JSON.stringify(result));
+    return result;
+  }
 
   // 1. 存步骤产出到MMA
   try {
     var knowledge = require('../../../scripts/knowledge');
-    knowledge.storeStepOutput(stepName, questionType, stepOutputJson, {
+    // 提取 original_example（抽象提炼后保留的原始案例）
+    var originalExample = output && output.original_example ? output.original_example : '';
+    var storeResult = knowledge.storeStepOutput(stepName, questionType, stepOutputJson, {
       tags: [questionType],
       user_request: userRequest || '',
+      original_example: originalExample,
     });
     result.stored = true;
+    if (storeResult && storeResult.id) result.point_id = storeResult.id;
   } catch(e) { console.error('存储步骤产出失败:', e.message); }
 
   // 2. 记指标
@@ -112,6 +144,7 @@ function storeStep(stepName, questionType, stepOutputJson, userRequest) {
     var record = metrics.collectStep(stepName, output, {
       question_type: questionType,
       user_request: userRequest || '',
+      run_id: guardState && guardState.run_id ? guardState.run_id : '',
     });
     metrics.appendStepMetric(record);
     result.metric_recorded = true;
@@ -119,7 +152,11 @@ function storeStep(stepName, questionType, stepOutputJson, userRequest) {
     result.questions = record.questions_count;
   } catch(e) { console.error('记录指标失败:', e.message); }
 
+  // 3. Guard 由调用方在确认存储成功后，以完整 worker 数和 certainty 显式推进。
+  result.step_guard = result.stored && result.metric_recorded ? 'READY_FOR_AFTER' : 'NOT_ADVANCED';
+
   console.log(JSON.stringify(result));
+  return result;
 }
 
 // ── Finalize: 所有步骤完成后保洁+学习 ──
@@ -130,16 +167,59 @@ function finalize(questionType, userRequest) {
     evolve_analyzed: false,
   };
 
+  var guardStatus;
+  try {
+    guardStatus = require('./step-guard').status();
+  } catch (e) {
+    result.error = 'step_guard_unavailable';
+    result.detail = e.message;
+    console.log(JSON.stringify(result));
+    return result;
+  }
+  if (guardStatus.verdict !== 'STATUS' || guardStatus.remaining.length > 0) {
+    result.error = 'incomplete_pipeline';
+    result.remaining = guardStatus.remaining || [];
+    console.log(JSON.stringify(result));
+    return result;
+  }
+
   // 1. 知识保洁
   try {
-    var io = require('../../../scripts/mma/io');
-    var kg = io.loadMMA();
-    var decay = require('../../../scripts/mma/decay');
-    var actions = decay.knowledgeGroom(kg);
-    if (actions && actions.length > 0) io.saveMMA(kg);
+    var simpleLifecycle = require('../../../scripts/mma/simple-lifecycle');
+    var groomResult = simpleLifecycle.groomAll();
     result.grooming_done = true;
-    result.groomed = (actions || []).length;
+    result.groomed = Object.keys(groomResult).reduce(function(total, key) { return total + (groomResult[key] || []).length; }, 0);
   } catch(e) { console.error('知识保洁失败:', e.message); }
+
+  // 1.5 计算本次运行的 quality_score (供进化系统计算 free_energy)
+  try {
+    var metrics = require('./pipeline-metrics');
+    var pMetrics = require('path');
+    var mDataDir = pMetrics.join(DATA_DIR, 'metrics');
+    var stepLog = pMetrics.join(mDataDir, 'step-runs.ndjson');
+    if (require('fs').existsSync(stepLog)) {
+      var lines = require('fs').readFileSync(stepLog, 'utf-8').trim().split('\n');
+      var currentRunId = guardStatus.run_id;
+      var recentSteps = lines.map(function(l) { try { return JSON.parse(l); } catch(e) { return null; } })
+        .filter(function(record) {
+          return record && record.type === 'step' && record.run_id === currentRunId;
+        });
+      var clearCount = recentSteps.filter(function(s) { return s.is_clear; }).length;
+      var qualityScore = recentSteps.length > 0 ? clearCount / recentSteps.length : 0.5;
+      // 写入 quality_score 记录
+      var qualityRecord = {
+        timestamp: new Date().toISOString(),
+        type: 'quality_score',
+        question_type: questionType,
+        run_id: currentRunId,
+        quality_score: Math.round(qualityScore * 100) / 100,
+        step_count: recentSteps.length,
+        clear_count: clearCount,
+      };
+      require('fs').appendFileSync(stepLog, JSON.stringify(qualityRecord) + '\n', 'utf-8');
+      result.quality_score = qualityScore;
+    }
+  } catch(e) { /* quality_score 计算失败不阻塞 */ }
 
   // 2. 进化分析 (先跑分析, 结果驱动后续权重学习)
   var evolve = null;
@@ -185,6 +265,7 @@ function finalize(questionType, userRequest) {
   } catch(e) { console.error('meta更新失败:', e.message); }
 
   console.log(JSON.stringify(result));
+  return result;
 }
 
 function main() {

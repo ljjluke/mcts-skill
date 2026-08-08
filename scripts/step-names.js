@@ -7,22 +7,28 @@
  *   中文: 神思/发散/八卦镜/收敛/综合 ...
  * 直接前缀匹配 [step:bagua] 召不回历史用 [step:dimension] 存的数据 → 历史召回断链。
  *
- * 单一真源 = skills/ponder/SKILL.md 十步。所有入口读入先 normalizeStep() 归一化,
+ * 单一真源 = SKILL.md 八步。所有入口读入先 normalizeStep() 归一化,
  * 召回时用 matchStepPrefix() 把全部别名都当前缀候选。
  */
 
-// 标准十步（skills/ponder/SKILL.md 为单一真源，顺序即管线顺序）
-const STEPS = ['shensi', 'divergence', 'bagua', 'plans', 'converge', 'simulate', 'debate', 'synthesis'];
+// 标准十步(SKILL.md 单一真源,顺序即管线顺序)
+// interview = 需求打磨+无知自检(步骤守卫用)
+// score = 方案评分(8维度评分), simulate = 推演(情景模拟)
+const STEPS = ['interview', 'shensi', 'divergence', 'bagua', 'plans', 'converge', 'score', 'simulate', 'debate', 'synthesis'];
 
 // 别名 → 标准名(历史兼容)
 // dimension=旧版bagua, simulations=旧版simulate(复数), verification=已废八步外步骤
 // 中文名=早期实验数据
+// 旧版 simulate 同时含评分+推演,新版拆为 score+simulate
 const ALIASES = {
   // bagua
   'dimension': 'bagua',
   '八卦镜': 'bagua',
   'baguaMirror': 'bagua',
-  // simulate
+  // score (方案评分)
+  '评分': 'score',
+  '方案评分': 'score',
+  // simulate (推演)
   'simulations': 'simulate',
   'simulate_draft': 'simulate',
   'mcts': 'simulate',
@@ -45,6 +51,11 @@ const ALIASES = {
   // synthesis
   '综合': 'synthesis',
   'conclude': 'synthesis',
+  // interview (需求打磨+无知自检)
+  '需求打磨': 'interview',
+  '采访': 'interview',
+  '画像': 'interview',
+  '无知自检': 'interview',
   // verification — 八步外,归为 null(不再作为有效步骤,但旧数据召回时降级到 debate 的近邻)
   'verification': null,
   'verify': null,
@@ -116,6 +127,7 @@ function categoryFor(stepName) {
     case 'bagua': return 'core_decision';
     case 'plans': return 'input_and_output';
     case 'converge': return 'dependencies_and_coordination';
+    case 'score': return 'dependencies_and_coordination';
     case 'simulate': return 'dependencies_and_coordination';
     case 'debate': return 'structure_and_framework';
     case 'synthesis': return 'efficiency_and_resources';

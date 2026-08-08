@@ -140,8 +140,12 @@ function shouldStopIteration(rootNodes, taskType, currentRound, vHistory) {
 }
 
 // ===== State Machine =====
-const SM = require('./mma/state_machine');
-const STATUS_WEIGHTS = SM.STATUS_WEIGHTS;
+// 状态权重（从 simple-lifecycle 的简化状态机内联）
+const STATUS_WEIGHTS = {
+    HYPOTHESIS: 0.1, PROVISIONAL: 0.3, ACTIVE: 0.6, MATURE: 0.8,
+    CONFIRMED: 1.0, TRANSITIONAL: 0.5, DISPUTED: 0.2, SLEEPING: 0.15,
+    REFUTED: 0.0, ARCHIVED: 0,
+};
 
 function checkStatusTransition(currentStatus, n, hasContradiction = false, contradictionCount = 0) {
     if (currentStatus === "PROVISIONAL" && n >= 3 && !hasContradiction) return "CONFIRMED";
@@ -151,7 +155,7 @@ function checkStatusTransition(currentStatus, n, hasContradiction = false, contr
     return null;
 }
 
-function getStatusWeight(status) { return SM.getStatusWeight(status); }
+function getStatusWeight(status) { return Object.prototype.hasOwnProperty.call(STATUS_WEIGHTS, status) ? STATUS_WEIGHTS[status] : 0.1; }
 
 // ===== KBonus & Helpers =====
 function computeKBonus(kgMatch, nChild) {
@@ -920,20 +924,49 @@ function main() {
                             return { pass: true };
                         },
                     },
-                    falsification: {
-                        min_contradictions: 1,
+                    bagua: {
+                        min_dimensions: 6,
                         check: (s, i) => {
-                            if (i < 1) return { pass: false, reason: `反证检验找到0个矛盾, 发散不够深, 退回重做` };
+                            if (s < 6) return { pass: false, reason: `八卦镜只覆盖${s}个维度, 至少需要6个维度` };
                             return { pass: true };
                         },
                     },
-                    scoring: {
-                        min_dimensions: 3,
+                    plans: {
+                        min_plans: 3,
                         check: (s, i) => {
-                            if (s < 3) return { pass: false, reason: `评分维度只有${s}个, 至少需要3个维度` };
+                            if (s < 3) return { pass: false, reason: `只有${s}个方案, 至少需要3个本质不同的方案` };
                             return { pass: true };
                         },
                     },
+                    converge: {
+                        min_survivors: 3,
+                        check: (s, i) => {
+                            if (s < 3) return { pass: false, reason: `收敛后只保留${s}个方案, 至少需要3个进入评分(少于3说明上游发散不够,应回到方案步骤补充)` };
+                            return { pass: true };
+                        },
+                    },
+                    score: {
+                        min_scored: 3,
+                        check: (s, i) => {
+                            if (s < 3) return { pass: false, reason: `只评分了${s}个方案, 至少需要为3个幸存方案完成评分` };
+                            return { pass: true };
+                        },
+                    },
+                    simulate: {
+                        min_scenarios: 3,
+                        check: (s, i) => {
+                            if (s < 3) return { pass: false, reason: `只推演了${s}个方案, 至少需要覆盖3个幸存方案` };
+                            return { pass: true };
+                        },
+                    },
+                    debate: {
+                        min_attacks: 1,
+                        check: (s, i) => {
+                            if (s < 1) return { pass: false, reason: `辩论没有攻击轮次, 至少需要1轮攻击` };
+                            return { pass: true };
+                        },
+                    },
+                    // synthesis 无门控：最终步骤由用户确认把关
                 };
 
                 const gate = gates[step];
@@ -992,7 +1025,7 @@ function main() {
                         results.push({ plan: p.name, error: 'sub-process failed' });
                     }
                 }
-                output({ results, total: results.length });
+                output({ results, total: results.length, _warning: '⚠️ 此命令产出随机分数，仅供测试/占位。实际推演由 LLM agent (mcts-simulator) 执行，请勿将此命令产出用于真实决策。' });
                 break;
             }
             case "debate": {

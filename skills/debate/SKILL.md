@@ -6,7 +6,7 @@ argument-hint: "<survivors, scores, simulations, and working stance>"
 
 # Adversarial solution debate
 
-Read `${CLAUDE_PLUGIN_ROOT}/resources/prompts/debate.json`, `${CLAUDE_PLUGIN_ROOT}/engine/debate.md`, and `${CLAUDE_PLUGIN_ROOT}/engine/counterfactual-thinking.md`.
+Read `${CLAUDE_PLUGIN_ROOT}/skills/debate/resources/debate.json`, `${CLAUDE_PLUGIN_ROOT}/engine/debate.md`, and `${CLAUDE_PLUGIN_ROOT}/engine/counterfactual-thinking.md`.
 
 ## Opening-case worker contract
 

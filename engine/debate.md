@@ -32,7 +32,7 @@ Self-Check Verdict:
   ❌ Not passed — re-simulate with adjusted assumptions
 
 
-Template: node $P/scripts/mcts.js template self-check --data '<JSON>'
+Self-check: node $P/scripts/mcts.js compute handle-self-check --data '<JSON>'
 
 Code: handle-self-check --conclusion <Pass/Risk/NotPassed>
 

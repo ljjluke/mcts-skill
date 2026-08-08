@@ -6,7 +6,7 @@ argument-hint: "<survivors, scorecards, and requirements profile>"
 
 # Scenario simulation
 
-Read `${CLAUDE_PLUGIN_ROOT}/resources/prompts/simulate-scenarios.json` and `${CLAUDE_PLUGIN_ROOT}/engine/mcts-simulate.md`. Do not use `resources/prompts/simulate.json`; that legacy file is for solution scoring.
+Read `${CLAUDE_PLUGIN_ROOT}/skills/simulate/resources/simulate.json` and `${CLAUDE_PLUGIN_ROOT}/engine/mcts-simulate.md`. Solution scoring uses `${CLAUDE_PLUGIN_ROOT}/skills/solutions/resources/score.json`.
 
 ## Subagent worker contract
 

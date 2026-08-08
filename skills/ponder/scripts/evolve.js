@@ -18,7 +18,7 @@
 const fs = require('fs');
 const path = require('path');
 const { WeightRegistry, DEFAULT_WEIGHTS } = require('./weights.js');
-const { dataRoot, initializeDataFile, resolvePlugin } = require('../../../scripts/runtime-paths');
+const { dataRoot, initializeDataFile, initializeJsonDataFile, resolvePlugin } = require('../../../scripts/runtime-paths');
 // 步骤命名单一真源 + 历史别名兼容层
 const { STEPS, normalizeStep, allStepNamesFor } = require('../../../scripts/step-names');
 

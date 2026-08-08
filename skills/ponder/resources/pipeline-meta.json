@@ -1,5 +1,5 @@
 {
-  "version": "1.18.52",
+  "version": "1.18.65",
   "description": "自进化认知管道元配置 — 每次分析后可能被修改",
   "meta_rules": {
     "不变": "最小化自由能（预测误差）",
@@ -34,6 +34,132 @@
           "log": "验证失败率高 → free_energy_verify+0.01",
           "at": "2026-07-10T03:36:28.218Z",
           "generation": 4
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败+ambiguity主导 → 系数+0.02",
+          "at": "2026-08-03T12:33:53.030Z",
+          "generation": 4
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败→非主导uncertainty_risk系数-0.01",
+          "at": "2026-08-03T12:33:53.030Z",
+          "generation": 4
+        },
+        {
+          "type": "weight_adjust",
+          "log": "验证失败率高 → free_energy_verify+0.01",
+          "at": "2026-08-03T12:33:53.030Z",
+          "generation": 4
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败+ambiguity主导 → 系数+0.02",
+          "at": "2026-08-04T06:19:07.924Z",
+          "generation": 5
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败→非主导uncertainty_risk系数-0.01",
+          "at": "2026-08-04T06:19:07.924Z",
+          "generation": 5
+        },
+        {
+          "type": "weight_adjust",
+          "log": "验证失败率高 → free_energy_verify+0.01",
+          "at": "2026-08-04T06:19:07.924Z",
+          "generation": 5
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败+ambiguity主导 → 系数+0.02",
+          "at": "2026-08-04T09:15:52.450Z",
+          "generation": 5
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败→非主导uncertainty_risk系数-0.01",
+          "at": "2026-08-04T09:15:52.450Z",
+          "generation": 5
+        },
+        {
+          "type": "weight_adjust",
+          "log": "验证失败率高 → free_energy_verify+0.01",
+          "at": "2026-08-04T09:15:52.450Z",
+          "generation": 5
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败+ambiguity主导 → 系数+0.02",
+          "at": "2026-08-04T09:17:47.539Z",
+          "generation": 6
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败→非主导uncertainty_risk系数-0.01",
+          "at": "2026-08-04T09:17:47.539Z",
+          "generation": 6
+        },
+        {
+          "type": "weight_adjust",
+          "log": "验证失败率高 → free_energy_verify+0.01",
+          "at": "2026-08-04T09:17:47.539Z",
+          "generation": 6
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败+ambiguity主导 → 系数+0.02",
+          "at": "2026-08-04T09:32:29.095Z",
+          "generation": 7
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败→非主导uncertainty_risk系数-0.01",
+          "at": "2026-08-04T09:32:29.095Z",
+          "generation": 7
+        },
+        {
+          "type": "weight_adjust",
+          "log": "验证失败率高 → free_energy_verify+0.01",
+          "at": "2026-08-04T09:32:29.095Z",
+          "generation": 7
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败+ambiguity主导 → 系数+0.02",
+          "at": "2026-08-05T07:46:06.080Z",
+          "generation": 8
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败→非主导uncertainty_risk系数-0.01",
+          "at": "2026-08-05T07:46:06.080Z",
+          "generation": 8
+        },
+        {
+          "type": "weight_adjust",
+          "log": "验证失败率高 → free_energy_verify+0.01",
+          "at": "2026-08-05T07:46:06.080Z",
+          "generation": 8
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败+ambiguity主导 → 系数+0.02",
+          "at": "2026-08-05T10:06:54.665Z",
+          "generation": 9
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败→非主导uncertainty_risk系数-0.01",
+          "at": "2026-08-05T10:06:54.665Z",
+          "generation": 9
+        },
+        {
+          "type": "weight_adjust",
+          "log": "验证失败率高 → free_energy_verify+0.01",
+          "at": "2026-08-05T10:06:54.665Z",
+          "generation": 9
         }
       ]
     },
@@ -191,6 +317,132 @@
           "log": "验证失败率高 → free_energy_verify+0.01",
           "at": "2026-07-10T03:36:28.218Z",
           "generation": 4
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败+ambiguity主导 → 系数+0.02",
+          "at": "2026-08-03T12:33:53.030Z",
+          "generation": 4
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败→非主导uncertainty_risk系数-0.01",
+          "at": "2026-08-03T12:33:53.030Z",
+          "generation": 4
+        },
+        {
+          "type": "weight_adjust",
+          "log": "验证失败率高 → free_energy_verify+0.01",
+          "at": "2026-08-03T12:33:53.030Z",
+          "generation": 4
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败+ambiguity主导 → 系数+0.02",
+          "at": "2026-08-04T06:19:07.924Z",
+          "generation": 5
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败→非主导uncertainty_risk系数-0.01",
+          "at": "2026-08-04T06:19:07.924Z",
+          "generation": 5
+        },
+        {
+          "type": "weight_adjust",
+          "log": "验证失败率高 → free_energy_verify+0.01",
+          "at": "2026-08-04T06:19:07.924Z",
+          "generation": 5
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败+ambiguity主导 → 系数+0.02",
+          "at": "2026-08-04T09:15:52.450Z",
+          "generation": 5
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败→非主导uncertainty_risk系数-0.01",
+          "at": "2026-08-04T09:15:52.450Z",
+          "generation": 5
+        },
+        {
+          "type": "weight_adjust",
+          "log": "验证失败率高 → free_energy_verify+0.01",
+          "at": "2026-08-04T09:15:52.450Z",
+          "generation": 5
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败+ambiguity主导 → 系数+0.02",
+          "at": "2026-08-04T09:17:47.539Z",
+          "generation": 6
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败→非主导uncertainty_risk系数-0.01",
+          "at": "2026-08-04T09:17:47.539Z",
+          "generation": 6
+        },
+        {
+          "type": "weight_adjust",
+          "log": "验证失败率高 → free_energy_verify+0.01",
+          "at": "2026-08-04T09:17:47.539Z",
+          "generation": 6
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败+ambiguity主导 → 系数+0.02",
+          "at": "2026-08-04T09:32:29.095Z",
+          "generation": 7
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败→非主导uncertainty_risk系数-0.01",
+          "at": "2026-08-04T09:32:29.095Z",
+          "generation": 7
+        },
+        {
+          "type": "weight_adjust",
+          "log": "验证失败率高 → free_energy_verify+0.01",
+          "at": "2026-08-04T09:32:29.095Z",
+          "generation": 7
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败+ambiguity主导 → 系数+0.02",
+          "at": "2026-08-05T07:46:06.080Z",
+          "generation": 8
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败→非主导uncertainty_risk系数-0.01",
+          "at": "2026-08-05T07:46:06.080Z",
+          "generation": 8
+        },
+        {
+          "type": "weight_adjust",
+          "log": "验证失败率高 → free_energy_verify+0.01",
+          "at": "2026-08-05T07:46:06.080Z",
+          "generation": 8
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败+ambiguity主导 → 系数+0.02",
+          "at": "2026-08-05T10:06:54.665Z",
+          "generation": 9
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败→非主导uncertainty_risk系数-0.01",
+          "at": "2026-08-05T10:06:54.665Z",
+          "generation": 9
+        },
+        {
+          "type": "weight_adjust",
+          "log": "验证失败率高 → free_energy_verify+0.01",
+          "at": "2026-08-05T10:06:54.665Z",
+          "generation": 9
         }
       ]
     },
@@ -348,6 +600,132 @@
           "log": "验证失败率高 → free_energy_verify+0.01",
           "at": "2026-07-10T03:36:28.218Z",
           "generation": 4
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败+ambiguity主导 → 系数+0.02",
+          "at": "2026-08-03T12:33:53.030Z",
+          "generation": 4
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败→非主导uncertainty_risk系数-0.01",
+          "at": "2026-08-03T12:33:53.030Z",
+          "generation": 4
+        },
+        {
+          "type": "weight_adjust",
+          "log": "验证失败率高 → free_energy_verify+0.01",
+          "at": "2026-08-03T12:33:53.030Z",
+          "generation": 4
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败+ambiguity主导 → 系数+0.02",
+          "at": "2026-08-04T06:19:07.924Z",
+          "generation": 5
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败→非主导uncertainty_risk系数-0.01",
+          "at": "2026-08-04T06:19:07.924Z",
+          "generation": 5
+        },
+        {
+          "type": "weight_adjust",
+          "log": "验证失败率高 → free_energy_verify+0.01",
+          "at": "2026-08-04T06:19:07.924Z",
+          "generation": 5
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败+ambiguity主导 → 系数+0.02",
+          "at": "2026-08-04T09:15:52.450Z",
+          "generation": 5
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败→非主导uncertainty_risk系数-0.01",
+          "at": "2026-08-04T09:15:52.450Z",
+          "generation": 5
+        },
+        {
+          "type": "weight_adjust",
+          "log": "验证失败率高 → free_energy_verify+0.01",
+          "at": "2026-08-04T09:15:52.450Z",
+          "generation": 5
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败+ambiguity主导 → 系数+0.02",
+          "at": "2026-08-04T09:17:47.539Z",
+          "generation": 6
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败→非主导uncertainty_risk系数-0.01",
+          "at": "2026-08-04T09:17:47.539Z",
+          "generation": 6
+        },
+        {
+          "type": "weight_adjust",
+          "log": "验证失败率高 → free_energy_verify+0.01",
+          "at": "2026-08-04T09:17:47.539Z",
+          "generation": 6
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败+ambiguity主导 → 系数+0.02",
+          "at": "2026-08-04T09:32:29.095Z",
+          "generation": 7
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败→非主导uncertainty_risk系数-0.01",
+          "at": "2026-08-04T09:32:29.095Z",
+          "generation": 7
+        },
+        {
+          "type": "weight_adjust",
+          "log": "验证失败率高 → free_energy_verify+0.01",
+          "at": "2026-08-04T09:32:29.095Z",
+          "generation": 7
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败+ambiguity主导 → 系数+0.02",
+          "at": "2026-08-05T07:46:06.080Z",
+          "generation": 8
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败→非主导uncertainty_risk系数-0.01",
+          "at": "2026-08-05T07:46:06.080Z",
+          "generation": 8
+        },
+        {
+          "type": "weight_adjust",
+          "log": "验证失败率高 → free_energy_verify+0.01",
+          "at": "2026-08-05T07:46:06.080Z",
+          "generation": 8
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败+ambiguity主导 → 系数+0.02",
+          "at": "2026-08-05T10:06:54.665Z",
+          "generation": 9
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败→非主导uncertainty_risk系数-0.01",
+          "at": "2026-08-05T10:06:54.665Z",
+          "generation": 9
+        },
+        {
+          "type": "weight_adjust",
+          "log": "验证失败率高 → free_energy_verify+0.01",
+          "at": "2026-08-05T10:06:54.665Z",
+          "generation": 9
         }
       ]
     },
@@ -505,6 +883,132 @@
           "log": "验证失败率高 → free_energy_verify+0.01",
           "at": "2026-07-10T03:36:28.218Z",
           "generation": 4
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败+ambiguity主导 → 系数+0.02",
+          "at": "2026-08-03T12:33:53.030Z",
+          "generation": 4
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败→非主导uncertainty_risk系数-0.01",
+          "at": "2026-08-03T12:33:53.030Z",
+          "generation": 4
+        },
+        {
+          "type": "weight_adjust",
+          "log": "验证失败率高 → free_energy_verify+0.01",
+          "at": "2026-08-03T12:33:53.030Z",
+          "generation": 4
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败+ambiguity主导 → 系数+0.02",
+          "at": "2026-08-04T06:19:07.924Z",
+          "generation": 5
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败→非主导uncertainty_risk系数-0.01",
+          "at": "2026-08-04T06:19:07.924Z",
+          "generation": 5
+        },
+        {
+          "type": "weight_adjust",
+          "log": "验证失败率高 → free_energy_verify+0.01",
+          "at": "2026-08-04T06:19:07.924Z",
+          "generation": 5
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败+ambiguity主导 → 系数+0.02",
+          "at": "2026-08-04T09:15:52.450Z",
+          "generation": 5
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败→非主导uncertainty_risk系数-0.01",
+          "at": "2026-08-04T09:15:52.450Z",
+          "generation": 5
+        },
+        {
+          "type": "weight_adjust",
+          "log": "验证失败率高 → free_energy_verify+0.01",
+          "at": "2026-08-04T09:15:52.450Z",
+          "generation": 5
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败+ambiguity主导 → 系数+0.02",
+          "at": "2026-08-04T09:17:47.539Z",
+          "generation": 6
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败→非主导uncertainty_risk系数-0.01",
+          "at": "2026-08-04T09:17:47.539Z",
+          "generation": 6
+        },
+        {
+          "type": "weight_adjust",
+          "log": "验证失败率高 → free_energy_verify+0.01",
+          "at": "2026-08-04T09:17:47.539Z",
+          "generation": 6
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败+ambiguity主导 → 系数+0.02",
+          "at": "2026-08-04T09:32:29.095Z",
+          "generation": 7
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败→非主导uncertainty_risk系数-0.01",
+          "at": "2026-08-04T09:32:29.095Z",
+          "generation": 7
+        },
+        {
+          "type": "weight_adjust",
+          "log": "验证失败率高 → free_energy_verify+0.01",
+          "at": "2026-08-04T09:32:29.095Z",
+          "generation": 7
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败+ambiguity主导 → 系数+0.02",
+          "at": "2026-08-05T07:46:06.080Z",
+          "generation": 8
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败→非主导uncertainty_risk系数-0.01",
+          "at": "2026-08-05T07:46:06.080Z",
+          "generation": 8
+        },
+        {
+          "type": "weight_adjust",
+          "log": "验证失败率高 → free_energy_verify+0.01",
+          "at": "2026-08-05T07:46:06.080Z",
+          "generation": 8
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败+ambiguity主导 → 系数+0.02",
+          "at": "2026-08-05T10:06:54.665Z",
+          "generation": 9
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败→非主导uncertainty_risk系数-0.01",
+          "at": "2026-08-05T10:06:54.665Z",
+          "generation": 9
+        },
+        {
+          "type": "weight_adjust",
+          "log": "验证失败率高 → free_energy_verify+0.01",
+          "at": "2026-08-05T10:06:54.665Z",
+          "generation": 9
         }
       ]
     },
@@ -536,6 +1040,132 @@
           "log": "验证失败率高 → free_energy_verify+0.01",
           "at": "2026-07-10T03:36:28.218Z",
           "generation": 4
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败+ambiguity主导 → 系数+0.02",
+          "at": "2026-08-03T12:33:53.030Z",
+          "generation": 4
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败→非主导uncertainty_risk系数-0.01",
+          "at": "2026-08-03T12:33:53.030Z",
+          "generation": 4
+        },
+        {
+          "type": "weight_adjust",
+          "log": "验证失败率高 → free_energy_verify+0.01",
+          "at": "2026-08-03T12:33:53.030Z",
+          "generation": 4
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败+ambiguity主导 → 系数+0.02",
+          "at": "2026-08-04T06:19:07.924Z",
+          "generation": 5
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败→非主导uncertainty_risk系数-0.01",
+          "at": "2026-08-04T06:19:07.924Z",
+          "generation": 5
+        },
+        {
+          "type": "weight_adjust",
+          "log": "验证失败率高 → free_energy_verify+0.01",
+          "at": "2026-08-04T06:19:07.924Z",
+          "generation": 5
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败+ambiguity主导 → 系数+0.02",
+          "at": "2026-08-04T09:15:52.450Z",
+          "generation": 5
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败→非主导uncertainty_risk系数-0.01",
+          "at": "2026-08-04T09:15:52.450Z",
+          "generation": 5
+        },
+        {
+          "type": "weight_adjust",
+          "log": "验证失败率高 → free_energy_verify+0.01",
+          "at": "2026-08-04T09:15:52.450Z",
+          "generation": 5
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败+ambiguity主导 → 系数+0.02",
+          "at": "2026-08-04T09:17:47.539Z",
+          "generation": 6
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败→非主导uncertainty_risk系数-0.01",
+          "at": "2026-08-04T09:17:47.539Z",
+          "generation": 6
+        },
+        {
+          "type": "weight_adjust",
+          "log": "验证失败率高 → free_energy_verify+0.01",
+          "at": "2026-08-04T09:17:47.539Z",
+          "generation": 6
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败+ambiguity主导 → 系数+0.02",
+          "at": "2026-08-04T09:32:29.095Z",
+          "generation": 7
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败→非主导uncertainty_risk系数-0.01",
+          "at": "2026-08-04T09:32:29.095Z",
+          "generation": 7
+        },
+        {
+          "type": "weight_adjust",
+          "log": "验证失败率高 → free_energy_verify+0.01",
+          "at": "2026-08-04T09:32:29.095Z",
+          "generation": 7
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败+ambiguity主导 → 系数+0.02",
+          "at": "2026-08-05T07:46:06.080Z",
+          "generation": 8
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败→非主导uncertainty_risk系数-0.01",
+          "at": "2026-08-05T07:46:06.080Z",
+          "generation": 8
+        },
+        {
+          "type": "weight_adjust",
+          "log": "验证失败率高 → free_energy_verify+0.01",
+          "at": "2026-08-05T07:46:06.080Z",
+          "generation": 8
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败+ambiguity主导 → 系数+0.02",
+          "at": "2026-08-05T10:06:54.665Z",
+          "generation": 9
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败→非主导uncertainty_risk系数-0.01",
+          "at": "2026-08-05T10:06:54.665Z",
+          "generation": 9
+        },
+        {
+          "type": "weight_adjust",
+          "log": "验证失败率高 → free_energy_verify+0.01",
+          "at": "2026-08-05T10:06:54.665Z",
+          "generation": 9
         }
       ]
     },
@@ -693,6 +1323,132 @@
           "log": "验证失败率高 → free_energy_verify+0.01",
           "at": "2026-07-10T03:36:28.218Z",
           "generation": 4
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败+ambiguity主导 → 系数+0.02",
+          "at": "2026-08-03T12:33:53.030Z",
+          "generation": 4
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败→非主导uncertainty_risk系数-0.01",
+          "at": "2026-08-03T12:33:53.030Z",
+          "generation": 4
+        },
+        {
+          "type": "weight_adjust",
+          "log": "验证失败率高 → free_energy_verify+0.01",
+          "at": "2026-08-03T12:33:53.030Z",
+          "generation": 4
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败+ambiguity主导 → 系数+0.02",
+          "at": "2026-08-04T06:19:07.924Z",
+          "generation": 5
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败→非主导uncertainty_risk系数-0.01",
+          "at": "2026-08-04T06:19:07.924Z",
+          "generation": 5
+        },
+        {
+          "type": "weight_adjust",
+          "log": "验证失败率高 → free_energy_verify+0.01",
+          "at": "2026-08-04T06:19:07.924Z",
+          "generation": 5
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败+ambiguity主导 → 系数+0.02",
+          "at": "2026-08-04T09:15:52.450Z",
+          "generation": 5
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败→非主导uncertainty_risk系数-0.01",
+          "at": "2026-08-04T09:15:52.450Z",
+          "generation": 5
+        },
+        {
+          "type": "weight_adjust",
+          "log": "验证失败率高 → free_energy_verify+0.01",
+          "at": "2026-08-04T09:15:52.450Z",
+          "generation": 5
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败+ambiguity主导 → 系数+0.02",
+          "at": "2026-08-04T09:17:47.539Z",
+          "generation": 6
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败→非主导uncertainty_risk系数-0.01",
+          "at": "2026-08-04T09:17:47.539Z",
+          "generation": 6
+        },
+        {
+          "type": "weight_adjust",
+          "log": "验证失败率高 → free_energy_verify+0.01",
+          "at": "2026-08-04T09:17:47.539Z",
+          "generation": 6
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败+ambiguity主导 → 系数+0.02",
+          "at": "2026-08-04T09:32:29.095Z",
+          "generation": 7
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败→非主导uncertainty_risk系数-0.01",
+          "at": "2026-08-04T09:32:29.095Z",
+          "generation": 7
+        },
+        {
+          "type": "weight_adjust",
+          "log": "验证失败率高 → free_energy_verify+0.01",
+          "at": "2026-08-04T09:32:29.095Z",
+          "generation": 7
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败+ambiguity主导 → 系数+0.02",
+          "at": "2026-08-05T07:46:06.080Z",
+          "generation": 8
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败→非主导uncertainty_risk系数-0.01",
+          "at": "2026-08-05T07:46:06.080Z",
+          "generation": 8
+        },
+        {
+          "type": "weight_adjust",
+          "log": "验证失败率高 → free_energy_verify+0.01",
+          "at": "2026-08-05T07:46:06.080Z",
+          "generation": 8
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败+ambiguity主导 → 系数+0.02",
+          "at": "2026-08-05T10:06:54.665Z",
+          "generation": 9
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败→非主导uncertainty_risk系数-0.01",
+          "at": "2026-08-05T10:06:54.665Z",
+          "generation": 9
+        },
+        {
+          "type": "weight_adjust",
+          "log": "验证失败率高 → free_energy_verify+0.01",
+          "at": "2026-08-05T10:06:54.665Z",
+          "generation": 9
         }
       ]
     },
@@ -850,6 +1606,132 @@
           "log": "验证失败率高 → free_energy_verify+0.01",
           "at": "2026-07-10T03:36:28.218Z",
           "generation": 4
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败+ambiguity主导 → 系数+0.02",
+          "at": "2026-08-03T12:33:53.030Z",
+          "generation": 4
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败→非主导uncertainty_risk系数-0.01",
+          "at": "2026-08-03T12:33:53.030Z",
+          "generation": 4
+        },
+        {
+          "type": "weight_adjust",
+          "log": "验证失败率高 → free_energy_verify+0.01",
+          "at": "2026-08-03T12:33:53.030Z",
+          "generation": 4
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败+ambiguity主导 → 系数+0.02",
+          "at": "2026-08-04T06:19:07.924Z",
+          "generation": 5
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败→非主导uncertainty_risk系数-0.01",
+          "at": "2026-08-04T06:19:07.924Z",
+          "generation": 5
+        },
+        {
+          "type": "weight_adjust",
+          "log": "验证失败率高 → free_energy_verify+0.01",
+          "at": "2026-08-04T06:19:07.924Z",
+          "generation": 5
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败+ambiguity主导 → 系数+0.02",
+          "at": "2026-08-04T09:15:52.450Z",
+          "generation": 5
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败→非主导uncertainty_risk系数-0.01",
+          "at": "2026-08-04T09:15:52.450Z",
+          "generation": 5
+        },
+        {
+          "type": "weight_adjust",
+          "log": "验证失败率高 → free_energy_verify+0.01",
+          "at": "2026-08-04T09:15:52.450Z",
+          "generation": 5
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败+ambiguity主导 → 系数+0.02",
+          "at": "2026-08-04T09:17:47.539Z",
+          "generation": 6
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败→非主导uncertainty_risk系数-0.01",
+          "at": "2026-08-04T09:17:47.539Z",
+          "generation": 6
+        },
+        {
+          "type": "weight_adjust",
+          "log": "验证失败率高 → free_energy_verify+0.01",
+          "at": "2026-08-04T09:17:47.539Z",
+          "generation": 6
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败+ambiguity主导 → 系数+0.02",
+          "at": "2026-08-04T09:32:29.095Z",
+          "generation": 7
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败→非主导uncertainty_risk系数-0.01",
+          "at": "2026-08-04T09:32:29.095Z",
+          "generation": 7
+        },
+        {
+          "type": "weight_adjust",
+          "log": "验证失败率高 → free_energy_verify+0.01",
+          "at": "2026-08-04T09:32:29.095Z",
+          "generation": 7
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败+ambiguity主导 → 系数+0.02",
+          "at": "2026-08-05T07:46:06.080Z",
+          "generation": 8
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败→非主导uncertainty_risk系数-0.01",
+          "at": "2026-08-05T07:46:06.080Z",
+          "generation": 8
+        },
+        {
+          "type": "weight_adjust",
+          "log": "验证失败率高 → free_energy_verify+0.01",
+          "at": "2026-08-05T07:46:06.080Z",
+          "generation": 8
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败+ambiguity主导 → 系数+0.02",
+          "at": "2026-08-05T10:06:54.665Z",
+          "generation": 9
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败→非主导uncertainty_risk系数-0.01",
+          "at": "2026-08-05T10:06:54.665Z",
+          "generation": 9
+        },
+        {
+          "type": "weight_adjust",
+          "log": "验证失败率高 → free_energy_verify+0.01",
+          "at": "2026-08-05T10:06:54.665Z",
+          "generation": 9
         }
       ]
     },
@@ -1007,6 +1889,132 @@
           "log": "验证失败率高 → free_energy_verify+0.01",
           "at": "2026-07-10T03:36:28.218Z",
           "generation": 4
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败+ambiguity主导 → 系数+0.02",
+          "at": "2026-08-03T12:33:53.030Z",
+          "generation": 4
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败→非主导uncertainty_risk系数-0.01",
+          "at": "2026-08-03T12:33:53.030Z",
+          "generation": 4
+        },
+        {
+          "type": "weight_adjust",
+          "log": "验证失败率高 → free_energy_verify+0.01",
+          "at": "2026-08-03T12:33:53.030Z",
+          "generation": 4
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败+ambiguity主导 → 系数+0.02",
+          "at": "2026-08-04T06:19:07.924Z",
+          "generation": 5
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败→非主导uncertainty_risk系数-0.01",
+          "at": "2026-08-04T06:19:07.924Z",
+          "generation": 5
+        },
+        {
+          "type": "weight_adjust",
+          "log": "验证失败率高 → free_energy_verify+0.01",
+          "at": "2026-08-04T06:19:07.924Z",
+          "generation": 5
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败+ambiguity主导 → 系数+0.02",
+          "at": "2026-08-04T09:15:52.450Z",
+          "generation": 5
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败→非主导uncertainty_risk系数-0.01",
+          "at": "2026-08-04T09:15:52.450Z",
+          "generation": 5
+        },
+        {
+          "type": "weight_adjust",
+          "log": "验证失败率高 → free_energy_verify+0.01",
+          "at": "2026-08-04T09:15:52.450Z",
+          "generation": 5
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败+ambiguity主导 → 系数+0.02",
+          "at": "2026-08-04T09:17:47.539Z",
+          "generation": 6
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败→非主导uncertainty_risk系数-0.01",
+          "at": "2026-08-04T09:17:47.539Z",
+          "generation": 6
+        },
+        {
+          "type": "weight_adjust",
+          "log": "验证失败率高 → free_energy_verify+0.01",
+          "at": "2026-08-04T09:17:47.539Z",
+          "generation": 6
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败+ambiguity主导 → 系数+0.02",
+          "at": "2026-08-04T09:32:29.095Z",
+          "generation": 7
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败→非主导uncertainty_risk系数-0.01",
+          "at": "2026-08-04T09:32:29.095Z",
+          "generation": 7
+        },
+        {
+          "type": "weight_adjust",
+          "log": "验证失败率高 → free_energy_verify+0.01",
+          "at": "2026-08-04T09:32:29.095Z",
+          "generation": 7
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败+ambiguity主导 → 系数+0.02",
+          "at": "2026-08-05T07:46:06.080Z",
+          "generation": 8
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败→非主导uncertainty_risk系数-0.01",
+          "at": "2026-08-05T07:46:06.080Z",
+          "generation": 8
+        },
+        {
+          "type": "weight_adjust",
+          "log": "验证失败率高 → free_energy_verify+0.01",
+          "at": "2026-08-05T07:46:06.080Z",
+          "generation": 8
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败+ambiguity主导 → 系数+0.02",
+          "at": "2026-08-05T10:06:54.665Z",
+          "generation": 9
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败→非主导uncertainty_risk系数-0.01",
+          "at": "2026-08-05T10:06:54.665Z",
+          "generation": 9
+        },
+        {
+          "type": "weight_adjust",
+          "log": "验证失败率高 → free_energy_verify+0.01",
+          "at": "2026-08-05T10:06:54.665Z",
+          "generation": 9
         }
       ]
     },
@@ -1164,6 +2172,132 @@
           "log": "验证失败率高 → free_energy_verify+0.01",
           "at": "2026-07-10T03:36:28.218Z",
           "generation": 4
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败+ambiguity主导 → 系数+0.02",
+          "at": "2026-08-03T12:33:53.030Z",
+          "generation": 4
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败→非主导uncertainty_risk系数-0.01",
+          "at": "2026-08-03T12:33:53.030Z",
+          "generation": 4
+        },
+        {
+          "type": "weight_adjust",
+          "log": "验证失败率高 → free_energy_verify+0.01",
+          "at": "2026-08-03T12:33:53.030Z",
+          "generation": 4
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败+ambiguity主导 → 系数+0.02",
+          "at": "2026-08-04T06:19:07.924Z",
+          "generation": 5
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败→非主导uncertainty_risk系数-0.01",
+          "at": "2026-08-04T06:19:07.924Z",
+          "generation": 5
+        },
+        {
+          "type": "weight_adjust",
+          "log": "验证失败率高 → free_energy_verify+0.01",
+          "at": "2026-08-04T06:19:07.924Z",
+          "generation": 5
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败+ambiguity主导 → 系数+0.02",
+          "at": "2026-08-04T09:15:52.450Z",
+          "generation": 5
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败→非主导uncertainty_risk系数-0.01",
+          "at": "2026-08-04T09:15:52.450Z",
+          "generation": 5
+        },
+        {
+          "type": "weight_adjust",
+          "log": "验证失败率高 → free_energy_verify+0.01",
+          "at": "2026-08-04T09:15:52.450Z",
+          "generation": 5
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败+ambiguity主导 → 系数+0.02",
+          "at": "2026-08-04T09:17:47.539Z",
+          "generation": 6
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败→非主导uncertainty_risk系数-0.01",
+          "at": "2026-08-04T09:17:47.539Z",
+          "generation": 6
+        },
+        {
+          "type": "weight_adjust",
+          "log": "验证失败率高 → free_energy_verify+0.01",
+          "at": "2026-08-04T09:17:47.539Z",
+          "generation": 6
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败+ambiguity主导 → 系数+0.02",
+          "at": "2026-08-04T09:32:29.095Z",
+          "generation": 7
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败→非主导uncertainty_risk系数-0.01",
+          "at": "2026-08-04T09:32:29.095Z",
+          "generation": 7
+        },
+        {
+          "type": "weight_adjust",
+          "log": "验证失败率高 → free_energy_verify+0.01",
+          "at": "2026-08-04T09:32:29.095Z",
+          "generation": 7
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败+ambiguity主导 → 系数+0.02",
+          "at": "2026-08-05T07:46:06.080Z",
+          "generation": 8
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败→非主导uncertainty_risk系数-0.01",
+          "at": "2026-08-05T07:46:06.080Z",
+          "generation": 8
+        },
+        {
+          "type": "weight_adjust",
+          "log": "验证失败率高 → free_energy_verify+0.01",
+          "at": "2026-08-05T07:46:06.080Z",
+          "generation": 8
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败+ambiguity主导 → 系数+0.02",
+          "at": "2026-08-05T10:06:54.665Z",
+          "generation": 9
+        },
+        {
+          "type": "weight_adjust",
+          "log": "verify失败→非主导uncertainty_risk系数-0.01",
+          "at": "2026-08-05T10:06:54.665Z",
+          "generation": 9
+        },
+        {
+          "type": "weight_adjust",
+          "log": "验证失败率高 → free_energy_verify+0.01",
+          "at": "2026-08-05T10:06:54.665Z",
+          "generation": 9
         }
       ]
     }
@@ -1180,7 +2314,7 @@
       "verification"
     ],
     "parallel_groups": [],
-    "mutation_count": 28
+    "mutation_count": 55
   },
   "free_energy": {
     "current": 0.6696777777777777,
@@ -1224,13 +2358,48 @@
         "value": 0.6696777777777777,
         "at": "2026-07-10T03:36:28.218Z",
         "mutation": "weight_adjust"
+      },
+      {
+        "value": 0.6696777777777777,
+        "at": "2026-08-03T12:33:53.030Z",
+        "mutation": "weight_adjust"
+      },
+      {
+        "value": 0.6696777777777777,
+        "at": "2026-08-04T06:19:07.924Z",
+        "mutation": "weight_adjust"
+      },
+      {
+        "value": 0.6696777777777777,
+        "at": "2026-08-04T09:15:52.450Z",
+        "mutation": "weight_adjust"
+      },
+      {
+        "value": 0.6696777777777777,
+        "at": "2026-08-04T09:17:47.539Z",
+        "mutation": "weight_adjust"
+      },
+      {
+        "value": 0.6696777777777777,
+        "at": "2026-08-04T09:32:29.095Z",
+        "mutation": "weight_adjust"
+      },
+      {
+        "value": 0.6696777777777777,
+        "at": "2026-08-05T07:46:06.080Z",
+        "mutation": "weight_adjust"
+      },
+      {
+        "value": 0.6696777777777777,
+        "at": "2026-08-05T10:06:54.665Z",
+        "mutation": "weight_adjust"
       }
     ],
     "threshold": 0.4,
     "last_mutation_cycle": 0
   },
   "evolution": {
-    "generation": 4,
+    "generation": 10,
     "last_mutation": {
       "type": "weight_adjust",
       "log": [
@@ -1238,8 +2407,8 @@
         "verify失败→非主导uncertainty_risk系数-0.01",
         "验证失败率高 → free_energy_verify+0.01"
       ],
-      "at": "2026-07-10T03:36:28.218Z",
-      "generation": 4
+      "at": "2026-08-05T10:06:54.665Z",
+      "generation": 9
     },
     "mutation_types_available": [
       "weight_adjust",
@@ -1394,7 +2563,133 @@
       "log": "验证失败率高 → free_energy_verify+0.01",
       "at": "2026-07-10T03:36:28.218Z",
       "generation": 4
+    },
+    {
+      "type": "weight_adjust",
+      "log": "verify失败+ambiguity主导 → 系数+0.02",
+      "at": "2026-08-03T12:33:53.030Z",
+      "generation": 4
+    },
+    {
+      "type": "weight_adjust",
+      "log": "verify失败→非主导uncertainty_risk系数-0.01",
+      "at": "2026-08-03T12:33:53.030Z",
+      "generation": 4
+    },
+    {
+      "type": "weight_adjust",
+      "log": "验证失败率高 → free_energy_verify+0.01",
+      "at": "2026-08-03T12:33:53.030Z",
+      "generation": 4
+    },
+    {
+      "type": "weight_adjust",
+      "log": "verify失败+ambiguity主导 → 系数+0.02",
+      "at": "2026-08-04T06:19:07.924Z",
+      "generation": 5
+    },
+    {
+      "type": "weight_adjust",
+      "log": "verify失败→非主导uncertainty_risk系数-0.01",
+      "at": "2026-08-04T06:19:07.924Z",
+      "generation": 5
+    },
+    {
+      "type": "weight_adjust",
+      "log": "验证失败率高 → free_energy_verify+0.01",
+      "at": "2026-08-04T06:19:07.924Z",
+      "generation": 5
+    },
+    {
+      "type": "weight_adjust",
+      "log": "verify失败+ambiguity主导 → 系数+0.02",
+      "at": "2026-08-04T09:15:52.450Z",
+      "generation": 5
+    },
+    {
+      "type": "weight_adjust",
+      "log": "verify失败→非主导uncertainty_risk系数-0.01",
+      "at": "2026-08-04T09:15:52.450Z",
+      "generation": 5
+    },
+    {
+      "type": "weight_adjust",
+      "log": "验证失败率高 → free_energy_verify+0.01",
+      "at": "2026-08-04T09:15:52.450Z",
+      "generation": 5
+    },
+    {
+      "type": "weight_adjust",
+      "log": "verify失败+ambiguity主导 → 系数+0.02",
+      "at": "2026-08-04T09:17:47.539Z",
+      "generation": 6
+    },
+    {
+      "type": "weight_adjust",
+      "log": "verify失败→非主导uncertainty_risk系数-0.01",
+      "at": "2026-08-04T09:17:47.539Z",
+      "generation": 6
+    },
+    {
+      "type": "weight_adjust",
+      "log": "验证失败率高 → free_energy_verify+0.01",
+      "at": "2026-08-04T09:17:47.539Z",
+      "generation": 6
+    },
+    {
+      "type": "weight_adjust",
+      "log": "verify失败+ambiguity主导 → 系数+0.02",
+      "at": "2026-08-04T09:32:29.095Z",
+      "generation": 7
+    },
+    {
+      "type": "weight_adjust",
+      "log": "verify失败→非主导uncertainty_risk系数-0.01",
+      "at": "2026-08-04T09:32:29.095Z",
+      "generation": 7
+    },
+    {
+      "type": "weight_adjust",
+      "log": "验证失败率高 → free_energy_verify+0.01",
+      "at": "2026-08-04T09:32:29.095Z",
+      "generation": 7
+    },
+    {
+      "type": "weight_adjust",
+      "log": "verify失败+ambiguity主导 → 系数+0.02",
+      "at": "2026-08-05T07:46:06.080Z",
+      "generation": 8
+    },
+    {
+      "type": "weight_adjust",
+      "log": "verify失败→非主导uncertainty_risk系数-0.01",
+      "at": "2026-08-05T07:46:06.080Z",
+      "generation": 8
+    },
+    {
+      "type": "weight_adjust",
+      "log": "验证失败率高 → free_energy_verify+0.01",
+      "at": "2026-08-05T07:46:06.080Z",
+      "generation": 8
+    },
+    {
+      "type": "weight_adjust",
+      "log": "verify失败+ambiguity主导 → 系数+0.02",
+      "at": "2026-08-05T10:06:54.665Z",
+      "generation": 9
+    },
+    {
+      "type": "weight_adjust",
+      "log": "verify失败→非主导uncertainty_risk系数-0.01",
+      "at": "2026-08-05T10:06:54.665Z",
+      "generation": 9
+    },
+    {
+      "type": "weight_adjust",
+      "log": "验证失败率高 → free_energy_verify+0.01",
+      "at": "2026-08-05T10:06:54.665Z",
+      "generation": 9
     }
   ],
-  "_updated_at": "2026-07-10T03:36:28.218Z"
+  "_updated_at": "2026-08-05T10:06:54.665Z"
 }

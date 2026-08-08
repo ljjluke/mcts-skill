@@ -8,7 +8,7 @@ argument-hint: "<debate summary, ranking, profile, and stake>"
 
 Require complete `debate_summary` and `ranked` inputs. If any surviving solution is absent from the debate, stop and complete the missing debate rather than inventing a final ranking.
 
-1. Read `${CLAUDE_PLUGIN_ROOT}/resources/prompts/synthesis.json` and its referenced engines, including synthesis, error patterns, otherness, preference structure, and multidisciplinary audit.
+1. Read `${CLAUDE_PLUGIN_ROOT}/skills/synthesis/resources/synthesis.json` and its referenced engines, including synthesis, error patterns, otherness, preference structure, and multidisciplinary audit.
 2. Produce a recommendation, core reasoning, risks and mitigations, fallback conditions, and any remaining decision the user must personally make.
 3. For high-stake decisions, also provide:
    - challenges to the conclusion and the shared premises on which the options rely;

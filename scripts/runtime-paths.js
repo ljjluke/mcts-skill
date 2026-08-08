@@ -108,6 +108,32 @@ function initializeDataFile(relativePath, bundledPath) {
   return target;
 }
 
+function mergeMissingFields(target, seed) {
+  if (!seed || typeof seed !== 'object' || Array.isArray(seed)) return target;
+  const output = target && typeof target === 'object' && !Array.isArray(target) ? target : {};
+  for (const [key, value] of Object.entries(seed)) {
+    if (!Object.prototype.hasOwnProperty.call(output, key)) output[key] = value;
+    else if (value && typeof value === 'object' && !Array.isArray(value)) output[key] = mergeMissingFields(output[key], value);
+  }
+  return output;
+}
+
+function initializeJsonDataFile(relativePath, bundledPath) {
+  const target = initializeDataFile(relativePath, bundledPath);
+  const source = assertWithin(pluginRoot, bundledPath, 'Bundled resource path');
+  const current = JSON.parse(fs.readFileSync(target, 'utf8'));
+  const before = JSON.stringify(current);
+  const upgraded = mergeMissingFields(current, JSON.parse(fs.readFileSync(source, 'utf8')));
+  if (JSON.stringify(upgraded) !== before) {
+    const temp = `${target}.${process.pid}.${crypto.randomUUID()}.tmp`;
+    try {
+      fs.writeFileSync(temp, JSON.stringify(upgraded, null, 2) + '\n', { flag: 'wx' });
+      fs.renameSync(temp, target);
+    } finally { if (fs.existsSync(temp)) fs.unlinkSync(temp); }
+  }
+  return target;
+}
+
 function childProcessOptions(overrides = {}) {
   return {
     ...overrides,
@@ -131,5 +157,6 @@ module.exports = {
   resolvePlugin,
   resolveProjectOutput,
   initializeDataFile,
+  initializeJsonDataFile,
   childProcessOptions,
 };

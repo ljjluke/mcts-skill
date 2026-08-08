@@ -23,9 +23,9 @@ function ensureDir() {
 
 /**
  * 收集单步指标（增量式）
- * @param {string} stepName — 步骤名: shensi|divergence|bagua|plans|converge|simulate|debate|synthesis
+ * @param {string} stepName — 步骤名: interview|shensi|divergence|bagua|plans|converge|score|simulate|debate|synthesis
  * @param {object} stepOutput — 该步骤的结构化输出（agent schema 返回的对象）
- * @param {object} opts — 可选: { question_type, user_request }
+ * @param {object} opts — 可选: { question_type, user_request, run_id }
  * @returns {object} 记录的指标对象
  */
 function collectStep(stepName, stepOutput, opts = {}) {
@@ -35,10 +35,13 @@ function collectStep(stepName, stepOutput, opts = {}) {
     step: stepName,
     question_type: opts.question_type || '',
     user_request: opts.user_request || '',
+    run_id: opts.run_id || '',
     is_clear: stepOutput.is_clear !== undefined ? stepOutput.is_clear : true,
     questions_count: Array.isArray(stepOutput.user_questions) ? stepOutput.user_questions.length : 0,
     questions: stepOutput.user_questions || [],
+    certainty: typeof stepOutput.certainty === 'number' ? stepOutput.certainty : null,
   };
+  if (stepOutput.reasoning_dynamics) record.reasoning_dynamics = stepOutput.reasoning_dynamics;
 
   // 神思步骤: 收集赌注判定(全链门控的单一真源,立场层空转根因的落盘点)
   if (stepName === 'shensi') {
@@ -60,6 +63,9 @@ function collectStep(stepName, stepOutput, opts = {}) {
     record.item_count = stepOutput.plans.length;
   } else if (stepName === 'converge' && stepOutput.survivors) {
     record.item_count = stepOutput.survivors.length;
+  } else if (stepName === 'score') {
+    var scorecards = stepOutput.scorecards || stepOutput.scores || stepOutput.scored || [];
+    if (Array.isArray(scorecards)) record.item_count = scorecards.length;
   } else if (stepName === 'simulate' && Array.isArray(stepOutput)) {
     record.item_count = stepOutput.length;
   } else if (stepName === 'debate' && stepOutput.ranked) {

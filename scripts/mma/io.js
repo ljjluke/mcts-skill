@@ -1,564 +1,88 @@
-/** ═══════════════════════════════════════════════════════════════
- *  IO — 经脉分片存储 + 原子写入 + 自动备份 + 旧格式自动迁移
- *  "经脉者，所以决死生，处百病，调虚实，不可不通" —《灵枢·经脉》
+/**
+ * io.js — 兼容层：将旧 loadMMA/saveMMA 调用转发到 simple-io
  *
- *  存储哲学:
- *    每条经脉 = 一个独立文件 (shards/<meridian_key>.json)
- *    每条奇经 = 一个独立文件 (shards/_extra_<key>.json)
- *    meta.json = 全局元数据
- *
- *  优势:
- *    - 经脉独立运作，一个损坏不影响其他(经络独立)
- *    - deqi只加载活跃经脉(子午流注返回的6条)
- *    - 多智能体并发: 不同经脉无锁竞争
- *    - 原子写入(tmp→rename) + 备份(.bak) + 定期快照
- *
- *  外部接口不变: loadMMA / saveMMA / freshKG
- *  内部自动检测旧格式 meridian_kg.json 并迁移到分片
- * ═══════════════════════════════════════════════════════════════ */
-const fs = require('fs');
-const path = require('path');
-const { DATA_DIR, MEMORY_DIR, MMA_FILE, MMA_SHARDS_DIR, WORKING_MEMORY_FILE, ARCHIVE_DIR, WAL_DIR, LOCK_DIR,
-        TWELVE_MERIDIANS, EIGHT_EXTRA_MERIDIANS } = require('./constants');
-
-const META_FILE = path.join(MMA_SHARDS_DIR, 'meta.json');
-const SNAPSHOT_INTERVAL = 100;
-const LOCK_TIMEOUT_MS = 5000; // 5秒锁超时
-const LOCK_RETRY_INTERVAL = 50; // 50ms重试间隔
+ * v1.18.58: 原分片存储（20个经脉分片+锁+WAL）已迁移到单文件 knowledge.json
+ * 此文件保留旧接口签名，确保 evolve.js 等间接调用方不断
+ */
+const simpleIO = require('./simple-io');
 
 /**
- * ═══════════════════════════════════════════════════════════════
- *  分片级文件锁 (Shard-Level Lock) — 跨进程并发安全
- *  "和而不同" — 不同经脉无锁，同一经脉有锁
- *
- *  原理: 通过 mkdir 的原子性实现跨进程锁
- *    - mkdir 在文件系统层面是原子的
- *    - 成功创建目录 = 获得锁
- *    - 目录已存在 = 锁被占用
- *    - rmdir = 释放锁
- * ═══════════════════════════════════════════════════════════════
+ * 兼容旧接口：loadMMA()
+ * 返回包装对象，旧代码通过 kg.meridians/extra 遍历不会崩
+ * 新代码应直接用 simpleIO.loadKnowledge('knowledge') 的 data.points
  */
-function acquireShardLock(shardKey) {
-    const lockDir = path.join(LOCK_DIR, shardKey);
-    const deadline = Date.now() + LOCK_TIMEOUT_MS;
-
-    while (Date.now() < deadline) {
-        try {
-            fs.mkdirSync(lockDir, { recursive: false });
-            return true; // 获得锁
-        } catch (e) {
-            if (e.code !== 'EEXIST') return false; // 非'已存在'错误，直接失败
-            // 检查锁是否过期
-            try {
-                const lockTime = fs.statSync(lockDir).mtimeMs;
-                if (Date.now() - lockTime > LOCK_TIMEOUT_MS) {
-                    // 锁过期，强制释放
-                    fs.rmdirSync(lockDir);
-                    continue;
-                }
-            } catch (e2) {}
-        }
-        // 等待重试 — busy-wait spin (Atomics.wait 在主线程会抛 TypeError)
-        const spinEnd = Date.now() + LOCK_RETRY_INTERVAL;
-        while (Date.now() < spinEnd) { /* spin */ }
-    }
-    return false; // 超时
-}
-
-function releaseShardLock(shardKey) {
-    const lockDir = path.join(LOCK_DIR, shardKey);
-    try { fs.rmdirSync(lockDir); } catch (e) {}
-}
-
-/**
- * ═══════════════════════════════════════════════════════════════
- *  写前日志 (Write-Ahead Log) — 崩溃恢复 + 多窗口合并
- *  每次写入操作都先追加到WAL，再合并到分片
- *  崩溃后可重放WAL，不会丢数据
- * ═══════════════════════════════════════════════════════════════
- */
-function appendWAL(shardKey, operation, data) {
-    const walDirPath = path.join(MEMORY_DIR, 'wal');
-    const walFile = path.join(walDirPath, `${shardKey}.log`);
-    const entry = JSON.stringify({
-        ts: new Date().toISOString(),
-        pid: process.pid,
-        op: operation,
-        data,
-    });
-    fs.appendFileSync(walFile, entry + '\n', 'utf-8');
-}
-
-function replayWAL(shardKey) {
-    const walFile = path.join(MEMORY_DIR, 'wal', `${shardKey}.log`);
-    if (!fs.existsSync(walFile)) return [];
-    const entries = [];
-    const content = fs.readFileSync(walFile, 'utf-8');
-    for (const line of content.trim().split('\n').filter(Boolean)) {
-        try { entries.push(JSON.parse(line)); } catch (e) {}
-    }
-    return entries;
-}
-
-function clearWAL(shardKey) {
-    const walFile = path.join(MEMORY_DIR, 'wal', `${shardKey}.log`);
-    try { fs.unlinkSync(walFile); } catch (e) {}
-}
-
-/**
- * ═══════════════════════════════════════════════════════════════
- *  带乐观锁的原子写入
- *  参考数据库MVCC: 每个分片有版本号(save_count)
- *  写入时检查版本号是否匹配，不匹配则重读重写
- * ═══════════════════════════════════════════════════════════════
- */
-function atomicWriteShardWithLock(filePath, bakPath, shardKey, data, expectedVersion) {
-    if (!acquireShardLock(shardKey)) {
-        throw new Error(`[MMA] Lock timeout: ${shardKey} (${LOCK_TIMEOUT_MS}ms)`);
-    }
-
-    try {
-        // 版本检查（乐观锁）
-        if (expectedVersion !== undefined && fs.existsSync(filePath)) {
-            try {
-                const current = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
-                if (current._version !== undefined && current._version !== expectedVersion) {
-                    // 版本冲突！其他进程已修改
-                    return { success: false, conflict: true, current_version: current._version };
-                }
-            } catch (e) {}
-        }
-
-        // WAL: 先写日志
-        appendWAL(shardKey, 'write', { data, version: data._version });
-
-        // 写入分片
-        const json = JSON.stringify(data, null, 2);
-        const tmpPath = filePath.replace('.json', '.tmp.json');
-
-        if (fs.existsSync(filePath)) {
-            try {
-                JSON.parse(fs.readFileSync(filePath, 'utf-8'));
-                fs.copyFileSync(filePath, bakPath);
-            } catch (e) {}
-        }
-
-        fs.writeFileSync(tmpPath, json, 'utf-8');
-        try { const fd = fs.openSync(tmpPath, 'r+'); fs.fsyncSync(fd); fs.closeSync(fd); } catch (e) {}
-        fs.renameSync(tmpPath, filePath);
-
-        return { success: true };
-    } finally {
-        releaseShardLock(shardKey);
-    }
-}
-
-function loadShardWithRecovery(filePath, bakPath, fallback) {
-    // 尝试主文件
-    if (fs.existsSync(filePath)) {
-        try { return JSON.parse(fs.readFileSync(filePath, 'utf-8')); }
-        catch (e) { console.error(`[MMA] Shard corrupted: ${path.basename(filePath)} — ${e.message}`); }
-    }
-    // 尝试备份
-    if (fs.existsSync(bakPath)) {
-        try {
-            const data = JSON.parse(fs.readFileSync(bakPath, 'utf-8'));
-            fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
-            console.error(`[MMA] Shard ${path.basename(filePath)} recovered from backup`);
-            return data;
-        } catch (e) { console.error(`[MMA] Shard backup also corrupted: ${path.basename(bakPath)}`); }
-    }
-    return fallback;
-}
-
-function ensureDirs() {
-    [DATA_DIR, MEMORY_DIR, MMA_SHARDS_DIR, ARCHIVE_DIR, WAL_DIR, LOCK_DIR].forEach(d => {
-        if (!fs.existsSync(d)) fs.mkdirSync(d, { recursive: true });
-    });
-}
-
-function shardPath(meridianKey) { return path.join(MMA_SHARDS_DIR, `${meridianKey}.json`); }
-function shardBakPath(meridianKey) { return path.join(MMA_SHARDS_DIR, `${meridianKey}.bak.json`); }
-function shardLockKey(meridianKey) { return meridianKey; }
-
-function atomicWriteShard(filePath, bakPath, data) {
-    const json = JSON.stringify(data, null, 2);
-    const tmpPath = filePath.replace('.json', '.tmp.json');
-    if (fs.existsSync(filePath)) {
-        try { JSON.parse(fs.readFileSync(filePath, 'utf-8')); fs.copyFileSync(filePath, bakPath); } catch (e) {}
-    }
-    fs.writeFileSync(tmpPath, json, 'utf-8');
-    try { const fd = fs.openSync(tmpPath, 'r+'); fs.fsyncSync(fd); fs.closeSync(fd); } catch (e) {}
-    fs.renameSync(tmpPath, filePath);
-}
-
-// ═══════════════════════════════════════════════════════════════
-//  加载 — 从分片目录组装完整KG
-// ═══════════════════════════════════════════════════════════════
-
 function loadMMA() {
-    ensureDirs();
-
-    // Auto-migrate: legacy meridian_kg.json exists and shards dir is empty
-    if (fs.existsSync(MMA_FILE) && !fs.existsSync(META_FILE)) {
-        try {
-            const oldData = JSON.parse(fs.readFileSync(MMA_FILE, 'utf-8'));
-            if (oldData.meridians && oldData.extra) {
-                console.error('[MMA] Detected legacy meridian_kg.json, auto-migrating to shards...');
-                migrateToShards(oldData);
-                // 迁移成功后保留旧文件为备份
-                const migratedBak = MMA_FILE.replace('.json', '.migrated.bak.json');
-                fs.renameSync(MMA_FILE, migratedBak);
-                console.error(`[MMA] Migration complete, legacy file backed up as ${path.basename(migratedBak)}`);
-            }
-        } catch (e) {
-            console.error(`[MMA] Legacy migration failed: ${e.message}, cold-starting in shard mode`);
-        }
-    }
-
-    // Load meta shard
-    const meta = loadShardWithRecovery(META_FILE, META_FILE.replace('.json', '.bak.json'), null);
-
-    // No meta → cold start
-    if (!meta) {
-        console.error('[MMA] Cold start in shard mode');
-        return freshKG();
-    }
-
-    // 组装KG: 加载每条经脉的分片
-    const kg = freshKG();
-    kg.meta = meta;
-    kg._dirty_meridians = new Set(); // 加载后无脏分片
-    kg._shard_versions = {}; // 乐观锁: 记录各分片的加载时版本号
-
-    for (const key of Object.keys(TWELVE_MERIDIANS)) {
-        const sp = shardPath(key);
-        const bp = shardBakPath(key);
-        const shard = loadShardWithRecovery(sp, bp, { points: [] });
-        kg.meridians[key] = { ...structuredClone(TWELVE_MERIDIANS[key]), points: shard.points || [] };
-        if (shard._version !== undefined) kg._shard_versions[key] = shard._version;
-    }
-    for (const key of Object.keys(EIGHT_EXTRA_MERIDIANS)) {
-        const shardKey = '_extra_' + key;
-        const sp = shardPath(shardKey);
-        const bp = shardBakPath(shardKey);
-        const shard = loadShardWithRecovery(sp, bp, { points: [] });
-        kg.extra[key] = { ...structuredClone(EIGHT_EXTRA_MERIDIANS[key]), points: shard.points || [] };
-        if (shard._version !== undefined) kg._shard_versions[shardKey] = shard._version;
-    }
-    if (meta._version !== undefined) kg._shard_versions['meta'] = meta._version;
-
-    // WAL replay — 崩溃恢复：重放未清理的 WAL 日志
-    replayAndApplyWAL(kg);
-
-    return kg;
+  const data = simpleIO.loadKnowledge('knowledge');
+  return {
+    _simple_data: data,
+    meridians: {},
+    extra: {},
+    meta: data.meta,
+    points: data.points,
+  };
 }
-// ═══════════════════════════════════════════════════════════════
 
+/**
+ * 兼容旧接口：saveMMA(kg)
+ */
 function saveMMA(kg) {
-    ensureDirs();
-
-    // 更新元数据
-    kg.meta.total_points = Object.values(kg.meridians).reduce((s,m)=>s+m.points.length,0)
-                         + Object.values(kg.extra).reduce((s,m)=>s+m.points.length,0);
-    kg.meta.last_saved = new Date().toISOString();
-    kg.meta.save_count = (kg.meta.save_count || 0) + 1;
-    kg.meta.storage_mode = 'sharded';
-
-    const latestVersion = kg.meta.save_count;
-    const dirtySet = kg._dirty_meridians;
-
-    // 保存元数据（始终写入，因为 save_count 变了）
-    const cloneMeta = { ...kg.meta, _version: latestVersion };
-    const metaExpectedVersion = kg._shard_versions?.['meta'];
-    const metaResult = atomicWriteShardWithLock(
-        META_FILE, META_FILE.replace('.json', '.bak.json'), 'meta', cloneMeta, metaExpectedVersion
-    );
-    if (metaResult.conflict) {
-        console.error(`[MMA] Meta version conflict (${metaResult.current_version} vs ${metaExpectedVersion}), retrying`);
-    }
-
-    // 只保存有变更的经脉分片
-    for (const key of Object.keys(TWELVE_MERIDIANS)) {
-        if (dirtySet && !dirtySet.has(key)) continue;
-        const m = kg.meridians[key];
-        if (m && m.points) {
-            const shardData = { points: m.points, _version: latestVersion, _pid: process.pid };
-            const expectedVer = kg._shard_versions?.[key];
-            const r = atomicWriteShardWithLock(shardPath(key), shardBakPath(key), key, shardData, expectedVer);
-            if (r.conflict) {
-                console.error(`[MMA] Shard conflict: ${key} (${r.current_version} vs ${expectedVer})`);
-            }
-        }
-    }
-    for (const key of Object.keys(EIGHT_EXTRA_MERIDIANS)) {
-        const shardKey = '_extra_' + key;
-        // 兼容: markDirty 可能用原始key('dai')或shardKey('_extra_dai')
-        if (dirtySet && !dirtySet.has(shardKey) && !dirtySet.has(key)) continue;
-        const m = kg.extra[key];
-        if (m && m.points) {
-            const shardData = { points: m.points, _version: latestVersion, _pid: process.pid };
-            const expectedVer = kg._shard_versions?.[shardKey];
-            const r = atomicWriteShardWithLock(shardPath(shardKey), shardBakPath(shardKey), shardKey, shardData, expectedVer);
-            if (r.conflict) {
-                console.error(`[MMA] Shard conflict: ${shardKey} (${r.current_version} vs ${expectedVer})`);
-            }
-        }
-    }
-
-    // 重建标签索引 (性能优化: 写入后索引立即可用)
-    buildTagIndex(kg);
-
-    // 清除脏标记 + 更新版本号
-    if (dirtySet) dirtySet.clear();
-    if (kg._shard_versions) {
-        kg._shard_versions['meta'] = latestVersion;
-        for (const key of Object.keys(TWELVE_MERIDIANS)) {
-            if (kg._shard_versions[key] !== undefined) kg._shard_versions[key] = latestVersion;
-        }
-        for (const key of Object.keys(EIGHT_EXTRA_MERIDIANS)) {
-            const shardKey = '_extra_' + key;
-            if (kg._shard_versions[shardKey] !== undefined) kg._shard_versions[shardKey] = latestVersion;
-        }
-    }
-
-    // 保存成功后清理 WAL
-    const allShardKeys = [...Object.keys(TWELVE_MERIDIANS), ...Object.keys(EIGHT_EXTRA_MERIDIANS).map(k => '_extra_' + k), 'meta'];
-    for (const sk of allShardKeys) clearWAL(sk);
-}
-
-function takeSnapshot(kg) {
-    const snapshotFile = path.join(ARCHIVE_DIR,
-        `snapshot_${new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19)}.json`);
-    // 快照保存完整KG(方便恢复)
-    const full = {
-        meridians: {},
-        extra: {},
-        meta: kg.meta,
-    };
-    for (const key of Object.keys(kg.meridians)) {
-        full.meridians[key] = { points: kg.meridians[key].points };
-    }
-    for (const key of Object.keys(kg.extra)) {
-        full.extra[key] = { points: kg.extra[key].points };
-    }
-    fs.writeFileSync(snapshotFile, JSON.stringify(full, null, 2), 'utf-8');
-
-    // 只保留最近5个快照
-    const snapshots = fs.readdirSync(ARCHIVE_DIR)
-        .filter(f => f.startsWith('snapshot_'))
-        .sort().reverse();
-    for (const old of snapshots.slice(5)) {
-        fs.unlinkSync(path.join(ARCHIVE_DIR, old));
-    }
-}
-
-// ═══════════════════════════════════════════════════════════════
-//  旧格式 → 分片迁移
-// ═══════════════════════════════════════════════════════════════
-
-function migrateToShards(oldData) {
-    ensureDirs();
-
-    // 迁移元数据
-    const meta = oldData.meta || { version: "2.0.0", algorithm: "MMA (Meridian Memory Algorithm)",
-        created: new Date().toISOString(), total_points: 0, save_count: 0 };
-    meta.storage_mode = 'sharded';
-    meta.migrated_at = new Date().toISOString();
-    if (!meta.next_point_seq) {
-        // 从旧数据推算已有的最大 seq
-        let maxSeq = 0;
-        for (const m of Object.values(oldData.meridians || {})) {
-            for (const p of (m?.points || [])) {
-                const m2 = p.id?.match(/\d+/);
-                if (m2) maxSeq = Math.max(maxSeq, parseInt(m2[0]));
-            }
-        }
-        meta.next_point_seq = maxSeq + 1;
-    }
-    atomicWriteShard(META_FILE, META_FILE.replace('.json', '.bak.json'), meta);
-
-    // 迁移每条经脉
-    for (const key of Object.keys(TWELVE_MERIDIANS)) {
-        const m = oldData.meridians?.[key];
-        atomicWriteShard(shardPath(key), shardBakPath(key),
-            { points: m?.points || [] });
-    }
-    for (const key of Object.keys(EIGHT_EXTRA_MERIDIANS)) {
-        const m = oldData.extra?.[key];
-        atomicWriteShard(shardPath('_extra_' + key), shardBakPath('_extra_' + key),
-            { points: m?.points || [] });
-    }
-}
-
-// ═══════════════════════════════════════════════════════════════
-//  WAL 重放 — 崩溃恢复
-// ═══════════════════════════════════════════════════════════════
-
-function replayAndApplyWAL(kg) {
-    const allShardKeys = [...Object.keys(TWELVE_MERIDIANS), ...Object.keys(EIGHT_EXTRA_MERIDIANS).map(k => '_extra_' + k)];
-    let replayCount = 0;
-
-    for (const shardKey of allShardKeys) {
-        const entries = replayWAL(shardKey);
-        if (entries.length === 0) continue;
-
-        for (const entry of entries) {
-            if (entry.op !== 'write' || !entry.data) continue;
-            // 将 WAL 中记录的 points 合并回 KG
-            const targetMeridian = kg.meridians[shardKey] || kg.extra[shardKey.replace('_extra_', '')];
-            if (!targetMeridian) continue;
-            const walPoints = entry.data.points;
-            if (!walPoints || walPoints.length === 0) continue;
-
-            // 按顺序重放所有WAL条目（每条是完整分片快照，覆盖之前状态）
-            targetMeridian.points = walPoints;
-            replayCount++;
-        }
-    }
-
-    if (replayCount > 0) {
-        console.error(`[MMA] WAL replay: ${replayCount} shard(s) recovered from WAL`);
-    }
-}
-
-// ═══════════════════════════════════════════════════════════════
-//  冷启动
-// ═══════════════════════════════════════════════════════════════
-
-function freshKG() {
-    return {
-        meridians: structuredClone(TWELVE_MERIDIANS),
-        extra: structuredClone(EIGHT_EXTRA_MERIDIANS),
-        meta: { version: "2.0.0", algorithm: "MMA (Meridian Memory Algorithm)",
-                storage_mode: 'sharded',
-                created: new Date().toISOString(), total_points: 0, save_count: 0,
-                next_point_seq: 1 },
-        _dirty_meridians: new Set(),
-    };
-}
-
-// ═══════════════════════════════════════════════════════════════
-//  三焦工作记忆 (不变)
-// ═══════════════════════════════════════════════════════════════
-
-function loadWorkingMemory() {
-    ensureDirs();
-    if (!fs.existsSync(WORKING_MEMORY_FILE)) return { upper:[], middle:[], lower:[], last_meridian:null, last_meridian_ts:null };
-    try { return JSON.parse(fs.readFileSync(WORKING_MEMORY_FILE, 'utf-8')); }
-    catch(e) { return { upper:[], middle:[], lower:[], last_meridian:null, last_meridian_ts:null }; }
-}
-
-function saveWorkingMemory(wm) {
-    ensureDirs();
-    const tmpFile = WORKING_MEMORY_FILE.replace('.json', '.tmp.json');
-    fs.writeFileSync(tmpFile, JSON.stringify(wm, null, 0), 'utf-8');
-    fs.renameSync(tmpFile, WORKING_MEMORY_FILE);
-}
-
-// ═══════════════════════════════════════════════════════════════
-//  标签索引 — O(1)标签→穴位查找, 替代O(n)全量扫描
-// ═══════════════════════════════════════════════════════════════
-
-const _pointCache = new Map(); // 最近查找的pointId → {point, meridianKey}
-const MAX_CACHE = 100;
-
-/**
- * 构建标签索引: tag → [pointId, pointId, ...]
- * 每次saveMMA后重建(在数据变化时自动更新)
- */
-function buildTagIndex(kg) {
-    const index = {};
-    const idMap = {}; // pointId → {meridianKey, index}
-    for (const [key, m] of Object.entries(kg.meridians)) {
-        for (let i = 0; i < m.points.length; i++) {
-            const p = m.points[i];
-            if (p.hidden) continue;
-            idMap[p.id] = { meridianKey: key, index: i };
-            if (p.tags) for (const tag of p.tags) {
-                if (!index[tag]) index[tag] = [];
-                index[tag].push(p.id);
-            }
-        }
-    }
-    for (const [key, m] of Object.entries(kg.extra)) {
-        for (let i = 0; i < m.points.length; i++) {
-            const p = m.points[i];
-            if (p.hidden) continue;
-            idMap[p.id] = { meridianKey: '_extra_' + key, index: i };
-            if (p.tags) for (const tag of p.tags) {
-                if (!index[tag]) index[tag] = [];
-                index[tag].push(p.id);
-            }
-        }
-    }
-    kg._tagIndex = index;
-    kg._idMap = idMap;
-    return index;
+  if (kg._simple_data) {
+    simpleIO.saveKnowledge('knowledge', kg._simple_data);
+  } else if (kg.points) {
+    simpleIO.saveKnowledge('knowledge', { meta: kg.meta, points: kg.points });
+  }
 }
 
 /**
- * 从标签索引查询穴位 (替代全量扫描)
+ * 兼容旧接口：findPointById(kg, pointId)
  */
-function queryByTag(kg, tags, limit = 10) {
-    if (!kg._tagIndex && !buildTagIndex(kg)) return [];
-    const index = kg._tagIndex;
-    // 找匹配至少一个标签的点
-    const scored = {};
-    for (const tag of tags) {
-        const ids = index[tag];
-        if (!ids) continue;
-        for (const id of ids) {
-            scored[id] = (scored[id] || 0) + 1;
-        }
-    }
-    // 按匹配标签数排序, 返回top
-    return Object.entries(scored)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, limit)
-        .map(([id]) => {
-            const loc = kg._idMap[id];
-            if (!loc) return null;
-            const meridian = loc.meridianKey.startsWith('_extra_')
-                ? kg.extra[loc.meridianKey.replace('_extra_', '')]
-                : kg.meridians[loc.meridianKey];
-            if (!meridian || !meridian.points[loc.index]) return null;
-            return { point: meridian.points[loc.index], meridianKey: loc.meridianKey, index: loc.index };
-        })
-        .filter(Boolean);
-}
-
-// ═══════════════════════════════════════════════════════════════
-//  通用穴位查找 (带LRU缓存)
-// ═══════════════════════════════════════════════════════════════
-
 function findPointById(kg, pointId) {
-    // LRU cache
-    if (_pointCache.has(pointId)) return _pointCache.get(pointId);
-    for (const [key, m] of Object.entries(kg.meridians)) {
-        const idx = m.points.findIndex(p => p.id === pointId);
-        if (idx >= 0) {
-            const result = { point: m.points[idx], meridianKey: key, meridian: m, index: idx };
-            if (_pointCache.size >= MAX_CACHE) _pointCache.delete(_pointCache.keys().next().value);
-            _pointCache.set(pointId, result);
-            return result;
-        }
-    }
-    for (const [key, m] of Object.entries(kg.extra)) {
-        const idx = m.points.findIndex(p => p.id === pointId);
-        if (idx >= 0) {
-            const result = { point: m.points[idx], meridianKey: key, meridian: m, index: idx };
-            if (_pointCache.size >= MAX_CACHE) _pointCache.delete(_pointCache.keys().next().value);
-            _pointCache.set(pointId, result);
-            return result;
-        }
-    }
-    return null;
+  return simpleIO.findById(kg._simple_data || kg, pointId);
 }
 
-module.exports = { ensureDirs, loadMMA, saveMMA, freshKG, loadWorkingMemory, saveWorkingMemory, findPointById,
-    acquireShardLock, releaseShardLock, appendWAL, replayWAL, clearWAL, markDirty, buildTagIndex, queryByTag };
+/**
+ * 兼容旧接口：markDirty() — 单文件模式不需要，空操作
+ */
+function markDirty() {}
 
-function markDirty(kg, meridianKey) {
-    if (kg._dirty_meridians) kg._dirty_meridians.add(meridianKey);
+/**
+ * 兼容旧接口：ensureDirs()
+ */
+function ensureDirs() {
+  simpleIO.ensureDataDir();
 }
+
+/**
+ * 兼容旧接口：loadWorkingMemory / saveWorkingMemory
+ * 三焦工作记忆已不再使用，返回空结构
+ */
+function loadWorkingMemory() {
+  return { upper: [], middle: [], lower: [], last_meridian: null, last_meridian_ts: null };
+}
+function saveWorkingMemory() {}
+
+// 兼容旧接口的其他函数（空操作）
+function buildTagIndex() {}
+function queryByTag() { return []; }
+function acquireShardLock() { return true; }
+function releaseShardLock() {}
+function appendWAL() {}
+function replayWAL() { return []; }
+function clearWAL() {}
+
+module.exports = {
+  ensureDirs,
+  loadMMA,
+  saveMMA,
+  findPointById,
+  markDirty,
+  buildTagIndex,
+  queryByTag,
+  loadWorkingMemory,
+  saveWorkingMemory,
+  acquireShardLock,
+  releaseShardLock,
+  appendWAL,
+  replayWAL,
+  clearWAL,
+};

@@ -38,7 +38,7 @@ Verify: simulate-layer-guard --state '{solutions:[...]}'
 **⛔ MCTS now uses a real tree stored in ~/.claude/data/skills/ponder/memory/trees/.**
 This is NOT just a thought process. Every node is a real data object with CRUD operations.
 
-API: node $P/scripts/mcts.js tree <command>
+The removed tree CLI has no runtime replacement; use the active simulation agent flow.
 
 ```text
 Node = { id, description, parentId, childIds[],
@@ -57,27 +57,27 @@ Each round MUST use the real tree CLI. No text-simulated trees.
 
 ```text
 Step ① SELECTION:
-  node $P/scripts/mcts.js tree select <node-id> --session <sid>
+  [removed tree CLI] select <node-id> --session <sid>
   → Returns UCB-ranked children. Pick the top one.
   ⛔ `UCB` values are COMPUTED, not approximated by LLM.
 
 Step ② EXPANSION:
-  node $P/scripts/mcts.js tree add-children <parent-id> \
+  [removed tree CLI] add-children <parent-id> \
     --session <sid> \
     --children '[{"description":"...", "nodeType":"ACTION"}]'
   → Creates N real tree nodes with auto-increment IDs.
 
 Step ③ SIMULATION:
-  node $P/scripts/mcts.js tree simulate <leaf-id> \
+  [removed tree CLI] simulate <leaf-id> \
     --session <sid> --v <V> --sigma2 <σ²>
   → Records V and marks leaf as terminal.
 
 Step ④ BACKPROPAGATION:
-  node $P/scripts/mcts.js tree backprop <leaf-id> --session <sid>
+  [removed tree CLI] backprop <leaf-id> --session <sid>
   → Walks path to ROOT, updates n/V/σ² via Welford.
 
 Multi-round shortcut:
-  node $P/scripts/mcts.js tree round-start --session <sid>
+  [removed tree CLI] round-start --session <sid>
   → One complete round: select + (LLM adds children) + simulate + backprop
 ```
 
@@ -186,8 +186,8 @@ Each ancestor: n+=1, w+=V_leaf, V=w/n, Welford online σ²
 
 ## ⑤ KNOWLEDGE UPDATE
 
-Pre-write gate: node $P/scripts/mcts.js mma ashi '<entry_json>' (gate-check built-in)
-Example: node $P/scripts/mcts.js mma ashi '{"description":"...","tags":["..."],"category":"...","emotion":"xi","source":"execution_result","q":0.8}'
+Pre-write gate: use the active knowledge store interface after validating the entry.
+Store through the active knowledge interface; the legacy MMA insertion CLI is unavailable.
 → Returns point ID (e.g., "LUN0001") — **collect for session-end tracking**
 Score <0.4 → discard | 0.4-0.59 → observe (15-day verify) | ≥0.6 → store
 
@@ -223,7 +223,7 @@ Convergence: [check result]
 
 ⛔ FORBIDDEN: outputting only final V/n/σ² without per-round detail | collapsing rounds
 
-Template: node $P/scripts/mcts.js template mcts-round --data '<JSON>'
+Render each MCTS round directly as Markdown; no template CLI is available.
 
 ### Final Output
 
@@ -232,5 +232,5 @@ MCTS Complete — [N] rounds, stop reason: [why]
 Ranking: SolutionA n=5 V=0.84 σ²=0.03 Conf=High | SolutionB ...
 Best path: [...] | Main risk: [...]
 
-Template: node $P/scripts/mcts.js template mcts-final --data '<JSON>'
+Render the final MCTS output directly as Markdown; no template CLI is available.
 

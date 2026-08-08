@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://img.shields.io/badge/版本-1.18.52-blue?style=flat-square" alt="版本">
+  <img src="https://img.shields.io/badge/版本-1.18.65-blue?style=flat-square" alt="版本">
   <img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="许可">
   <img src="https://img.shields.io/badge/status-active-success?style=flat-square" alt="状态">
 </p>
@@ -27,7 +27,7 @@
 
 **问题不在模型，在想的过程。**
 
-大多数 LLM 有问必答。Ponder 不——完整入口会走完十个阶段：需求画像 → 前提审视 → 多视角发散 → 八维盲点 → 方案生成 → 收敛 → 八维评分 → 情景推演 → 辩论攻防 → 综合结论。每个阶段有独立的思考框架、检查和质量门禁。
+大多数 LLM 有问必答。Ponder 不——完整入口按固定顺序走完十个阶段：interview（需求画像）→ shensi（神思）→ divergence（发散）→ bagua（八卦镜）→ plans（方案）→ converge（收敛）→ score（评分）→ simulate（推演）→ debate（辩论）→ synthesis（综合）。仅 Ponder 通过阶段指令、转场守卫和完成校验三层机制防止跳步。
 
 结果不是"答得更快"，是**"答得更可信"**。
 
@@ -43,13 +43,13 @@
 ┌───────────────────────────────────────────┐
 │      采访（五诊画像：天/地/人/法/物）        │
 ├───────────────────────────────────────────┤
-│   神思破框  ──→  6视角发散                 │
-│      ↓                ↓                   │
-│   八卦镜找盲点 →  5-10个方案               │
-│      ↓                ↓                   │
-│   8维评分      →  推演 + 辩论              │
-│      ↓                ↓                   │
-│       用户确认 →  最终结论                  │
+│    shensi      →     divergence           │
+│       ↓                   ↓               │
+│     bagua       →       plans             │
+│       ↓                   ↓               │
+│    converge     →       score             │
+│       ↓                   ↓               │
+│    simulate     → debate → synthesis       │
 └───────────────────────────────────────────┘
     ↓
 每步代码检查，每步产出积累。下一次更准。
@@ -65,9 +65,8 @@
 
 ```
 
-你提问 → 需求打磨 → 神思破框 → 多视角发散 → 盲点发现
-       → 方案生成 → 8维评分 → 收敛 → 推演 → 辩论攻防
-       → 用户确认 → 最终结论
+你提问 → interview → shensi → divergence → bagua → plans
+       → converge → score → simulate → debate → synthesis
 
 每次分析的结果自动积累到记忆系统。下一次比上一次更准。
 ```
@@ -78,64 +77,31 @@
 |---|---|
 | 🎯 **需求打磨** | 第一步不是分析，是确保你在解决对的问题。带选项的追问，直到画像清晰。 |
 | 🌪️ **神思破框** | 不是"换个角度想想"。五步认知工序（虚静→神凝→神游→意象→言意），产出真正的反直觉发现。 |
-| 👁️ **八卦镜找盲点** | 8个维度 × 独立 agent 同步扫描，找出你没意识到的盲区和隐藏假设。 |
-| 📊 **8维方案评分** | 每个方案在可行性、应变力、穿透力、风险等8个维度由独立 agent 打分，不做单一维度评价。 |
+| 👁️ **八卦镜找盲点** | 8 个维度逐项扫描，找出你没意识到的盲区和隐藏假设。 |
+| 📊 **8维方案评分** | 每个方案在可行性、应变力、穿透力、风险等8个维度分别评分，不做单一维度评价。 |
 | ⚔️ **辩论攻防** | 方案不是被比较——是被攻击。每个方案承受其他所有方案的联合批判，活下来的才是真强者。 |
 | 🧠 **记忆永不丢** | 每次分析产出自动存入 MMA。下次同类问题，系统自动调取 top 3 最相关的历史经验做参考。 |
 | 🔄 **自我进化** | 权重注册表根据实际结果自动调整系数。知识有生命周期——新生→验证→确认→沉睡→归档。 |
-| 🎯 **用户确认** | 不硬推结论。出推荐方案后检查遗留盲点和假设，让用户确认"这些风险你接受吗？"后再出最终结论。 |
 
 ---
 
 ## 🏗 架构一览
 
 ```
-┌──────────────────────────────────────────────────────────────────┐
-│                完整编排器 (skills/ponder/SKILL.md)                │
-│  完整技能负责编排十阶段；专项技能暴露可独立调用的能力。             │
-│  没有 workflow 引擎或隐藏调度层。                                 │
-├──────────────────────────────────────────────────────────────────┤
-│                                                                   │
-│  ┌─ 需求打磨 ────────────────────────────────────────────────┐   │
-│  │  AskUserQuestion 一次一问 → 天时/地利/人和/法/本质          │   │
-│  └───────────────────────────────────────────────────────────┘   │
-│                              │                                    │
-│                              ▼                                    │
-│  ┌─ 分析序列 ───────────────────────────────────────────────┐   │
-│  │                                                           │   │
-│  │  神思 (破框)      → 主线程，五步认知工序                │   │
-│  │  发散 (6视角)     → 主线程，多角度审视                  │   │
-│  │  八卦镜 (盲点)    → 8 agent × 1 维度                    │   │
-│  │  方案 (生成)      → N agent × 1 方案                    │   │
-│  │  方案评分 (8维)   → N agent × 8 维度评分                │   │
-│  │  收敛 (淘汰)      → 主线程，依评分保留最优              │   │
-│  │  推演（模拟）     → N 个隔离 Subagent                    │   │
-│  │  辩论 (攻防)      → 立论 + 围攻 + 抗压排名              │   │
-│  │  用户确认         → LLM推荐 + 检查遗留盲点              │   │
-│  │  综合结论         → 完整结论+风险+建议                   │   │
-│  │                                                           │   │
-│  │  每步: 查top3历史 → 读prompt JSON → 读引擎文档            │   │
-│  │       → 执行 → 展示 → 存产出                              │   │
-│  └───────────────────────────────────────────────────────────┘   │
-│                              │                                    │
-│                              ▼                                    │
-│  ┌─ MMA 记忆系统 ────────────────────────────────────────────┐   │
-│  │  12条正经 × 知识点                                       │   │
-│  │  语义匹配(中/英/日/韩) · 自然语言存储                     │   │
-│  │  知识保洁: 衰减/促进/沉睡/归档                            │   │
-│  │  情绪调制 · 再巩固窗口(30分钟)                            │   │
-│  │  写前日志 + 分片锁 + 原子写入                             │   │
-│  └───────────────────────────────────────────────────────────┘   │
-│                              │                                    │
-│                              ▼                                    │
-│  ┌─ 辅助工具 (按需调用) ────────────────────────────────────┐   │
-│  │  orchestrate.js — 存产出、查历史、收尾                    │   │
-│  │  mcts_compute.js — 数学引擎(80+命令)                     │   │
-│  │  mcts_guard.js   — 合规守卫                              │   │
-│  │  evolve.js       — 离线进化分析                           │   │
-│  └───────────────────────────────────────────────────────────┘   │
-└──────────────────────────────────────────────────────────────────┘
+一个 luke Plugin
+├── 九个 Skills
+│   ├── ponder: interview → shensi → divergence → bagua → plans
+│   │           → converge → score → simulate → debate → synthesis
+│   └── 八个独立专项：interview、explore、blindspots、solutions、
+│       simulate、debate、synthesis、memory
+├── skills/<owner>/resources/     各 Skill 自有 prompt 与 schema
+├── engine/                       根目录共享推理基础
+├── MMA                           philosophy、knowledge、step_history
+├── mcts gateway                  compute、l10n、knowledge、profile
+└── 运行时                        PONDER_DATA_DIR；Plugin 只读
 ```
+
+只有 Ponder 负责十阶段编排和三层防跳步检查。八个专项 Skill 各自独立、可单独调用。
 
 ---
 
@@ -157,16 +123,9 @@ Ponder 不是在"更努力地思考"——它是在从不同位置思考。每�
 
 ## 🔄 记忆怎么工作
 
-```
-每步执行完 → orchestrate.js step 存产出到 MMA
-  （自然语言，不是 JSON → 语义匹配可用）
+MMA 保持简单，只使用 `philosophy`、`knowledge`、`step_history` 三个文件。每条知识采用领域中性抽象，同时保留 `original_example` 以便追溯，并记录 `outcomes`，让后续运行依据真实结果学习。
 
-下次同类问题 → node skills/ponder/scripts/orchestrate.js history <阶段> <类型>
-  → 返回 top 3 最相关的历史记录
-  → 注入当前阶段的 prompt 作为参考
-
-旧数据衰减 → 未用知识沉睡 → 低质归档 → 高频自动升级
-```
+mcts gateway 只有四个接口面：`compute`、`l10n`、`knowledge`、`profile`，不承担编排或守卫职责。
 
 ---
 
@@ -214,24 +173,16 @@ claude
 
 ```
 ponder-skill/
-├── .claude-plugin/                  # Plugin 与市场清单
+├── .claude-plugin/                  # 单一 luke Plugin 清单
 ├── skills/                          # 九个可独立发现的 Skill
-│   ├── ponder/
-│   │   ├── SKILL.md                 # 完整十阶段编排器
-│   │   ├── scripts/                 # ponder 独享的持久化与进化实现
-│   │   └── resources/               # 不可变元数据与规则种子
-│   ├── interview/ … synthesis/      # 专项推理 Skill
-│   └── memory/SKILL.md              # 召回、记录和结果学习
-├── engine/                          # 多 Skill 共享的只读推理框架
-├── resources/prompts/               # 共享提示模板与 schema
-├── scripts/                         # 共享运行时、守卫、计算和 MMA
-│   ├── runtime-paths.js             # Plugin/工程/数据路径权威
-│   ├── knowledge.js                 # 持久知识接口
-│   └── mma/                         # 知识存储实现
-├── hooks/
-│   ├── hooks.json                   # 会话生命周期注册
-│   └── scripts/                     # Hook 独享实现
-├── references/                      # 算法与框架参考
+│   ├── ponder/SKILL.md              # 十阶段编排与专属守卫
+│   ├── interview/ … synthesis/      # 独立专项 Skill
+│   ├── memory/SKILL.md              # 独立记忆专项
+│   └── <owner>/resources/           # prompt 随所属 Skill 放置
+├── engine/                          # 根目录共享推理基础
+├── scripts/mma/                     # philosophy、knowledge、step_history
+├── scripts/mcts/                    # compute、l10n、knowledge、profile
+├── hooks/                           # 会话生命周期集成
 └── assets/                          # 文档媒体
 ```
 
@@ -241,12 +192,12 @@ ponder-skill/
 
 | 原则 | 含义 |
 |------|------|
-| **编排透明** | `skills/ponder/SKILL.md` 负责编排完整流程；专项技能暴露边界清晰的阶段能力。你读到什么，LLM 就执行什么。 |
-| **仅在必要时隔离** | 子 agent 只用于真正需要并行和隔离的工作（多维评分、方案生成、模拟推演）。其余全在主线程执行。 |
-| **代码结构，非代码强制** | prompt 做引导，schema 做约束，agent 做专业化。没有 workflow 引擎。 |
-| **跨领域设计** | 所有维度和框架使用领域中性语言。不假设用户是搞技术、金融还是医疗。 |
-| **记忆是一等公民** | 每次产出自持存储。每次运行丰富下次。知识有生命周期：HYPOTHESIS → CONFIRMED → SLEEPING → ARCHIVED。 |
-| **输出为人类阅读** | 不出 JSON、不出路径、不出框架术语。表格用于对比，段落用于叙事。 |
+| **一个 Plugin，九个 Skills** | `luke` 是唯一 Plugin；Ponder 是完整十阶段 Skill，另外八个专项均可独立调用。 |
+| **仅 Ponder 编排** | 只有 `skills/ponder/SKILL.md` 持有阶段顺序和三层防跳步机制。 |
+| **prompt 归 owner，共享基础归根目录** | prompt 位于 `skills/<owner>/resources/`；可复用推理基础统一位于根 `engine/`。 |
+| **简单 MMA** | 记忆只有 `philosophy`、`knowledge`、`step_history`，使用领域中性抽象并保留 `original_example` 和 `outcomes`。 |
+| **Plugin 只读** | 运行时写入 `PONDER_DATA_DIR`，不修改已安装 Plugin。 |
+| **窄接口 gateway** | mcts gateway 只提供 `compute`、`l10n`、`knowledge`、`profile`。 |
 
 ---
 

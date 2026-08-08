@@ -6,7 +6,7 @@ argument-hint: "<exploration findings and requirements profile>"
 
 # Eight-dimension blind-spot audit
 
-Require the exploration consensus and current requirements profile. Read `${CLAUDE_PLUGIN_ROOT}/resources/prompts/bagua.json` and `${CLAUDE_PLUGIN_ROOT}/engine/bagua.md`.
+Require the exploration consensus and current requirements profile. Read `${CLAUDE_PLUGIN_ROOT}/skills/blindspots/resources/bagua.json` and `${CLAUDE_PLUGIN_ROOT}/engine/bagua.md`.
 
 ## Subagent worker contract
 

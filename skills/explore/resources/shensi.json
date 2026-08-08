@@ -122,12 +122,40 @@
         "required": [
           "level"
         ]
+      },
+      "reasoning_dynamics": {
+        "type": "object",
+        "description": "推理动态（可选，记录推理过程中的关键转折，供下游步骤感知思考过程而非仅看结论）",
+        "properties": {
+          "key_turning_points": {
+            "type": "array",
+            "description": "推理过程中的关键转折点（如：最初倾向X，发现Y后转向Z）",
+            "items": {
+              "type": "string"
+            }
+          },
+          "divergence_pattern": {
+            "type": "string",
+            "description": "本步产出中的分歧模式（如：前提审视中2个前提互相矛盾）"
+          },
+          "confidence_nuance": {
+            "type": "string",
+            "description": "确定性细节（如：整体确定但某前提依赖用户确认；或反直觉发现虽强但缺乏数据支撑）"
+          }
+        }
+      },
+      "certainty": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 1,
+        "description": "本步结论确定性，0-1；依据证据强度、未验证假设和分歧程度校准"
       }
     },
     "required": [
       "counter_intuitive",
       "insight",
-      "stake"
+      "stake",
+      "certainty"
     ]
   }
 }

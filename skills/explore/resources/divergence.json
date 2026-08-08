@@ -44,11 +44,18 @@
       "consensus": {
         "type": "string",
         "description": "六视互否撞击后存活的综合判断（非简单汇总；须体现视角对立如何被合题化解或划界）"
+      },
+      "certainty": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 1,
+        "description": "本步结论确定性，0-1；依据证据强度、未验证假设和分歧程度校准"
       }
     },
     "required": [
       "perspectives",
-      "consensus"
+      "consensus",
+      "certainty"
     ]
   }
 }

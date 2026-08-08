@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.18.52-blue?style=flat-square" alt="version">
+  <img src="https://img.shields.io/badge/version-1.18.65-blue?style=flat-square" alt="version">
   <img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="license">
   <img src="https://img.shields.io/badge/status-active-success?style=flat-square" alt="status">
 </p>
@@ -27,7 +27,7 @@ Will it nail it this time? Miss something obvious? Give you the same confident-s
 
 **That's not a model problem. It's a process problem.**
 
-LLMs answer the moment you ask. Ponder doesn't. Its complete entry runs a ten-stage process: interview → premise examination → perspective expansion → blind-spot audit → solution generation → convergence → scoring → simulation → debate → synthesis. Each stage has its own thinking framework, independent evaluators, and code-enforced quality gates.
+LLMs answer the moment you ask. Ponder doesn't. Its complete entry runs ten stages in a fixed order: interview → shensi → divergence → bagua → plans → converge → score → simulate → debate → synthesis. Ponder alone enforces three anti-skip layers: stage instructions, transition guards, and completion validation.
 
 The result isn't faster answers. It's **answers you can trust**.
 
@@ -43,13 +43,13 @@ You ask a question
 ┌──────────────────────────────────────────────────┐
 │           Interview (5-dimension profile)         │
 ├──────────────────────────────────────────────────┤
-│    Frame-breaking  —→  6-perspective scan        │
-│         ↓                    ↓                    │
-│    8-dim blindspot   →  5-10 solutions           │
-│         ↓                    ↓                    │
-│    8-dim scoring     →  Simulation + debate      │
-│         ↓                    ↓                    │
-│           User confirmation → Final               │
+│       shensi      →      divergence               │
+│          ↓                   ↓                     │
+│        bagua       →        plans                  │
+│          ↓                   ↓                     │
+│       converge     →        score                  │
+│          ↓                   ↓                     │
+│       simulate     → debate → synthesis            │
 └──────────────────────────────────────────────────┘
          ↓
 Every phase verified, every result accumulated. Next time is sharper.
@@ -64,9 +64,8 @@ Every phase verified, every result accumulated. Next time is sharper.
 *Direct LLM answer vs the same question through Ponder's complete ten-stage process.*
 
 ```
-You ask → Requirement refinement → Frame-breaking → Multi-perspective scan
-       → Blindspot discovery → Solution generation → 8-dimension scoring
-       → Simulation → Debate under fire → User confirmation → Final output
+You ask → interview → shensi → divergence → bagua → plans
+       → converge → score → simulate → debate → synthesis
 
 Every step feeds back into memory. Every run makes the next one sharper.
 ```
@@ -77,65 +76,31 @@ Every step feeds back into memory. Every run makes the next one sharper.
 |---|---|
 | 🎯 **Requirement Refinement** | The first phase isn't analysis — it's making sure you're solving the right problem. Iterative, option-based questioning until the picture is clear. |
 | 🌪️ **Frame-breaking** | Not "think harder." A structured 5-step cognitive process (empty the mind → focus → wander → image → connect) to force genuinely unexpected insights. |
-| 👁️ **Blindspot Discovery** | 8 dimensions × independent agents systematically scan for what you didn't know you were missing. Surfaces the hidden assumptions before they become blindspots in your decision. |
-| 📊 **8-Dimension Scoring** | Every proposed solution is scored across 8 orthogonal dimensions (feasibility, resilience, risk, penetration...) by independent agents. No single-point rating. |
+| 👁️ **Blindspot Discovery** | 8 dimensions systematically scan for what you didn't know you were missing. Surfaces the hidden assumptions before they become blindspots in your decision. |
+| 📊 **8-Dimension Scoring** | Every proposed solution is scored across 8 orthogonal dimensions (feasibility, resilience, risk, penetration...) without collapsing judgment into a single-point rating. |
 | ⚔️ **Debate Under Fire** | Solutions don't just get compared — they get attacked. Each solution faces combined criticism from all others. The winner is the one that survives, not the one that sounds best. |
 | 🧠 **Persistent Memory** | Every analysis is stored as structured knowledge. Future runs automatically recall top-3 most relevant past experiences per phase. The system gets smarter with use. |
 | 🔄 **Self-Learning** | Weight registry adjusts coefficients based on real outcomes. Knowledge grooming decays unused data, promotes valuable patterns, sleeps low-quality entries. |
-| 🎯 **User Confirmation** | The system doesn't push conclusions. It presents recommendations, surfaces remaining blindspots and assumptions, and asks you to confirm before finalizing. |
 
 ---
 
 ## 🏗 Architecture at a Glance
 
 ```
-┌──────────────────────────────────────────────────────────────────┐
-│             FULL ORCHESTRATOR (skills/ponder/SKILL.md)             │
-│  The complete skill orchestrates ten stages; specialist skills      │
-│  expose individual capabilities. No workflow engine is required.    │
-├──────────────────────────────────────────────────────────────────┤
-│                                                                   │
-│  ┌─ Requirement Refinement ──────────────────────────────────┐   │
-│  │  AskUserQuestion (one at a time) → Tian/Di/Ren/Fa/Wu      │   │
-│  └───────────────────────────────────────────────────────────┘   │
-│                              │                                    │
-│                              ▼                                    │
-│  ┌─ Analysis Sequence ───────────────────────────────────────┐   │
-│  │                                                           │   │
-│  │  神思 Frame-breaking      → 主线程，反直觉发现             │   │
-│  │  发散 6-Perspective Scan  → 主线程，多角度审视             │   │
-│  │  八卦镜 Blindspot Hunt    → 8 agents × 1 dimension        │   │
-│  │  方案 Solution Generation → N agents × 1 plan             │   │
-│  │  方案评分 8-D Scoring     → N agents × 8 dimensions       │   │
-│  │  收敛 Convergence         → 主线程，依据评分淘汰           │   │
-│  │  Simulation               → N isolated Subagents            │   │
-│  │  辩论 Debate/Attack       → 立论 + 围攻 + 抗压排名         │   │
-│  │  用户确认 User Confirm    → LLM推荐 + 检查遗留盲点         │   │
-│  │  综合 Final Conclusion    → 完整结论+风险+建议             │   │
-│  │                                                           │   │
-│  │  Each phase: load top-3 history → read prompt JSON        │   │
-│  │              → read engine doc → execute → display → store│   │
-│  └───────────────────────────────────────────────────────────┘   │
-│                              │                                    │
-│                              ▼                                    │
-│  ┌─ MMA MEMORY (Meridian Memory Algorithm) ──────────────────┐   │
-│  │  12 primary meridians × knowledge points                  │   │
-│  │  Semantic matching (CJK/EN) · Natural language storage    │   │
-│  │  Knowledge grooming: decay/promote/sleep/archival         │   │
-│  │  Emotional modulation · Reconsolidation window(30min)     │   │
-│  │  WAL + shard locking + atomic writes                     │   │
-│  └───────────────────────────────────────────────────────────┘   │
-│                              │                                    │
-│                              ▼                                    │
-│  ┌─ UTILITY SCRIPTS (called when needed) ───────────────────┐   │
-│  │  orchestrate.js  — store output, query history, finalize │   │
-│  │  mcts_compute.js — math engine (UCB, hexagrams, gates)   │   │
-│  │  mcts_guard.js   — compliance checkers                    │   │
-│  │  clarity-check.js — quality scoring (currently disabled)  │   │
-│  │  evolve.js       — offline evolution analysis            │   │
-│  └───────────────────────────────────────────────────────────┘   │
-└──────────────────────────────────────────────────────────────────┘
+ONE luke PLUGIN
+├── Nine Skills
+│   ├── ponder: interview → shensi → divergence → bagua → plans
+│   │           → converge → score → simulate → debate → synthesis
+│   └── Eight independent specialists: interview, explore, blindspots,
+│       solutions, simulate, debate, synthesis, memory
+├── skills/<owner>/resources/     owner-local prompts and schemas
+├── engine/                       shared root reasoning foundations
+├── MMA                           philosophy, knowledge, step_history
+├── mcts gateway                  compute, l10n, knowledge, profile
+└── runtime                       PONDER_DATA_DIR; Plugin is read-only
 ```
+
+Only Ponder owns orchestration and the three-layer anti-skip guard. Specialists remain independently callable.
 
 ---
 
@@ -157,17 +122,9 @@ By the end, you've seen the problem from 20+ distinct vantage points. The blinds
 
 ## 🔄 How Memory Works
 
-```
-Each step executes → orchestrate.js step saves output to MMA
-  (natural language, not JSON — semantic matching ready)
+MMA deliberately keeps three files: `philosophy`, `knowledge`, and `step_history`. Each stored item uses a domain-neutral abstraction, retains an `original_example` for traceability, and records `outcomes` so later runs can learn from results.
 
-Next similar question → node skills/ponder/scripts/orchestrate.js history <phase> <type>
-  → returns top-3 most relevant historical matches
-  → injected into phase prompt as reference
-
-Old data decays → unused knowledge sleeps → low quality archived
-  → frequently used auto-promotes to CONFIRMED status
-```
+The mcts gateway has exactly four surfaces: `compute`, `l10n`, `knowledge`, and `profile`. It owns neither orchestration nor guarding.
 
 ---
 
@@ -215,24 +172,16 @@ Default: `~/.claude/data/skills/ponder/`. `PONDER_DATA_DIR` must remain outside 
 
 ```
 ponder-skill/
-├── .claude-plugin/                  # Plugin and marketplace manifests
+├── .claude-plugin/                  # One luke Plugin manifest
 ├── skills/                          # Nine independently discoverable Skills
-│   ├── ponder/
-│   │   ├── SKILL.md                 # Complete ten-stage orchestrator
-│   │   ├── scripts/                 # Ponder-only persistence and evolution
-│   │   └── resources/               # Immutable metadata/rule seeds
-│   ├── interview/ … synthesis/      # Specialist reasoning Skills
-│   └── memory/SKILL.md              # Recall, record, and outcomes
-├── engine/                          # Shared read-only reasoning frameworks
-├── resources/prompts/               # Shared prompt templates and schemas
-├── scripts/                         # Shared runtime, guards, math, and MMA
-│   ├── runtime-paths.js             # Plugin/project/data path authority
-│   ├── knowledge.js                 # Durable knowledge interface
-│   └── mma/                         # Knowledge storage implementation
-├── hooks/
-│   ├── hooks.json                   # Session lifecycle registration
-│   └── scripts/                     # Hook-only implementations
-├── references/                      # Algorithm and framework references
+│   ├── ponder/SKILL.md              # Ten-stage orchestration and guard
+│   ├── interview/ … synthesis/      # Independent specialist Skills
+│   ├── memory/SKILL.md              # Independent memory specialist
+│   └── <owner>/resources/           # Prompts live with their owning Skill
+├── engine/                          # Shared reasoning foundations at root
+├── scripts/mma/                     # philosophy, knowledge, step_history
+├── scripts/mcts/                    # compute, l10n, knowledge, profile
+├── hooks/                           # Session lifecycle integration
 └── assets/                          # Documentation media
 ```
 
@@ -242,12 +191,12 @@ ponder-skill/
 
 | Principle | Meaning |
 |-----------|---------|
-| **Visible orchestration** | `skills/ponder/SKILL.md` is the complete orchestrator; specialist skills expose bounded phases. What you read is what executes. |
-| **Isolate only when necessary** | Sub-agents only for truly parallel, independent work (dimensions, plans, simulations). Everything else runs in the main thread. |
-| **Code structure, not code enforcement** | Prompts guide, schemas constrain, agents specialize. No workflow engine, no pipeline runner. |
-| **Domain-agnostic by design** | All dimensions, frameworks, and prompts use domain-neutral language. No assumptions about software, finance, or any vertical. |
-| **Memory as a first-class citizen** | Every output persists. Every run enriches the next. Knowledge has a lifecycle: born as HYPOTHESIS, matures to CONFIRMED, decays to SLEEPING, or dies as REFUTED. |
-| **Output fit for human consumption** | No JSON, no bash commands, no framework jargon in user-facing output. Tables where appropriate, narrative where better. |
+| **One Plugin, nine Skills** | `luke` is the single Plugin. Ponder is the complete ten-stage Skill; eight specialists are independently callable. |
+| **Ponder-only orchestration** | Only `skills/ponder/SKILL.md` owns the stage order and its three anti-skip layers. |
+| **Owner-local prompts, shared foundations** | Prompts live in `skills/<owner>/resources/`; reusable foundations live once in root `engine/`. |
+| **Simple MMA** | Memory uses only `philosophy`, `knowledge`, and `step_history`, with domain-neutral abstractions plus `original_example` and `outcomes`. |
+| **Read-only Plugin** | Runtime writes go to `PONDER_DATA_DIR`; the installed Plugin is never mutated. |
+| **Narrow gateway** | The mcts gateway exposes only `compute`, `l10n`, `knowledge`, and `profile`. |
 
 ---
 

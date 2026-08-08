@@ -80,7 +80,7 @@ Cross-dimension validation (5 pairs from tension scan):
 ```
 
 
-Template: node $P/scripts/mcts.js template portrait --data '<JSON>'
+Render the portrait directly as Markdown; no template CLI is available.
 
 ---
 
@@ -122,7 +122,7 @@ Code: node $P/scripts/mcts_compute.js dong-jing --message '<msg>' --decision-cou
 
 ## 0.2 Technical Constraint Checklist
 
-Code: node $P/scripts/mcts_guard.js constraint-checklist (9 items: methodology, resources_external, structure, compliance, performance, safety, time_budget, legacy_constraints, stakeholder_preference)
+Checklist items: methodology, resources_external, structure, compliance, performance, safety, time_budget, legacy_constraints, stakeholder_preference.
 
 Items with auto_detect=true → check from available materials. auto_detect=false → MUST ask user.
 
@@ -166,4 +166,4 @@ Hard constraint violated → eliminate solution. Soft → lower match score M.
 ```
 
 
-Template: node $P/scripts/mcts.js template constraint-list --data '<JSON>'
+Render the constraint list directly as Markdown; no template CLI is available.

@@ -1,16 +1,16 @@
 {
   "name": "luke",
-  "version": "1.18.52",
-  "description": "Self-evolving cognitive framework with nine composable skills, a ten-stage reasoning process, durable knowledge memory, and automatic evolution.",
+  "version": "1.18.65",
+  "description": "One luke Plugin with nine independent Skills. Ponder orchestrates ten stages: interview, shensi, divergence, bagua, plans, converge, score, simulate, debate, and synthesis; eight specialist Skills remain independently callable.",
   "owner": {
     "name": "ljjluke"
   },
   "plugins": [
     {
       "name": "luke",
-      "description": "Self-evolving cognitive framework with nine composable skills, a ten-stage reasoning process, durable knowledge memory, and automatic evolution.",
+      "description": "One luke Plugin with nine independent Skills. Ponder orchestrates ten stages: interview, shensi, divergence, bagua, plans, converge, score, simulate, debate, and synthesis; eight specialist Skills remain independently callable.",
       "source": "./",
-      "version": "1.18.52",
+      "version": "1.18.65",
       "author": {
         "name": "ljjluke"
       },

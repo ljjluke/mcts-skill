@@ -84,7 +84,7 @@ Self-Check Verdict:
   ❌ Not passed — re-simulate with adjusted assumptions
 
 
-Template: node $P/scripts/mcts.js template self-check --data '<JSON>'
+Self-check: node $P/scripts/mcts.js compute handle-self-check --data '<JSON>'
 
 Code: handle-self-check --conclusion <Pass/Risk/NotPassed>
 
@@ -188,4 +188,4 @@ Code: li-shi-split --insight '<JSON>'
  Language Guard: check --user-lang <lang> --output "..." [PASS/FAIL]
 
 
-Template: node $P/scripts/mcts.js template decision-report --data '<JSON>'
+Render the decision report directly as Markdown; no template CLI is available.

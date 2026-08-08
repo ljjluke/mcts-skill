@@ -451,16 +451,16 @@ The skill learns from every decision cycle. Three feedback loops:
 
 ① Divergence → Memory:
    Divergence insights (心斋/六视/八卦镜 findings) → semantic knowledge
-   CLI: node $P/scripts/mcts.js mma capture-divergence '<json>'
+   No runtime CLI; preserve divergence in the active reasoning context.
 
 ② Five-Element Propagation:
    Tonify/drain one point → propagate through generating/controlling chain
    Auto-link promotes/inhibits between knowledge points
-   CLI: node $P/scripts/mcts.js mma interact
+   No runtime CLI; perform interaction through the active skill flow.
 
 ③ Knowledge Audit:
    Periodic check: completeness / contradiction / staleness / five-element balance
-   CLI: node $P/scripts/mcts.js mma audit [context_tags]
+   No runtime CLI; audit context through the active skill flow.
 
 
 ### Five Element Interactions
