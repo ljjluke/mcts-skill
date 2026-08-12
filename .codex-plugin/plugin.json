@@ -1,0 +1,42 @@
+{
+  "name": "luke",
+  "version": "1.18.65",
+  "description": "One luke Plugin with nine independent Skills. Ponder orchestrates ten stages: interview, shensi, divergence, bagua, plans, converge, score, simulate, debate, and synthesis; eight specialist Skills remain independently callable.",
+  "author": {
+    "name": "ljjluke",
+    "url": "https://github.com/ljjluke/mcts-skill"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/ljjluke/mcts-skill",
+  "repository": "https://github.com/ljjluke/mcts-skill",
+  "keywords": [
+    "cognitive-architecture",
+    "self-evolving",
+    "reasoning",
+    "memory",
+    "knowledge-management",
+    "structured-thinking",
+    "multi-step-reasoning",
+    "meta-cognition"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Luke",
+    "shortDescription": "Nine independent reasoning skills centered on the Ponder workflow.",
+    "longDescription": "Luke packages the Ponder reasoning workflow and its specialist phases as independent Codex skills for structured analysis, decision support, simulation, debate, and synthesis.",
+    "developerName": "ljjluke",
+    "category": "Productivity",
+    "capabilities": [
+      "Reasoning",
+      "Planning"
+    ],
+    "websiteURL": "https://github.com/ljjluke/mcts-skill",
+    "privacyPolicyURL": "https://github.com/ljjluke/mcts-skill",
+    "termsOfServiceURL": "https://github.com/ljjluke/mcts-skill",
+    "defaultPrompt": [
+      "Use ponder to analyze this decision.",
+      "Explore blind spots in this plan.",
+      "Debate these candidate solutions."
+    ]
+  }
+}
