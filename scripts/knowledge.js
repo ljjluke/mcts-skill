@@ -236,14 +236,53 @@ function storeStepOutput(stepName, questionType, output, opts = {}) {
         }
         if (parts.length >= 3) break;
       }
-      summary = parts.join(' | ') || JSON.stringify(parsedOutput).substring(0, 150);
+      // 结构化数组提取：score/converge/debate 类产出（scores/survivors/ranked/...）
+      // 拼成"方案名:数值"可读摘要，避免 JSON.stringify 截断产生乱码
+      if (!parts.length) {
+        var arrays = [];
+        if (Array.isArray(parsedOutput)) arrays.push(parsedOutput);
+        else {
+          var arrKeys = ['scores', 'survivors', 'ranked', 'plans', 'candidates', 'results', 'perspectives', 'dimensions'];
+          for (var ak = 0; ak < arrKeys.length; ak++) {
+            if (Array.isArray(parsedOutput[arrKeys[ak]])) { arrays.push(parsedOutput[arrKeys[ak]]); break; }
+          }
+        }
+        for (var ai = 0; ai < arrays.length && parts.length < 5; ai++) {
+          var arr = arrays[ai];
+          for (var aj = 0; aj < arr.length && parts.length < 5; aj++) {
+            var it = arr[aj];
+            if (it && typeof it === 'object' && it.name) {
+              var num = '';
+              if (it.total != null) num = ':' + it.total;
+              else if (it.score != null) num = ':' + it.score;
+              else if (it.rank != null) num = ':第' + it.rank;
+              else if (it.reason) num = ':' + String(it.reason).substring(0, 30);
+              parts.push(String(it.name).substring(0, 40) + num);
+            } else if (typeof it === 'string' && it.length > 5) {
+              parts.push(it.substring(0, 60));
+            }
+          }
+        }
+        if (parts.length) summary = parts.join(' / ');
+      }
+      if (!summary) summary = JSON.stringify(parsedOutput).substring(0, 150);
     }
   } else {
     // 降级：无法解析为 JSON，直接截取原始文本
     summary = String(output).substring(0, 300);
   }
+  // 截断在自然边界收口（最后一个句读/空格），避免切坏 JSON 或词组
+  if (summary.length > 300) {
+    var cutS = summary.substring(0, 300);
+    var lastB = Math.max(cutS.lastIndexOf('。'), cutS.lastIndexOf('；'), cutS.lastIndexOf('，'), cutS.lastIndexOf(','), cutS.lastIndexOf(' '), cutS.lastIndexOf('/'));
+    summary = lastB > 100 ? cutS.substring(0, lastB) : cutS;
+  }
   var entryDesc = '[step:' + stepName + '] ' + questionType + ': ' + summary;
-  if (entryDesc.length > 400) entryDesc = entryDesc.substring(0, 400);
+  if (entryDesc.length > 400) {
+    var cutD = entryDesc.substring(0, 400);
+    var lastD = Math.max(cutD.lastIndexOf('。'), cutD.lastIndexOf('；'), cutD.lastIndexOf('，'), cutD.lastIndexOf(','), cutD.lastIndexOf(' '));
+    entryDesc = lastD > 150 ? cutD.substring(0, lastD) : cutD;
+  }
 
   // 构造 tags, 清洗每个 tag
   var rawTags = ['step_history', 'step_' + stepName, questionType, ...(opts.tags || [])];

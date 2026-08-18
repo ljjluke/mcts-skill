@@ -256,7 +256,27 @@ function recallStepHistory(stepName, questionType, opts = {}) {
   const relevant = candidates.filter(c => (c._anchor_score || 0) > 0 || c.tags.some(t => t === questionType));
   const final = relevant.length > 0 ? relevant : candidates.slice(0, 3);
   final.sort((a, b) => (b._match_score || 0) - (a._match_score || 0));
-  return final.slice(0, limit);
+  const result = final.slice(0, limit);
+
+  // 消费证据：命中条目打 used_in:<step> 标记（知识是否被消费过有据可查）
+  try {
+    let consumed = false;
+    for (const c of result) {
+      const found = io.findById(data, c.id);
+      if (found && found.point) {
+        if (!found.point.tags) found.point.tags = [];
+        const useTag = 'used_in:' + stepName;
+        if (!found.point.tags.includes(useTag)) {
+          found.point.tags.push(useTag);
+          found.point.last_verified = new Date().toISOString();
+          consumed = true;
+        }
+      }
+    }
+    if (consumed) io.saveKnowledge('step_history', data);
+  } catch (e) { /* 打标失败不影响召回 */ }
+
+  return result;
 }
 
 function _matchStepPrefix(description, stepName) {

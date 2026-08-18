@@ -42,6 +42,8 @@ function queryHistory(stepName, questionType) {
     if (hist && hist.length > 0) {
       result.entries = hist.slice(0, 3).map(function(h) { return { content: (h.content || '').substring(0, 200), q: h.q, status: h.status }; });
       result.count = hist.length;
+      // 消费证据：本次召回命中了哪些知识（可观测）
+      result.recalled_ids = hist.slice(0, 3).map(function(h) { return h.id; });
     }
   } catch(e) { result.error = e.message; }
   console.log(JSON.stringify(result));
@@ -70,7 +72,7 @@ function queryRules(stepName, questionType) {
 }
 
 // ── Step: 存一步产出 + 记一步指标 ──
-function storeStep(stepName, questionType, stepOutputJson, userRequest) {
+function storeStep(stepName, questionType, stepOutputJson, userRequest, knowledgeEntry) {
   var output;
   // 宽松解析:先试直接 parse,失败则尝试从自然语言中抠出 JSON 块,再失败则降级存原始文本不崩
   function extractJson(str) {
@@ -137,6 +139,22 @@ function storeStep(stepName, questionType, stepOutputJson, userRequest) {
     result.stored = true;
     if (storeResult && storeResult.id) result.point_id = storeResult.id;
   } catch(e) { console.error('存储步骤产出失败:', e.message); }
+
+  // 1.5 如果提供了提炼后的知识条目，同时存到对应知识文件（philosophy/knowledge）
+  // knowledge_entry_JSON: {"description","summary","anchors","tags","knowledge_level","domain","epistemic_status","applicability","original_example"}
+  // applicability（适用条件）必填级强烈建议：没有适用条件的结论是格言，无法指导后续决策
+  if (knowledgeEntry && typeof knowledgeEntry === 'object' && knowledgeEntry.description) {
+    try {
+      var knowledgeStore = require('../../../scripts/knowledge');
+      var knowledgeResult = knowledgeStore.store(knowledgeEntry);
+      if (knowledgeResult && knowledgeResult.id) {
+        result.knowledge_point_id = knowledgeResult.id;
+        result.knowledge_file = knowledgeResult.file;
+        if (knowledgeResult.anchors_derived) result.knowledge_anchors_derived = true;
+        if (knowledgeResult.level_downgraded_to) result.knowledge_level_downgraded_to = knowledgeResult.level_downgraded_to;
+      }
+    } catch(e) { console.error('存储提炼知识失败:', e.message); }
+  }
 
   // 2. 记指标
   try {
@@ -277,14 +295,29 @@ function main() {
   } else if (cmd === 'rules') {
     queryRules(args[1] || '', args[2] || '');
   } else if (cmd === 'step') {
-    storeStep(args[1] || '', args[2] || '', args[3] || '{}', args[4] || '');
+    // 参数弹性解析：args[4] 既可能是 userRequest（自然语言）也可能是 knowledge_entry（JSON）
+    // 若 args[4] 以 { 开头则视为 knowledge_entry，userRequest 留空
+    var userRequest = '';
+    var knowledgeEntry = null;
+    if (args[4]) {
+      var trimmed = String(args[4]).trim();
+      if (trimmed.startsWith('{')) {
+        try { knowledgeEntry = JSON.parse(trimmed); } catch(e) { userRequest = args[4]; }
+      } else {
+        userRequest = args[4];
+      }
+    }
+    if (args[5]) {
+      try { knowledgeEntry = JSON.parse(args[5]); } catch(e) {}
+    }
+    storeStep(args[1] || '', args[2] || '', args[3] || '{}', userRequest, knowledgeEntry);
   } else if (cmd === 'finalize') {
     finalize(args[1] || '', args[2] || '');
   } else {
     console.log('用法:');
     console.log('  node skills/ponder/scripts/orchestrate.js history <步骤名> <问题类型>          — 查top3历史');
     console.log('  node skills/ponder/scripts/orchestrate.js rules <步骤名> <问题类型>            — 查本步命中的进化规则');
-    console.log('  node skills/ponder/scripts/orchestrate.js step <步骤名> <问题类型> \'<JSON>\'   — 存一步产出+记指标');
+    console.log('  node skills/ponder/scripts/orchestrate.js step <步骤名> <问题类型> \'<JSON>\' [用户请求] [knowledge_entry_JSON] - 存一步产出+记指标');
     console.log('  node skills/ponder/scripts/orchestrate.js finalize <问题类型> <问题描述>        — 保洁+学习');
   }
 }
