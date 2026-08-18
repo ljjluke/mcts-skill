@@ -1,6 +1,6 @@
 {
   "name": "luke",
-  "version": "1.18.65",
+  "version": "1.18.71",
   "description": "One luke Plugin with nine independent Skills. Ponder orchestrates ten stages: interview, shensi, divergence, bagua, plans, converge, score, simulate, debate, and synthesis; eight specialist Skills remain independently callable.",
   "owner": {
     "name": "ljjluke"
@@ -10,7 +10,7 @@
       "name": "luke",
       "description": "One luke Plugin with nine independent Skills. Ponder orchestrates ten stages: interview, shensi, divergence, bagua, plans, converge, score, simulate, debate, and synthesis; eight specialist Skills remain independently callable.",
       "source": "./",
-      "version": "1.18.65",
+      "version": "1.18.71",
       "author": {
         "name": "ljjluke"
       },

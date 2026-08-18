@@ -1,4 +1,4 @@
-# Ponder 真实架构（v1.18.65）
+# Ponder 真实架构（v1.18.71）
 
 > 当前仓库是一个 `luke` Plugin 和九个标准 Skill。执行合同以各 `skills/*/SKILL.md` 为准；CLI 脚本提供守卫、持久化和计算能力，但不是隐藏工作流引擎。
 

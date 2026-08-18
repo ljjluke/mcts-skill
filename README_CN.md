@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://img.shields.io/badge/版本-1.18.65-blue?style=flat-square" alt="版本">
+  <img src="https://img.shields.io/badge/版本-1.18.71-blue?style=flat-square" alt="版本">
   <img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="许可">
   <img src="https://img.shields.io/badge/status-active-success?style=flat-square" alt="状态">
 </p>
